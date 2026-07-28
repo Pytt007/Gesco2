@@ -1,11 +1,13 @@
 /**
  * GESCO — Service Authentification
- * Couche de communication directe avec Supabase Auth & Profils Utilisateurs avec fallback Démo
+ * Couche de communication directe avec Supabase Auth & Profils Utilisateurs
+ * ⚠️ PRODUCTION : Aucun fallback non authentifié autorisé
  */
 
 import { supabase, createIsolatedClient, usernameToEmail, emailToUsername } from '../common/supabaseClient';
 import { GescoUser, UserAccount, UserRole } from '../../types';
 
+// ── CONSTANTE DÉMO (utilisée uniquement pour l'affichage de la page de connexion) ──
 export const DEMO_ADMIN_USER: GescoUser = {
   id: 'usr-demo-admin-01',
   username: 'admin',
@@ -60,30 +62,50 @@ export function subscribeToAuthStateChange(callback: (event: string, session: an
   }
 }
 
+// ── SEC-002 : Verrouillage progressif côté service ────────────────────────────
+const _loginAttempts: Record<string, { count: number; lockedUntil: number }> = {};
+
+function checkRateLimit(username: string): void {
+  const now = Date.now();
+  const rec = _loginAttempts[username];
+  if (rec && rec.lockedUntil > now) {
+    const remainingSec = Math.ceil((rec.lockedUntil - now) / 1000);
+    throw new Error(`Compte temporairement verrouillé. Réessayez dans ${remainingSec} secondes.`);
+  }
+}
+
+function recordFailedAttempt(username: string): void {
+  const now = Date.now();
+  const rec = _loginAttempts[username] || { count: 0, lockedUntil: 0 };
+  rec.count += 1;
+  // 3 tentatives → verrouillage 30s ; 5+ → 60s
+  if (rec.count >= 5) rec.lockedUntil = now + 60_000;
+  else if (rec.count >= 3) rec.lockedUntil = now + 30_000;
+  _loginAttempts[username] = rec;
+}
+
+function clearAttempts(username: string): void {
+  delete _loginAttempts[username];
+}
+
+// ── SEC-001 CORRIGÉ : Authentification stricte sans fallback non sécurisé ──────
 export async function loginWithPassword(username: string, password: string): Promise<GescoUser> {
-  const email = usernameToEmail(username);
-  try {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (!error && data?.user) {
-      return await resolveUserFromSupabase(data.user);
-    }
-  } catch {
-    // Fallback en mode démo si Supabase n'est pas connecté
+  const trimmedUser = username.toLowerCase().trim();
+  const email = usernameToEmail(trimmedUser);
+
+  // Vérifier le rate-limit avant d'envoyer la requête
+  checkRateLimit(trimmedUser);
+
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error || !data?.user) {
+    recordFailedAttempt(trimmedUser);
+    // ✅ SEC-001 : Message d'erreur générique sans fuite d'information interne
+    throw new Error('Identifiant ou mot de passe incorrect.');
   }
 
-  // Fallback Démo instantané
-  const lowerUser = username.toLowerCase().trim() || 'admin';
-  let role: UserRole = 'ADMIN_GENERALE';
-  if (lowerUser.includes('prof') || lowerUser.includes('scolaire')) role = 'SCOLAIRE_ENSEIGNANT';
-  if (lowerUser.includes('compta') || lowerUser.includes('finance')) role = 'FINANCE';
-
-  return {
-    id: `usr-demo-${lowerUser}`,
-    username: lowerUser,
-    role,
-    fullName: lowerUser === 'admin' ? 'M. le Directeur Général' : `Utilisateur ${lowerUser}`,
-    avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${lowerUser}`,
-  };
+  clearAttempts(trimmedUser);
+  return resolveUserFromSupabase(data.user);
 }
 
 export async function logoutUser(): Promise<void> {
@@ -95,28 +117,21 @@ export async function logoutUser(): Promise<void> {
 }
 
 export async function fetchUserAccounts(): Promise<UserAccount[]> {
-  try {
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('*')
-      .order('created_at', { ascending: true });
+  // SEC-003 : Colonnes explicites — pas de SELECT *
+  const { data: profiles, error } = await supabase
+    .from('profiles')
+    .select('id, username, full_name, role, avatar_url')
+    .order('created_at', { ascending: true });
 
-    if (profiles && profiles.length > 0) {
-      return profiles.map((p) => ({
-        id: p.id,
-        username: p.username,
-        fullName: p.full_name || p.username,
-        role: p.role as UserRole,
-        avatarUrl: p.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${p.username}`,
-      }));
-    }
-  } catch { /* Fallback */ }
+  if (error || !profiles || profiles.length === 0) return [];
 
-  return [
-    { id: 'usr-demo-admin-01', username: 'admin', fullName: 'M. le Directeur Général', role: 'ADMIN_GENERALE' },
-    { id: 'usr-demo-teacher-01', username: 'enseignant', fullName: 'M. KOUASSI Philippe (Enseignant)', role: 'SCOLAIRE_ENSEIGNANT' },
-    { id: 'usr-demo-finance-01', username: 'comptable', fullName: 'M. SANOGO Ibrahim (Finance)', role: 'FINANCE' },
-  ];
+  return profiles.map((p) => ({
+    id: p.id,
+    username: p.username,
+    fullName: p.full_name || p.username,
+    role: p.role as UserRole,
+    avatarUrl: p.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${p.username}`,
+  }));
 }
 
 export async function createAccount(

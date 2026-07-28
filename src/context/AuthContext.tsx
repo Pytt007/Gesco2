@@ -37,9 +37,10 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<GescoUser | null>(DEMO_ADMIN_USER);
+  // ✅ SEC-001 : Aucun utilisateur pré-chargé par défaut — toujours null
+  const [currentUser, setCurrentUser] = useState<GescoUser | null>(null);
   const [userAccounts, setUserAccounts] = useState<UserAccount[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const refreshUserAccounts = useCallback(async () => {
     try {
@@ -58,13 +59,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const user = await resolveUserFromSupabase(session.user);
         if (!cancelled) setCurrentUser(user);
       } else {
-        // Mode démo par défaut si pas de session Supabase active
-        if (!cancelled && !currentUser) setCurrentUser(DEMO_ADMIN_USER);
+        // ✅ SEC-001 : Pas de session → l'utilisateur reste null (non connecté)
+        if (!cancelled) setCurrentUser(null);
       }
       if (!cancelled) setLoading(false);
     }).catch(() => {
+      // En cas d'erreur réseau, on reste non connecté
       if (!cancelled) {
-        setCurrentUser(DEMO_ADMIN_USER);
+        setCurrentUser(null);
         setLoading(false);
       }
     });
@@ -74,6 +76,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         const user = await resolveUserFromSupabase(session.user);
         if (!cancelled) setCurrentUser(user);
+      } else {
+        if (!cancelled) setCurrentUser(null);
       }
     });
 

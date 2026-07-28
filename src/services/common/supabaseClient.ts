@@ -9,11 +9,11 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
+// SEC-005 : Avertissement interne minimal — ne jamais exposer les noms de variables en production
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error(
-    '[Supabase] Variables VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY manquantes.\n' +
-    'Créez un fichier .env.local avec ces variables.'
-  );
+  if (import.meta.env.DEV) {
+    console.warn('[GESCO] Configuration de connexion manquante. Vérifiez votre fichier .env.local.');
+  }
 }
 
 /** Client principal — session persistée dans localStorage */

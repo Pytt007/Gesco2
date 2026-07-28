@@ -1,4 +1,55 @@
 // ─────────────────────────────────────────────────────────────────────────────
+// GESCO — Validation centralisée des données métier (SEC-004)
+// Utilitaires de validation utilisés dans tous les services
+// ───────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Valide qu'un montant est strictement positif et ne dépasse pas un plafond raisonnable.
+ * @throws Error si invalide
+ */
+export function validateAmount(amount: number, fieldLabel = 'Montant'): void {
+  if (!Number.isFinite(amount)) throw new Error(`${fieldLabel} invalide : valeur non numérique.`);
+  if (amount <= 0) throw new Error(`${fieldLabel} invalide : doit être strictement positif.`);
+  if (amount > 100_000_000) throw new Error(`${fieldLabel} invalide : dépasse le plafond autorisé (100 000 000 FCFA).`);
+}
+
+/**
+ * Valide qu'une chaîne obligatoire n'est pas vide.
+ * @throws Error si invalide
+ */
+export function validateRequired(value: string | undefined | null, fieldLabel: string): void {
+  if (!value || !value.toString().trim()) {
+    throw new Error(`Le champ "${fieldLabel}" est obligatoire.`);
+  }
+}
+
+/**
+ * Valide une date ISO : ne doit pas être dans un futur lointain (> 30 jours).
+ * @throws Error si invalide
+ */
+export function validateDate(dateStr: string, fieldLabel = 'Date'): void {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) throw new Error(`${fieldLabel} invalide : format de date incorrect.`);
+  const maxFuture = new Date();
+  maxFuture.setDate(maxFuture.getDate() + 30);
+  if (d > maxFuture) throw new Error(`${fieldLabel} invalide : date trop éloignée dans le futur.`);
+  const minDate = new Date('2000-01-01');
+  if (d < minDate) throw new Error(`${fieldLabel} invalide : date antérieure à l'an 2000.`);
+}
+
+/**
+ * Valide une extension de fichier uploadé.
+ * @throws Error si extension non autorisée
+ */
+export function validateFileExtension(filename: string): void {
+  const ALLOWED_EXTENSIONS = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.doc', '.docx', '.xls', '.xlsx'];
+  const FORBIDDEN_EXTENSIONS = ['.exe', '.sh', '.bat', '.cmd', '.ps1', '.php', '.js', '.ts', '.html', '.htm', '.svg', '.xml'];
+  const ext = ('.' + filename.split('.').pop()).toLowerCase();
+  if (FORBIDDEN_EXTENSIONS.includes(ext)) throw new Error(`Fichier refusé : l'extension "${ext}" n'est pas autorisée.`);
+  if (!ALLOWED_EXTENSIONS.includes(ext)) throw new Error(`Extension de fichier non reconnue : "${ext}".`);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // GESCO — Utilitaires d'Exportation (Vrais Téléchargements de Fichiers)
 // Remplace les appels à window.print() par des téléchargements réels Excel/CSV
 // ─────────────────────────────────────────────────────────────────────────────
