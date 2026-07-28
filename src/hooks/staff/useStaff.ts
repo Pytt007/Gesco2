@@ -173,8 +173,9 @@ export function useStaff(options: UseStaffOptions = {}) {
   );
 
   return {
-    staffMembers,
-    totalCount,
+    staffMembers: staffMembers || [],
+    staff: staffMembers || [],
+    totalCount: totalCount || 0,
     page,
     totalPages,
     loading,

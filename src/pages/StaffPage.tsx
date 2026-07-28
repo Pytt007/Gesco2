@@ -35,8 +35,8 @@ export default function StaffPage() {
   const { addNotification } = useToast();
 
   const {
-    staff,
-    totalCount,
+    staffMembers: staff = [],
+    totalCount = 0,
     page,
     totalPages,
     loading,
@@ -109,7 +109,7 @@ export default function StaffPage() {
   };
 
   const handleExport = () => {
-    const data = staff.map((s) => ({
+    const data = (staff || []).map((s) => ({
       'Matricule': s.matricule || s.id,
       'Nom': s.lastName,
       'Prénom': s.firstName,
@@ -155,11 +155,11 @@ export default function StaffPage() {
           </div>
           <div style={{ padding: '12px 16px', background: '#f0f9ff', borderRadius: '12px', border: '1px solid #bae6fd' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#0369a1' }}>Enseignants</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0c4a6e' }}>{staff.filter((s) => s.role === 'TEACHER').length}</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0c4a6e' }}>{(staff || []).filter((s) => s.role === 'TEACHER').length}</div>
           </div>
           <div style={{ padding: '12px 16px', background: '#ecfdf5', borderRadius: '12px', border: '1px solid #a7f3d0' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#047857' }}>Actifs</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#064e3b' }}>{staff.filter((s) => s.status === 'Actif').length}</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#064e3b' }}>{(staff || []).filter((s) => s.status === 'Actif').length}</div>
           </div>
         </div>
       </div>
@@ -222,14 +222,14 @@ export default function StaffPage() {
                     <div style={{ marginTop: '8px' }}>Chargement de la liste...</div>
                   </td>
                 </tr>
-              ) : staff.length === 0 ? (
+              ) : (staff || []).length === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
                     Aucun membre du personnel trouvé.
                   </td>
                 </tr>
               ) : (
-                staff.map((s) => (
+                (staff || []).map((s) => (
                   <tr key={s.id} style={{ borderBottom: '1px solid #f1f5f9' }} className="table-row-hover">
                     <td style={{ padding: '12px 16px' }}>
                       <div style={{ fontWeight: 700, color: '#0f172a' }}>{s.lastName} {s.firstName}</div>
