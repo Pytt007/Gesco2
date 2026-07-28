@@ -40,8 +40,8 @@ export default function StudentsPage() {
   const { addNotification } = useToast();
 
   const {
-    students,
-    totalCount,
+    students = [],
+    totalCount = 0,
     page,
     totalPages,
     loading,

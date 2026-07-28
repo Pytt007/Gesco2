@@ -152,12 +152,12 @@ export default function AcademicPage({ onNavigate }: AcademicPageProps) {
           </div>
           <div style={{ padding: '12px 16px', background: '#ecfdf5', borderRadius: '12px', border: '1px solid #a7f3d0' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#047857' }}>Classes Actives</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#064e3b' }}>{classroomsHook.classrooms.filter((c) => c.isActive).length}</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#064e3b' }}>{(classroomsHook.classrooms || []).filter((c) => c.isActive).length}</div>
           </div>
           <div style={{ padding: '12px 16px', background: '#faf5ff', borderRadius: '12px', border: '1px solid #e9d5ff' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#7e22ce' }}>Capacité Globale</span>
             <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#581c87' }}>
-              {classroomsHook.classrooms.reduce((acc, c) => acc + (c.capacity || 35), 0)} Places
+              {(classroomsHook.classrooms || []).reduce((acc, c) => acc + (c.capacity || 35), 0)} Places
             </div>
           </div>
         </div>
@@ -208,14 +208,14 @@ export default function AcademicPage({ onNavigate }: AcademicPageProps) {
                     <div style={{ marginTop: '8px' }}>Chargement des classes...</div>
                   </td>
                 </tr>
-              ) : classroomsHook.classrooms.length === 0 ? (
+              ) : (classroomsHook.classrooms || []).length === 0 ? (
                 <tr>
                   <td colSpan={5} style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
                     Aucune classe trouvée.
                   </td>
                 </tr>
               ) : (
-                classroomsHook.classrooms.map((c) => (
+                (classroomsHook.classrooms || []).map((c) => (
                   <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9' }} className="table-row-hover">
                     <td style={{ padding: '12px 16px' }}>
                       <div style={{ fontWeight: 700, color: '#0f172a' }}>{c.name}</div>

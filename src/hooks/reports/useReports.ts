@@ -135,9 +135,9 @@ export function useReports(initialYearId: string = 'ay-2026') {
           <h1>${generatedReport.title}</h1>
           <p class="sub">${generatedReport.subtitle} · Édité le ${generatedReport.generatedAt}</p>
 
-          ${generatedReport.summaryCards.length > 0 ? `
+          ${(generatedReport.summaryCards || []).length > 0 ? `
             <div class="kpis">
-              ${generatedReport.summaryCards.map((c) => `
+              ${(generatedReport.summaryCards || []).map((c) => `
                 <div class="kpi-card">
                   <div class="kpi-label">${c.label}</div>
                   <div class="kpi-val" style="color: ${c.color || '#1e293b'}">${c.value}</div>
@@ -149,13 +149,13 @@ export function useReports(initialYearId: string = 'ay-2026') {
           <table>
             <thead>
               <tr>
-                ${generatedReport.headers.map((h) => `<th>${h}</th>`).join('')}
+                ${(generatedReport.headers || []).map((h) => `<th>${h}</th>`).join('')}
               </tr>
             </thead>
             <tbody>
-              ${generatedReport.rows.map((row) => `
+              ${(generatedReport.rows || []).map((row) => `
                 <tr>
-                  ${row.map((cell) => `<td>${cell}</td>`).join('')}
+                  ${(row || []).map((cell) => `<td>${cell}</td>`).join('')}
                 </tr>
               `).join('')}
             </tbody>
@@ -173,9 +173,9 @@ export function useReports(initialYearId: string = 'ay-2026') {
   }, [generatedReport]);
 
   return {
-    reports,
-    filteredReports,
-    favoriteReports,
+    reports: reports || [],
+    filteredReports: filteredReports || [],
+    favoriteReports: favoriteReports || [],
     activeCategory,
     setActiveCategory,
     searchQuery,

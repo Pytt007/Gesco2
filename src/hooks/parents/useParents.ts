@@ -172,8 +172,9 @@ export function useParents(options: UseParentsOptions = {}) {
   );
 
   return {
-    parents,
-    totalCount,
+    parents: parents || [],
+    parentsList: parents || [],
+    totalCount: totalCount || 0,
     page,
     totalPages,
     loading,

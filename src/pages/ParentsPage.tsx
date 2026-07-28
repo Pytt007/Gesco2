@@ -152,11 +152,11 @@ export default function ParentsPage({ onNavigate }: ParentsPageProps) {
           </div>
           <div style={{ padding: '12px 16px', background: '#ecfdf5', borderRadius: '12px', border: '1px solid #a7f3d0' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#047857' }}>Actifs</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#064e3b' }}>{parents.filter((p) => p.status === 'Actif').length}</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#064e3b' }}>{(parents || []).filter((p) => p.status === 'Actif').length}</div>
           </div>
           <div style={{ padding: '12px 16px', background: '#f0f9ff', borderRadius: '12px', border: '1px solid #bae6fd' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#0369a1' }}>Contacts WhatsApp</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0c4a6e' }}>{parents.filter((p) => Boolean(p.whatsapp)).length}</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0c4a6e' }}>{(parents || []).filter((p) => Boolean(p.whatsapp)).length}</div>
           </div>
         </div>
       </div>
@@ -218,14 +218,14 @@ export default function ParentsPage({ onNavigate }: ParentsPageProps) {
                     <div style={{ marginTop: '8px' }}>Chargement de la liste...</div>
                   </td>
                 </tr>
-              ) : parents.length === 0 ? (
+              ) : (parents || []).length === 0 ? (
                 <tr>
                   <td colSpan={5} style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
                     Aucun parent trouvé.
                   </td>
                 </tr>
               ) : (
-                parents.map((p) => (
+                (parents || []).map((p) => (
                   <tr key={p.id} style={{ borderBottom: '1px solid #f1f5f9' }} className="table-row-hover">
                     <td style={{ padding: '12px 16px' }}>
                       <div style={{ fontWeight: 700, color: '#0f172a' }}>{p.lastName} {p.firstName}</div>

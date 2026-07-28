@@ -194,8 +194,8 @@ export function useClassrooms(options: UseClassroomsOptions = {}) {
   );
 
   return {
-    classrooms,
-    totalCount,
+    classrooms: classrooms || [],
+    totalCount: totalCount || 0,
     page,
     totalPages,
     loading,

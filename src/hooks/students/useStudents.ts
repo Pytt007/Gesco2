@@ -168,8 +168,9 @@ export function useStudents(options: UseStudentsOptions = {}) {
   }, [fetchStudentsList]);
 
   return {
-    students,
-    totalCount,
+    students: students || [],
+    studentsList: students || [],
+    totalCount: totalCount || 0,
     page,
     totalPages,
     loading,

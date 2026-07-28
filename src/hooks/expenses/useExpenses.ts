@@ -132,8 +132,8 @@ export function useExpenses(academicYearId: string = 'ay-2026') {
   }, [academicYearId, loadData, showToast]);
 
   return {
-    expenses,
-    categories,
+    expenses: expenses || [],
+    categories: categories || [],
     kpis,
     loading,
     error,
