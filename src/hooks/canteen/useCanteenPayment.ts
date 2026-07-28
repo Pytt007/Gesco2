@@ -82,7 +82,7 @@ export function useCanteenPayment(academicYearId: string = 'ay-2026') {
     } finally {
       setIsSubmitting(false);
     }
-  }, [selectedEnrollment, academicYearId, settings, showToast]);
+  }, [selectedEnrollment, academicYearId, schoolInfo, showToast]);
 
   const handleCloseReceipt = useCallback(() => {
     setIsReceiptOpen(false);

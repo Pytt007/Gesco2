@@ -4,6 +4,7 @@ import { ToastNotification, NotificationType } from '../types';
 interface ToastContextValue {
   notifications: ToastNotification[];
   addNotification: (type: NotificationType, message: string) => void;
+  showToast: (message: string, type?: NotificationType) => void;
   removeNotification: (id: string) => void;
 }
 
@@ -20,12 +21,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     }, 4500);
   }, []);
 
+  const showToast = useCallback((message: string, type: NotificationType = 'info') => {
+    addNotification(type, message);
+  }, [addNotification]);
+
   const removeNotification = useCallback((id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   }, []);
 
   return (
-    <ToastContext.Provider value={{ notifications, addNotification, removeNotification }}>
+    <ToastContext.Provider value={{ notifications, addNotification, showToast, removeNotification }}>
       {children}
     </ToastContext.Provider>
   );

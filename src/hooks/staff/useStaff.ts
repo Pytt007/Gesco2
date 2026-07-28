@@ -36,6 +36,7 @@ export function useStaff(options: UseStaffOptions = {}) {
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<StaffStatus | 'all'>(initialStatus);
+  const [roleFilter, setRoleFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'lastName' | 'firstName' | 'employeeNumber' | 'hireDate'>('lastName');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
@@ -184,10 +185,12 @@ export function useStaff(options: UseStaffOptions = {}) {
     success,
     searchQuery,
     statusFilter,
+    roleFilter,
     sortBy,
     sortOrder,
     setSearchQuery,
     setStatusFilter,
+    setRoleFilter,
     setSortBy,
     setSortOrder,
     setPage,

@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { useToast } from '../context/ToastContext';
-import { useStaff, useStaffDetail } from '../hooks/staff';
+import { useStaff } from '../hooks/staff';
 import { StaffMember } from '../services/staff/staffService';
 import { downloadExcel } from '../utils/exportUtils';
 import {
