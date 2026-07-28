@@ -132,6 +132,8 @@ export interface RecordPaymentInput {
   remarks?: string;
   recordedBy?: string;
   confirmOverpayment?: boolean;
+  /** ✅ INT-005 : Année scolaire dynamique — évite l'année scolaire codée en dur */
+  academicYearId?: string;
 }
 
 export interface ReceiptData {

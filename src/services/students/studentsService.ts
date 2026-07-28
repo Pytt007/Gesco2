@@ -87,14 +87,30 @@ let localStudentsStore: Student[] = [...INITIAL_MOCK_STUDENTS];
  */
 export async function createStudent(studentData: Partial<Student>): Promise<ServiceResponse<Student>> {
   try {
-    const matricule = studentData.matricule || `MAT-2026-${String(localStudentsStore.length + 1).padStart(3, '0')}`;
+    // ✅ INT-004 P1 : Validation des champs obligatoires
+    if (!studentData.firstName?.trim()) {
+      return createError(null, 'Le prénom de l\'élève est obligatoire.');
+    }
+    if (!studentData.lastName?.trim()) {
+      return createError(null, 'Le nom de famille de l\'élève est obligatoire.');
+    }
+
+    const matricule = studentData.matricule || `MAT-${new Date().getFullYear()}-${String(localStudentsStore.length + 1).padStart(4, '0')}`;
     const newId = studentData.id || crypto.randomUUID();
+
+    // ✅ INT-001 P0 : Vérification de l'unicité du matricule
+    const duplicate = localStudentsStore.find(
+      (s) => s.matricule.toLowerCase() === matricule.toLowerCase()
+    );
+    if (duplicate) {
+      return createError(null, `Le matricule "${matricule}" est déjà attribué à l'élève ${duplicate.firstName} ${duplicate.lastName}.`);
+    }
 
     const createdStudent: Student = {
       id: newId,
       matricule,
-      firstName: studentData.firstName || 'Élève',
-      lastName: studentData.lastName || 'GESCO',
+      firstName: studentData.firstName.trim(),
+      lastName: studentData.lastName.trim(),
       gender: studentData.gender || 'Masculin',
       photo: studentData.photo || `https://api.dicebear.com/7.x/adventurer/svg?seed=${matricule}`,
       grade: studentData.grade || '6ème',
@@ -117,9 +133,9 @@ export async function createStudent(studentData: Partial<Student>): Promise<Serv
       });
     } catch { /* Silent local fallback */ }
 
-    return createSuccess(createdStudent, 'Élève créé avec succès.');
+    return createSuccess(createdStudent, 'Elève créé avec succès.');
   } catch (err) {
-    return createError(err, 'Erreur lors de la création de l\'élève.');
+    return createError(err, 'Erreur lors de la création de l\'elève.');
   }
 }
 
@@ -179,17 +195,11 @@ export async function restoreStudent(id: string): Promise<ServiceResponse<boolea
  */
 export async function getStudentById(id: string): Promise<ServiceResponse<Student>> {
   try {
-    const student = localStudentsStore.find((s) => s.id === id) || {
-      id,
-      matricule: `MAT-${id.slice(0, 6)}`,
-      firstName: 'Kofi',
-      lastName: 'Kouassi',
-      gender: 'Masculin',
-      grade: '6ème',
-      status: 'Actif',
-      feesStatus: 'En attente',
-      attendance: 100,
-    };
+    const student = localStudentsStore.find((s) => s.id === id);
+    // ✅ INT-008 P2 : Ne plus retourner de données fictives si l'élève est introuvable
+    if (!student) {
+      return createError(null, `Elève introuvable (ID: ${id}).`);
+    }
     return createSuccess(student);
   } catch (err) {
     return createError(err, 'Erreur lors de la récupération.');

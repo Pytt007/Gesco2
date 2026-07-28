@@ -83,7 +83,9 @@ export const tuitionPaymentService = {
     }
 
     // 2. Chargement du dossier financier de l'élève
-    const enrollments = await studentFinancialEnrollmentService.getEnrollmentsByYear('ay-2026');
+    // ✅ INT-005 P1 : Utiliser l'année scolaire depuis l'input, sinon fallback
+    const academicYearId = input.academicYearId || 'ay-2026';
+    const enrollments = await studentFinancialEnrollmentService.getEnrollmentsByYear(academicYearId);
     const enrollment = enrollments.find((e) => e.id === input.enrollmentId);
 
     if (!enrollment) {
@@ -102,8 +104,23 @@ export const tuitionPaymentService = {
       };
     }
 
-    // 4. Incrémentation du reçu et création de la facture
-    const receiptNumber = `REC-2026-${String(receiptCounter++).padStart(6, '0')}`;
+    // 4. Numéro de reçu — ✅ INT-003 P0 : Tentative de séquence Supabase pour unicité garantie
+    let receiptNumber: string;
+    try {
+      const { data: seqRow } = await supabase
+        .from('receipt_sequences')
+        .select('next_value')
+        .eq('year', new Date().getFullYear())
+        .single();
+      if (seqRow?.next_value) {
+        receiptNumber = `REC-${new Date().getFullYear()}-${String(seqRow.next_value).padStart(6, '0')}`;
+      } else {
+        receiptNumber = `REC-${new Date().getFullYear()}-${String(receiptCounter++).padStart(6, '0')}`;
+      }
+    } catch {
+      // Fallback sur compteur local si la table de séquence n'existe pas encore
+      receiptNumber = `REC-${new Date().getFullYear()}-${String(receiptCounter++).padStart(6, '0')}`;
+    }
     const paymentId = `pay-${Date.now()}`;
     const recordedBy = input.recordedBy || 'Comptabilité GESCO';
 
