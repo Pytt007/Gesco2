@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { useSchoolYear } from '../../context/SchoolYearContext';
 import { useAuth } from '../../context/AuthContext';
-import { CalendarRange, Moon, Sun, ChevronDown, ChevronRight, Search, Command, Sparkles } from 'lucide-react';
+import { CalendarRange, Moon, Sun, ChevronDown, ChevronRight, Search, Command, Sparkles, ShieldCheck } from 'lucide-react';
 import { VIEW_LABELS } from '../../constants/routes';
 
 interface HeaderProps {
@@ -67,9 +67,14 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOp
         </h1>
       </div>
 
-      {/* ── ACTIONS DROITE (RECHERCHE CTRL+K, ANNÉE, THEME) ─────────────────── */}
+      {/* ── ACTIONS DROITE (RECHERCHE CTRL+K, ANNÉE, ENTERPRISE BADGE, THEME) ── */}
       <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         
+        {/* Badge Enterprise 30k€ */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, color: '#047857' }}>
+          <ShieldCheck size={14} color="#10b981" /> Enterprise Edition
+        </div>
+
         {/* Raccourci Command Palette (CTRL + K) */}
         <button
           onClick={onOpenCommandPalette}
