@@ -456,7 +456,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
 
             <div style={{ marginTop: '0.5rem' }}>
               <div style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1 }}>
-                {kpis ? kpis.totalStudents : 0}
+                {kpis?.totalStudents ?? 0}
               </div>
               <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', marginTop: '0.5rem', fontWeight: 600 }}>
                 ↗ +2 ce mois
@@ -492,7 +492,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
 
             <div style={{ marginTop: '0.5rem' }}>
               <div style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1 }}>
-                {kpis ? `${kpis.monthlyRevenue.toLocaleString('fr-FR')} F` : '0 F'}
+                {`${(kpis?.collectedAmount ?? 0).toLocaleString('fr-FR')} F`}
               </div>
               <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', marginTop: '0.5rem', fontWeight: 600 }}>
                 ↗ +5% ce mois
@@ -528,7 +528,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
 
             <div style={{ marginTop: '0.5rem' }}>
               <div style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1 }}>
-                {kpis ? kpis.unpaidFeesCount : 0}
+                {(kpis?.remainingAmount ?? 0) > 0 ? (kpis?.remainingAmount ?? 0).toLocaleString('fr-FR') : '0'}
               </div>
               <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', marginTop: '0.5rem', fontWeight: 600 }}>
                 &nbsp;
@@ -564,7 +564,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
 
             <div style={{ marginTop: '0.5rem' }}>
               <div style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1 }}>
-                {kpis ? `${kpis.attendanceRate}%` : '0%'}
+                {`${kpis?.recoveryRatePercent ?? 0}%`}
               </div>
               <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', marginTop: '0.5rem', fontWeight: 600 }}>
                 ↗ +0.5% ce mois
