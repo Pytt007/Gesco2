@@ -52,8 +52,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
+    // Timer de sécurité pour éviter de bloquer l'interface si Supabase est lent ou hors-ligne
+    const safetyTimer = setTimeout(() => {
+      if (!cancelled) {
+        setLoading(false);
+      }
+    }, 2500);
+
     fetchCurrentSession().then(async (res) => {
       if (cancelled) return;
+      clearTimeout(safetyTimer);
       const session = res?.data?.session;
       if (session?.user) {
         const user = await resolveUserFromSupabase(session.user);
@@ -66,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }).catch(() => {
       // En cas d'erreur réseau, on reste non connecté
       if (!cancelled) {
+        clearTimeout(safetyTimer);
         setCurrentUser(null);
         setLoading(false);
       }
@@ -79,10 +88,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         if (!cancelled) setCurrentUser(null);
       }
+      if (!cancelled) setLoading(false);
     });
 
     return () => {
       cancelled = true;
+      clearTimeout(safetyTimer);
       if (subscription?.unsubscribe) subscription.unsubscribe();
     };
   }, []);
