@@ -401,71 +401,177 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
         </div>
       )}
 
-      {/* ── WIDGET 1 : CARTES KPI AVEC SPARKLINE & VARIATIONS ─────────────────── */}
+      {/* ── HEADER & BADGE ANNÉE SCOLAIRE ─────────────────────────────────── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+        <h1 style={{ fontSize: '1.65rem', fontWeight: 800, color: '#1e293b', margin: 0, fontFamily: "'Outfit', sans-serif" }}>
+          Dashboard
+        </h1>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          background: '#ffffff',
+          border: '1px solid #e2e8f0',
+          borderRadius: '10px',
+          padding: '6px 14px',
+          fontSize: '0.85rem',
+          fontWeight: 600,
+          color: '#475569',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+        }}>
+          <Calendar size={16} color="#2563eb" />
+          <span>Année Scolaire <strong style={{ color: '#0f172a' }}>{schoolYear}</strong></span>
+        </div>
+      </div>
+
+      {/* ── WIDGET 1 : CARTES KPI AVEC DÉGRADÉS FLUIDES (IMAGE REF) ───────── */}
       {isWidgetVisible('w-kpis') && (
-        <div>
-          {/* Sélecteur de période */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <h6 style={{ margin: 0, fontWeight: 700, color: '#334155', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <TrendingUp size={16} color="#4f46e5" /> Indicateurs Clés de l'Établissement
-            </h6>
-            <div className="flex gap-1" style={{ background: '#ffffff', padding: '2px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-              {(['DAY', 'WEEK', 'MONTH', 'YEAR'] as PeriodFilter[]).map((p) => (
-                <button
-                  key={p}
-                  className={`btn btn-sm ${period === p ? 'btn-primary' : 'btn-ghost'}`}
-                  style={{ padding: '2px 10px', fontSize: '0.75rem', borderRadius: '6px' }}
-                  onClick={() => setPeriod(p)}
-                >
-                  {p === 'DAY' ? 'Jour' : p === 'WEEK' ? 'Semaine' : p === 'MONTH' ? 'Mois' : 'Année'}
-                </button>
-              ))}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+          
+          {/* Card 1 : Total Élèves (Bleu) */}
+          <div
+            className="card-hover"
+            onClick={() => handleNavigate('STUDENTS')}
+            style={{
+              background: 'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)',
+              borderRadius: '16px',
+              padding: '1.35rem 1.25rem',
+              color: '#ffffff',
+              position: 'relative',
+              overflow: 'hidden',
+              cursor: 'pointer',
+              boxShadow: '0 8px 20px rgba(37, 99, 235, 0.25)'
+            }}
+          >
+            <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)' }} />
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em', color: 'rgba(255,255,255,0.85)' }}>
+                TOTAL ÉLÈVES
+              </span>
+              <div style={{ width: 38, height: 38, borderRadius: '10px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <GraduationCap size={20} color="#ffffff" />
+              </div>
+            </div>
+
+            <div style={{ marginTop: '0.5rem' }}>
+              <div style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1 }}>
+                {kpis ? kpis.totalStudents : 0}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', marginTop: '0.5rem', fontWeight: 600 }}>
+                ↗ +2 ce mois
+              </div>
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '0.875rem' }}>
-            {mainKpis.map((kpi) => (
-              <div
-                key={kpi.id}
-                className="card card-hover"
-                onClick={() => handleNavigate(kpi.targetView)}
-                style={{ borderRadius: '14px', border: '1px solid var(--border-color, #e2e8f0)', cursor: 'pointer', padding: '1rem', position: 'relative', overflow: 'hidden' }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                  <div style={{ width: 42, height: 42, borderRadius: '12px', background: kpi.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: kpi.color, flexShrink: 0 }}>
-                    {kpi.icon}
-                  </div>
-                  <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>{kpi.trend}</span>
-                </div>
+          {/* Card 2 : Revenus Mois (Rose/Magenta) */}
+          <div
+            className="card-hover"
+            onClick={() => handleNavigate('SCOLARITY')}
+            style={{
+              background: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
+              borderRadius: '16px',
+              padding: '1.35rem 1.25rem',
+              color: '#ffffff',
+              position: 'relative',
+              overflow: 'hidden',
+              cursor: 'pointer',
+              boxShadow: '0 8px 20px rgba(236, 72, 153, 0.25)'
+            }}
+          >
+            <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)' }} />
 
-                <div style={{ marginTop: '0.25rem' }}>
-                  <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1.35rem', color: kpi.color, lineHeight: 1.1 }}>
-                    {kpi.value}
-                  </h3>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted, #64748b)', display: 'block', marginTop: '4px' }}>
-                    {kpi.label}
-                  </span>
-                  {kpi.subtext && (
-                    <span style={{ fontSize: '0.6875rem', color: '#94a3b8', display: 'block', marginTop: '2px' }}>
-                      {kpi.subtext}
-                    </span>
-                  )}
-                </div>
-
-                {/* SVG Sparkline décoratif */}
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 20, opacity: 0.25, pointerEvents: 'none' }}>
-                  <svg width="100%" height="100%" viewBox="0 0 100 20" preserveAspectRatio="none">
-                    <polyline
-                      fill="none"
-                      stroke={kpi.color}
-                      strokeWidth="3"
-                      points={kpi.sparkline.map((val, i) => `${(i / (kpi.sparkline.length - 1)) * 100},${20 - (val / Math.max(...kpi.sparkline)) * 18}`).join(' ')}
-                    />
-                  </svg>
-                </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em', color: 'rgba(255,255,255,0.85)' }}>
+                REVENUS (MOIS)
+              </span>
+              <div style={{ width: 38, height: 38, borderRadius: '10px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CreditCard size={20} color="#ffffff" />
               </div>
-            ))}
+            </div>
+
+            <div style={{ marginTop: '0.5rem' }}>
+              <div style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1 }}>
+                {kpis ? `${kpis.monthlyRevenue.toLocaleString('fr-FR')} F` : '0 F'}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', marginTop: '0.5rem', fontWeight: 600 }}>
+                ↗ +5% ce mois
+              </div>
+            </div>
           </div>
+
+          {/* Card 3 : Frais en Retard (Orange) */}
+          <div
+            className="card-hover"
+            onClick={() => handleNavigate('SCOLARITY')}
+            style={{
+              background: 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)',
+              borderRadius: '16px',
+              padding: '1.35rem 1.25rem',
+              color: '#ffffff',
+              position: 'relative',
+              overflow: 'hidden',
+              cursor: 'pointer',
+              boxShadow: '0 8px 20px rgba(234, 88, 12, 0.25)'
+            }}
+          >
+            <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)' }} />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em', color: 'rgba(255,255,255,0.85)' }}>
+                FRAIS EN RETARD
+              </span>
+              <div style={{ width: 38, height: 38, borderRadius: '10px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <AlertCircle size={20} color="#ffffff" />
+              </div>
+            </div>
+
+            <div style={{ marginTop: '0.5rem' }}>
+              <div style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1 }}>
+                {kpis ? kpis.unpaidFeesCount : 0}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', marginTop: '0.5rem', fontWeight: 600 }}>
+                &nbsp;
+              </div>
+            </div>
+          </div>
+
+          {/* Card 4 : Taux de Présence (Vert) */}
+          <div
+            className="card-hover"
+            onClick={() => handleNavigate('ATTENDANCE')}
+            style={{
+              background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+              borderRadius: '16px',
+              padding: '1.35rem 1.25rem',
+              color: '#ffffff',
+              position: 'relative',
+              overflow: 'hidden',
+              cursor: 'pointer',
+              boxShadow: '0 8px 20px rgba(5, 150, 105, 0.25)'
+            }}
+          >
+            <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)' }} />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em', color: 'rgba(255,255,255,0.85)' }}>
+                TAUX DE PRÉSENCE
+              </span>
+              <div style={{ width: 38, height: 38, borderRadius: '10px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CheckCircle2 size={20} color="#ffffff" />
+              </div>
+            </div>
+
+            <div style={{ marginTop: '0.5rem' }}>
+              <div style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1 }}>
+                {kpis ? `${kpis.attendanceRate}%` : '0%'}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', marginTop: '0.5rem', fontWeight: 600 }}>
+                ↗ +0.5% ce mois
+              </div>
+            </div>
+          </div>
+
         </div>
       )}
 
