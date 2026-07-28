@@ -26,10 +26,30 @@ function useSupabaseAuth() {
   useEffect(() => {
     let cancelled = false;
 
+    const syncUser = async (user: any): Promise<GescoUser> => {
+      let gescoUser = mapUserToGesco(user);
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role, full_name')
+          .eq('id', user.id)
+          .single();
+        if (profile?.role) {
+          gescoUser = {
+            ...gescoUser,
+            role: profile.role,
+            fullName: profile.full_name || gescoUser.fullName,
+          };
+        }
+      } catch {}
+      return gescoUser;
+    };
+
     const initSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!cancelled && session?.user) {
-        setCurrentUser(mapUserToGesco(session.user));
+        const mapped = await syncUser(session.user);
+        if (!cancelled) setCurrentUser(mapped);
       }
       setLoading(false);
     };
@@ -37,11 +57,12 @@ function useSupabaseAuth() {
     initSession();
 
     // Écouter les changements de session (login/logout)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        setCurrentUser(mapUserToGesco(session.user));
+        const mapped = await syncUser(session.user);
+        if (!cancelled) setCurrentUser(mapped);
       } else {
-        setCurrentUser(null);
+        if (!cancelled) setCurrentUser(null);
       }
     });
 
@@ -86,7 +107,25 @@ function useSupabaseAuth() {
       throw new Error('Identifiant ou mot de passe incorrect.');
     }
 
-    return data.user ? mapUserToGesco(data.user) : null;
+    if (!data.user) return null;
+
+    let gescoUser = mapUserToGesco(data.user);
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, full_name')
+        .eq('id', data.user.id)
+        .single();
+      if (profile?.role) {
+        gescoUser = {
+          ...gescoUser,
+          role: profile.role,
+          fullName: profile.full_name || gescoUser.fullName,
+        };
+      }
+    } catch {}
+
+    return gescoUser;
   }, []);
 
   // ─── Logout ───────────────────────────────────────────────────────────────
@@ -110,12 +149,12 @@ function useSupabaseAuth() {
     const email = usernameToEmail(username);
     const avatarUrl = `https://api.dicebear.com/7.x/adventurer/svg?seed=${username}`;
 
-    // Étape 1 : Créer le compte Supabase Auth (rôle ignoré dans user_metadata)
+    // Étape 1 : Créer le compte Supabase Auth (inclure le rôle dans user_metadata)
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { username, full_name: fullName, avatar_url: avatarUrl },
+        data: { username, full_name: fullName, avatar_url: avatarUrl, role },
       },
     });
 
