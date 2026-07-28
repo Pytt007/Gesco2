@@ -1,137 +1,322 @@
-import React from 'react';
+// ─────────────────────────────────────────────────────────────────────────────
+// GESCO — Sidebar Navigation Premium (src/components/layout/Sidebar.tsx)
+// Rétractable, Favoris Épinglables, Groupes Repliables & Raccourci Command Palette
+// ─────────────────────────────────────────────────────────────────────────────
+
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSchoolYear } from '../../context/SchoolYearContext';
 import {
   LayoutDashboard, Users, UserCheck, GraduationCap, Briefcase, UtensilsCrossed,
   Bus, Trophy, ClipboardList, TrendingDown, FileBarChart,
   History, BarChart2, Settings, BookOpen, LogOut, Calendar,
+  ChevronDown, ChevronRight, Star, Command, PanelLeftClose, PanelLeft,
+  ShieldCheck, Search
 } from 'lucide-react';
+import { ROLE_LABELS } from '../../constants/permissions';
 
 interface NavItem {
   id: string;
   label: string;
   icon: React.ReactNode;
-  section?: string;
+  groupKey: 'PEDAGOGY' | 'FINANCE' | 'ANALYSIS' | 'ADMINISTRATION';
+  badge?: string;
 }
 
-const ALL_NAV_ITEMS: NavItem[] = [
-  { id: 'DASHBOARD',   label: 'Tableau de Bord',  icon: <LayoutDashboard size={18} />,   section: 'NAVIGATION' },
-  { id: 'STUDENTS',    label: 'Élèves',            icon: <Users size={18} />,             section: 'SCOLAIRE' },
-  { id: 'PARENTS',     label: 'Parents',           icon: <UserCheck size={18} />,         section: 'SCOLAIRE' },
-  { id: 'CLASSES',     label: 'Classes',           icon: <GraduationCap size={18} />,     section: 'SCOLAIRE' },
-  { id: 'STAFF',            label: 'Personnel',          icon: <Briefcase size={18} />,         section: 'SCOLAIRE' },
-  { id: 'STAFF_ATTENDANCE', label: 'Présence Personnel', icon: <UserCheck size={18} />,         section: 'SCOLAIRE' },
-  { id: 'TIMETABLE',        label: 'Emploi du Temps',    icon: <Calendar size={18} />,          section: 'SCOLAIRE' },
-  { id: 'ATTENDANCE',  label: 'Présences',         icon: <UserCheck size={18} />,         section: 'SCOLAIRE' },
-  { id: 'NOTES',       label: 'Notes & Éval.',     icon: <BookOpen size={18} />,          section: 'SCOLAIRE' },
-  { id: 'ACTIVITIES',  label: 'Activités',         icon: <Trophy size={18} />,            section: 'SCOLAIRE' },
-  { id: 'CANTEEN',     label: 'Cantine',           icon: <UtensilsCrossed size={18} />,   section: 'SERVICES' },
-  { id: 'TRANSPORT',   label: 'Transport',         icon: <Bus size={18} />,               section: 'SERVICES' },
-  { id: 'SCOLARITY',   label: 'Scolarité',         icon: <ClipboardList size={18} />,     section: 'FINANCE' },
-  { id: 'EXPENSES',    label: 'Dépenses',          icon: <TrendingDown size={18} />,      section: 'FINANCE' },
-  { id: 'REPORTS',     label: 'Rapports',          icon: <FileBarChart size={18} />,      section: 'FINANCE' },
-  { id: 'STATISTICS',  label: 'Statistiques',      icon: <BarChart2 size={18} />,         section: 'GESTION' },
-  { id: 'HISTORY',     label: 'Historique',        icon: <History size={18} />,           section: 'GESTION' },
-  { id: 'SETTINGS',    label: 'Paramètres',        icon: <Settings size={18} />,          section: 'GESTION' },
+interface NavGroup {
+  key: 'PEDAGOGY' | 'FINANCE' | 'ANALYSIS' | 'ADMINISTRATION';
+  title: string;
+  emoji: string;
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  { key: 'PEDAGOGY', title: 'PÉDAGOGIE', emoji: '👨‍🎓' },
+  { key: 'FINANCE', title: 'FINANCES', emoji: '💰' },
+  { key: 'ANALYSIS', title: 'ANALYSES', emoji: '📊' },
+  { key: 'ADMINISTRATION', title: 'ADMINISTRATION', emoji: '⚙️' },
 ];
 
-const SECTIONS = ['NAVIGATION', 'SCOLAIRE', 'SERVICES', 'FINANCE', 'GESTION'];
+const ALL_NAV_ITEMS: NavItem[] = [
+  // PÉDAGOGIE
+  { id: 'STUDENTS', label: 'Élèves', icon: <Users size={18} />, groupKey: 'PEDAGOGY' },
+  { id: 'PARENTS', label: 'Parents', icon: <UserCheck size={18} />, groupKey: 'PEDAGOGY' },
+  { id: 'CLASSES', label: 'Classes', icon: <GraduationCap size={18} />, groupKey: 'PEDAGOGY' },
+  { id: 'STAFF', label: 'Personnel', icon: <Briefcase size={18} />, groupKey: 'PEDAGOGY' },
+  { id: 'ATTENDANCE', label: 'Présences', icon: <UserCheck size={18} />, groupKey: 'PEDAGOGY' },
+  { id: 'TIMETABLE', label: 'Emploi du Temps', icon: <Calendar size={18} />, groupKey: 'PEDAGOGY' },
+  { id: 'NOTES', label: 'Notes & Éval.', icon: <BookOpen size={18} />, groupKey: 'PEDAGOGY' },
+  { id: 'REPORT_CARDS', label: 'Bulletins', icon: <FileBarChart size={18} />, groupKey: 'PEDAGOGY' },
+
+  // FINANCES
+  { id: 'SCOLARITY', label: 'Scolarité', icon: <ClipboardList size={18} />, groupKey: 'FINANCE' },
+  { id: 'CANTEEN', label: 'Cantine', icon: <UtensilsCrossed size={18} />, groupKey: 'FINANCE' },
+  { id: 'TRANSPORT', label: 'Transport', icon: <Bus size={18} />, groupKey: 'FINANCE' },
+  { id: 'EXPENSES', label: 'Dépenses', icon: <TrendingDown size={18} />, groupKey: 'FINANCE' },
+
+  // ANALYSES
+  { id: 'REPORTS', label: 'Rapports', icon: <FileBarChart size={18} />, groupKey: 'ANALYSIS' },
+  { id: 'STATISTICS', label: 'Statistiques', icon: <BarChart2 size={18} />, groupKey: 'ANALYSIS' },
+
+  // ADMINISTRATION
+  { id: 'SETTINGS', label: 'Paramètres', icon: <Settings size={18} />, groupKey: 'ADMINISTRATION' },
+  { id: 'HISTORY', label: 'Journal d\'Audit', icon: <History size={18} />, groupKey: 'ADMINISTRATION' },
+];
 
 interface SidebarProps {
   currentView: string;
   onNavigate: (view: string) => void;
+  onOpenCommandPalette?: () => void;
 }
 
-import { ROLE_LABELS } from '../../constants/permissions';
-
-export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
+export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette }: SidebarProps) {
   const { currentUser, logout, canAccess } = useAuth();
   const { schoolYear } = useSchoolYear();
 
+  // État de repli de la Sidebar (Compact vs Étendu)
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    return localStorage.getItem('gesco_sidebar_collapsed') === 'true';
+  });
+
+  // État des groupes repliables
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+
+  // État des favoris épinglés (stocké en local)
+  const [pinnedViews, setPinnedViews] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('gesco_pinned_views');
+      return saved ? JSON.parse(saved) : ['STUDENTS', 'SCOLARITY', 'NOTES'];
+    } catch {
+      return ['STUDENTS', 'SCOLARITY', 'NOTES'];
+    }
+  });
+
+  const toggleCollapse = () => {
+    const next = !isCollapsed;
+    setIsCollapsed(next);
+    localStorage.setItem('gesco_sidebar_collapsed', String(next));
+  };
+
+  const toggleGroup = (key: string) => {
+    setCollapsedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const togglePin = (e: React.MouseEvent, viewId: string) => {
+    e.stopPropagation();
+    setPinnedViews((prev) => {
+      const next = prev.includes(viewId) ? prev.filter((id) => id !== viewId) : [...prev, viewId];
+      localStorage.setItem('gesco_pinned_views', JSON.stringify(next));
+      return next;
+    });
+  };
+
   const visibleItems = ALL_NAV_ITEMS.filter((item) => canAccess(item.id));
+  const pinnedItems = visibleItems.filter((item) => pinnedViews.includes(item.id));
 
   return (
-    <nav className="sidebar" aria-label="Navigation principale">
-      {/* Logo */}
-      <div className="sidebar-logo">
-        <img
-          src="/logo-dark.png"
-          alt="GESCO"
-          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-        />
-        <div className="sidebar-logo-text">
-          <span className="sidebar-logo-title">GESCO</span>
-          <span className="sidebar-logo-subtitle">Gestion Scolaire</span>
+    <nav
+      className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}
+      aria-label="Navigation principale"
+      style={{
+        width: isCollapsed ? '72px' : '250px',
+        transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+      }}
+    >
+      {/* ── EN-TÊTE LOGO & BOUTON TOGGLE ────────────────────────────────────── */}
+      <div className="sidebar-logo" style={{ justifyContent: isCollapsed ? 'center' : 'space-between', padding: '1.25rem 1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <img
+            src="/logo-dark.png"
+            alt="GESCO"
+            style={{ width: 36, height: 36, objectFit: 'contain' }}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+          {!isCollapsed && (
+            <div className="sidebar-logo-text">
+              <span className="sidebar-logo-title">GESCO</span>
+              <span className="sidebar-logo-subtitle">ERP Primaire</span>
+            </div>
+          )}
         </div>
+
+        <button
+          className="btn btn-ghost btn-sm"
+          onClick={toggleCollapse}
+          title={isCollapsed ? 'Déplier la sidebar' : 'Réduire la sidebar'}
+          style={{ color: 'rgba(255,255,255,0.7)', padding: '4px' }}
+        >
+          {isCollapsed ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
+        </button>
       </div>
 
-      {/* Année scolaire (badge) */}
-      <div style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <span style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '0.4rem',
-          fontSize: '0.7rem',
-          fontWeight: 600,
-          color: 'rgba(255,255,255,0.55)',
-          background: 'rgba(79,70,229,0.2)',
-          borderRadius: '6px',
-          padding: '0.25rem 0.6rem',
-          letterSpacing: '0.04em',
-        }}>
-          📅 Année {schoolYear}
-        </span>
-      </div>
+      {/* ── BADGE ANNÉE SCOLAIRE & BOUTON COMMAND PALETTE ────────────────────── */}
+      {!isCollapsed && (
+        <div style={{ padding: '0 1rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div
+            onClick={onOpenCommandPalette}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justify: 'space-between',
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '8px',
+              padding: '0.45rem 0.75rem',
+              color: 'rgba(255,255,255,0.75)',
+              fontSize: '0.78125rem',
+              cursor: 'pointer',
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Search size={14} /> Recherche...
+            </span>
+            <span style={{ fontSize: '0.65rem', background: 'rgba(255,255,255,0.15)', padding: '1px 5px', borderRadius: '4px' }}>
+              Ctrl+K
+            </span>
+          </div>
 
-      {/* Navigation */}
-      <div className="sidebar-nav">
-        {SECTIONS.map((section) => {
-          const items = visibleItems.filter((item) => item.section === section);
-          if (items.length === 0) return null;
-          return (
-            <div key={section}>
-              {section !== 'NAVIGATION' && (
-                <div className="sidebar-section-label">{section}</div>
-              )}
-              {items.map((item) => (
-                <button
-                  key={item.id}
-                  className={`sidebar-item${currentView === item.id ? ' active' : ''}`}
-                  onClick={() => onNavigate(item.id)}
-                  aria-current={currentView === item.id ? 'page' : undefined}
-                  id={`nav-${item.id.toLowerCase()}`}
-                >
+          <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', background: 'rgba(79,70,229,0.2)', padding: '4px 8px', borderRadius: '6px', textAlign: 'center', fontWeight: 600 }}>
+            📅 Année Scolaire {schoolYear}
+          </div>
+        </div>
+      )}
+
+      {/* ── LISTE DE NAVIGATION PRINCIPALE ─────────────────────────────────── */}
+      <div className="sidebar-nav" style={{ padding: '0.5rem 0' }}>
+        
+        {/* 🏠 Dashboard */}
+        {canAccess('DASHBOARD') && (
+          <button
+            className={`sidebar-item${currentView === 'DASHBOARD' ? ' active' : ''}`}
+            onClick={() => onNavigate('DASHBOARD')}
+            style={{ margin: '0.125rem 0.75rem', borderRadius: '8px' }}
+          >
+            <span className="sidebar-item-icon"><LayoutDashboard size={18} /></span>
+            {!isCollapsed && <span>Tableau de bord</span>}
+          </button>
+        )}
+
+        {/* ⭐ FAVORIS ÉPINGLÉS */}
+        {!isCollapsed && pinnedItems.length > 0 && (
+          <div style={{ margin: '0.75rem 0 0.25rem' }}>
+            <div className="sidebar-section-label" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f59e0b' }}>
+              <Star size={12} fill="#f59e0b" /> FAVORIS ÉPINGLÉS
+            </div>
+            {pinnedItems.map((item) => (
+              <button
+                key={`pin-${item.id}`}
+                className={`sidebar-item${currentView === item.id ? ' active' : ''}`}
+                onClick={() => onNavigate(item.id)}
+                style={{ margin: '0.0625rem 0.75rem', borderRadius: '8px', justifyContent: 'space-between' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <span className="sidebar-item-icon">{item.icon}</span>
-                  {item.label}
-                </button>
-              ))}
+                  <span>{item.label}</span>
+                </div>
+                <Star
+                  size={13}
+                  fill="#f59e0b"
+                  color="#f59e0b"
+                  onClick={(e) => togglePin(e, item.id)}
+                  title="Désépingler"
+                />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* 📂 GROUPES MÉTIERS REPLIABLES */}
+        {NAV_GROUPS.map((group) => {
+          const items = visibleItems.filter((i) => i.groupKey === group.key);
+          if (items.length === 0) return null;
+          const isGroupCollapsed = collapsedGroups[group.key];
+
+          return (
+            <div key={group.key} style={{ margin: '0.5rem 0' }}>
+              {!isCollapsed ? (
+                <div
+                  className="sidebar-section-label"
+                  onClick={() => toggleGroup(group.key)}
+                  style={{
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justify: 'space-between',
+                    padding: '0.5rem 1rem',
+                  }}
+                >
+                  <span>{group.emoji} {group.title}</span>
+                  {isGroupCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                </div>
+              ) : (
+                <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '8px 12px' }} />
+              )}
+
+              {!isGroupCollapsed &&
+                items.map((item) => {
+                  const isPinned = pinnedViews.includes(item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      className={`sidebar-item${currentView === item.id ? ' active' : ''}`}
+                      onClick={() => onNavigate(item.id)}
+                      style={{ margin: '0.0625rem 0.75rem', borderRadius: '8px', justifyContent: 'space-between' }}
+                      title={isCollapsed ? item.label : undefined}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <span className="sidebar-item-icon">{item.icon}</span>
+                        {!isCollapsed && <span>{item.label}</span>}
+                      </div>
+
+                      {!isCollapsed && (
+                        <Star
+                          size={13}
+                          color={isPinned ? '#f59e0b' : 'rgba(255,255,255,0.2)'}
+                          fill={isPinned ? '#f59e0b' : 'none'}
+                          onClick={(e) => togglePin(e, item.id)}
+                          title={isPinned ? 'Désépingler' : 'Épingler dans les favoris'}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
             </div>
           );
         })}
       </div>
 
-      {/* Footer Utilisateur */}
+      {/* ── FOOTER UTILISATEUR & DÉCONNEXION ─────────────────────────────────── */}
       {currentUser && (
-        <div className="sidebar-footer">
-          <div className="sidebar-user" onClick={() => onNavigate('SETTINGS')} title="Paramètres du compte">
+        <div className="sidebar-footer" style={{ padding: '0.75rem 0.5rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <div
+            className="sidebar-user"
+            onClick={() => onNavigate('SETTINGS')}
+            title="Paramètres du compte"
+            style={{ padding: '0.5rem', borderRadius: '8px' }}
+          >
             <img
               src={currentUser.avatarUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${currentUser.username}`}
               alt={currentUser.fullName}
               className="sidebar-avatar"
+              style={{ width: 34, height: 34 }}
             />
-            <div className="sidebar-user-info">
-              <div className="sidebar-user-name">{currentUser.fullName}</div>
-              <div className="sidebar-user-role">{ROLE_LABELS[currentUser.role] || currentUser.role}</div>
-            </div>
+            {!isCollapsed && (
+              <div className="sidebar-user-info">
+                <div className="sidebar-user-name" style={{ fontSize: '0.8125rem' }}>{currentUser.fullName}</div>
+                <div className="sidebar-user-role" style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.5)' }}>
+                  {ROLE_LABELS[currentUser.role] || currentUser.role}
+                </div>
+              </div>
+            )}
           </div>
+
           <button
             className="sidebar-item"
             onClick={logout}
-            style={{ marginTop: '0.25rem', color: 'rgba(239,68,68,0.8)' }}
-            id="btn-logout"
+            style={{ margin: '0.25rem 0.5rem 0', color: '#ef4444', borderRadius: '8px' }}
+            title={isCollapsed ? 'Déconnexion' : undefined}
           >
             <LogOut size={16} style={{ flexShrink: 0 }} />
-            Déconnexion
+            {!isCollapsed && <span>Déconnexion</span>}
           </button>
         </div>
       )}

@@ -1,17 +1,43 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// GESCO — Header Header & Breadcrumb (src/components/layout/Header.tsx)
+// Fil d'Ariane dynamique, Sélecteur d'Année, Raccourci Command Palette & Mode Sombre
+// ─────────────────────────────────────────────────────────────────────────────
+
 import React, { useState } from 'react';
 import { useSchoolYear } from '../../context/SchoolYearContext';
 import { useAuth } from '../../context/AuthContext';
-import { CalendarRange, Moon, Sun, ChevronDown } from 'lucide-react';
-
+import { CalendarRange, Moon, Sun, ChevronDown, ChevronRight, Search, Command, Sparkles } from 'lucide-react';
 import { VIEW_LABELS } from '../../constants/routes';
 
 interface HeaderProps {
   currentView: string;
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
+  onOpenCommandPalette?: () => void;
 }
 
-export default function Header({ currentView, isDarkMode, onToggleDarkMode }: HeaderProps) {
+// Mappage du Groupe Métier pour le Fil d'Ariane
+const BREADCRUMB_GROUPS: Record<string, string> = {
+  DASHBOARD: 'Tableau de bord',
+  STUDENTS: 'Pédagogie',
+  PARENTS: 'Pédagogie',
+  CLASSES: 'Pédagogie',
+  STAFF: 'Pédagogie',
+  ATTENDANCE: 'Pédagogie',
+  TIMETABLE: 'Pédagogie',
+  NOTES: 'Pédagogie',
+  REPORT_CARDS: 'Pédagogie',
+  SCOLARITY: 'Finances',
+  CANTEEN: 'Finances',
+  TRANSPORT: 'Finances',
+  EXPENSES: 'Finances',
+  REPORTS: 'Analyses',
+  STATISTICS: 'Analyses',
+  SETTINGS: 'Administration',
+  HISTORY: 'Administration',
+};
+
+export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOpenCommandPalette }: HeaderProps) {
   const { schoolYear, schoolYears, setSchoolYear } = useSchoolYear();
   const { currentUser } = useAuth();
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
@@ -21,18 +47,54 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode }: He
     setYearDropdownOpen(false);
   };
 
+  const groupLabel = BREADCRUMB_GROUPS[currentView] || 'GESCO';
+  const pageTitle = VIEW_LABELS[currentView] || currentView;
+
   return (
-    <header className="header">
+    <header className="header" style={{ padding: '0.875rem 2rem', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
+      
+      {/* ── FIL D'ARIANE (BREADCRUMB) ────────────────────────────────────────── */}
       <div>
-        <h1 className="header-title">{VIEW_LABELS[currentView] || currentView}</h1>
-        {currentUser && (
-          <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '1px' }}>
-            Connecté en tant que {currentUser.fullName}
-          </p>
-        )}
+        <nav aria-label="Fil d'ariane" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78125rem', color: 'var(--text-muted)' }}>
+          <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>GESCO</span>
+          <ChevronRight size={12} />
+          <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{groupLabel}</span>
+          <ChevronRight size={12} />
+          <span style={{ fontWeight: 700, color: '#4f46e5' }}>{pageTitle}</span>
+        </nav>
+        <h1 className="header-title" style={{ fontSize: '1.25rem', fontWeight: 800, margin: '2px 0 0' }}>
+          {pageTitle}
+        </h1>
       </div>
 
-      <div className="header-actions">
+      {/* ── ACTIONS DROITE (RECHERCHE CTRL+K, ANNÉE, THEME) ─────────────────── */}
+      <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        
+        {/* Raccourci Command Palette (CTRL + K) */}
+        <button
+          onClick={onOpenCommandPalette}
+          className="btn btn-ghost btn-sm"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: 'var(--bg-surface-hover)',
+            border: '1px solid var(--border)',
+            borderRadius: '10px',
+            padding: '6px 12px',
+            color: 'var(--text-secondary)',
+            fontSize: '0.8125rem',
+            fontWeight: 500,
+          }}
+          title="Rechercher partout (CTRL + K)"
+        >
+          <Search size={14} color="#4f46e5" />
+          <span>Recherche</span>
+          <span style={{ fontSize: '0.65rem', background: 'var(--border)', padding: '1px 6px', borderRadius: '4px', fontWeight: 700, color: 'var(--text-muted)' }}>
+            ⌘K
+          </span>
+        </button>
+
         {/* Sélecteur d'Année Scolaire */}
         <div style={{ position: 'relative' }}>
           <button
@@ -41,9 +103,10 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode }: He
             onClick={() => setYearDropdownOpen(!yearDropdownOpen)}
             aria-expanded={yearDropdownOpen}
             aria-haspopup="listbox"
+            style={{ borderRadius: '10px', padding: '6px 12px', fontSize: '0.8125rem' }}
           >
-            <CalendarRange size={15} style={{ color: 'var(--color-primary)' }} />
-            {schoolYear}
+            <CalendarRange size={15} style={{ color: '#4f46e5' }} />
+            <span>{schoolYear}</span>
             <ChevronDown
               size={13}
               style={{
@@ -56,7 +119,6 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode }: He
 
           {yearDropdownOpen && (
             <>
-              {/* Overlay pour fermer le dropdown */}
               <div
                 style={{ position: 'fixed', inset: 0, zIndex: 49 }}
                 onClick={() => setYearDropdownOpen(false)}
@@ -70,7 +132,7 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode }: He
                   right: 0,
                   background: 'var(--bg-surface)',
                   border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-md)',
+                  borderRadius: '12px',
                   boxShadow: 'var(--shadow-lg)',
                   zIndex: 50,
                   minWidth: '160px',
@@ -88,21 +150,14 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode }: He
                       display: 'block',
                       width: '100%',
                       textAlign: 'left',
-                      padding: '0.6rem 1rem',
+                      padding: '8px 14px',
                       fontSize: '0.8125rem',
                       fontWeight: year === schoolYear ? 700 : 500,
-                      color: year === schoolYear ? 'var(--color-primary)' : 'var(--text-primary)',
+                      color: year === schoolYear ? '#4f46e5' : 'var(--text-primary)',
                       background: year === schoolYear ? 'var(--color-primary-light)' : 'none',
                       border: 'none',
                       cursor: 'pointer',
-                      fontFamily: 'inherit',
                       transition: 'background 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (year !== schoolYear) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-surface-hover)';
-                    }}
-                    onMouseLeave={(e) => {
-                      if (year !== schoolYear) (e.currentTarget as HTMLButtonElement).style.background = 'none';
                     }}
                   >
                     {year} {year === schoolYear ? '✓' : ''}
@@ -113,20 +168,18 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode }: He
           )}
         </div>
 
-        {/* Bouton Mode Sombre/Clair */}
+        {/* Bouton Mode Sombre / Clair */}
         <button
           id="btn-toggle-theme"
           className="btn btn-ghost btn-sm"
           onClick={onToggleDarkMode}
           aria-label={isDarkMode ? 'Passer au mode clair' : 'Passer au mode sombre'}
           title={isDarkMode ? 'Mode clair' : 'Mode sombre'}
-          style={{ padding: '0.5rem', borderRadius: 'var(--radius-md)' }}
+          style={{ padding: '8px', borderRadius: '10px' }}
         >
-          {isDarkMode
-            ? <Sun size={17} style={{ color: '#f59e0b' }} />
-            : <Moon size={17} />
-          }
+          {isDarkMode ? <Sun size={17} style={{ color: '#f59e0b' }} /> : <Moon size={17} />}
         </button>
+
       </div>
     </header>
   );

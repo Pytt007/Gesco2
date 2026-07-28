@@ -5,6 +5,7 @@ import { ToastProvider } from './context/ToastContext';
 import ToastContainer from './components/common/ToastContainer';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
+import CommandPalette from './components/layout/CommandPalette';
 import LoginPage from './pages/LoginPage';
 import './index.css';
 
@@ -135,6 +136,7 @@ function AccessDenied() {
 function AppContent() {
   const { currentUser, loading, canAccess } = useAuth();
   const [currentView, setCurrentView] = useState('DASHBOARD');
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('gesco-theme') === 'dark';
   });
@@ -143,6 +145,18 @@ function AppContent() {
     document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
     localStorage.setItem('gesco-theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
+
+  // Écouteur global CTRL + K / CMD + K pour ouvrir la Command Palette
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     if (currentUser && !canAccess(currentView)) {
@@ -196,21 +210,27 @@ function AppContent() {
       case 'ACTIVITIES':       return <PlaceholderPage title="Activités" icon="⚽" />;
       case 'NOTES':            return <GradeEntryPage />;
       case 'BULLETINS':        return <ReportCardsPage />;
+      case 'REPORT_CARDS':     return <ReportCardsPage />;
       case 'REPORTS':          return <ReportsPage />;
       case 'STATISTICS':       return <PlaceholderPage title="Statistiques" icon="📈" />;
-      case 'HISTORY':          return <PlaceholderPage title="Historique" icon="📜" />;
+      case 'HISTORY':          return <PlaceholderPage title="Journal d'Audit" icon="📜" />;
       default:                 return <DashboardPage onNavigate={setCurrentView} />;
     }
   };
 
   return (
     <div className="gesco-layout">
-      <Sidebar currentView={currentView} onNavigate={setCurrentView} />
+      <Sidebar
+        currentView={currentView}
+        onNavigate={setCurrentView}
+        onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+      />
       <main className="gesco-main">
         <Header
           currentView={currentView}
           isDarkMode={isDarkMode}
           onToggleDarkMode={() => setIsDarkMode((d) => !d)}
+          onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
         />
         <div className="gesco-content">
           <ErrorBoundary>
@@ -220,6 +240,12 @@ function AppContent() {
           </ErrorBoundary>
         </div>
       </main>
+
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onNavigate={setCurrentView}
+      />
       <ToastContainer />
     </div>
   );
