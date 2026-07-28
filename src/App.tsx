@@ -102,14 +102,32 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 }
 
-// ─── COMPOSANTS AUXILIAIRES ─────────────────────────────────────────────────
+// ─── COMPOSANTS AUXILIAIRES PREMIUM ─────────────────────────────────────────
 
 function PageLoader() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
       <div style={{ textAlign: 'center' }}>
-        <span className="spinner" style={{ width: 36, height: 36, borderWidth: 3 }} />
-        <p style={{ marginTop: '1rem', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Chargement du module...</p>
+        <div style={{
+          width: 48,
+          height: 48,
+          borderRadius: 14,
+          background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+          color: '#ffffff',
+          display: 'flex',
+          alignItems: 'center',
+          justify: 'center',
+          fontWeight: 900,
+          fontSize: '1.25rem',
+          margin: '0 auto 12px',
+          boxShadow: '0 8px 20px rgba(79, 70, 229, 0.3)',
+        }}>
+          G
+        </div>
+        <span className="spinner" style={{ width: 26, height: 26, borderWidth: 3 }} />
+        <p style={{ marginTop: '12px', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+          Chargement du module...
+        </p>
       </div>
     </div>
   );
@@ -118,10 +136,10 @@ function PageLoader() {
 function AccessDenied() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
-      <div className="card" style={{ maxWidth: 400, textAlign: 'center', borderRadius: 14 }}>
+      <div className="card shadow-sm" style={{ maxWidth: 400, textAlign: 'center', borderRadius: 16 }}>
         <div className="card-body p-4">
           <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>🔒</div>
-          <h2 style={{ marginBottom: '0.5rem', fontSize: '1.25rem' }}>Accès Restreint</h2>
+          <h2 style={{ marginBottom: '0.5rem', fontSize: '1.25rem', fontWeight: 800 }}>Accès Restreint</h2>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
             Vous n'avez pas les permissions nécessaires pour accéder à cette page.
           </p>
@@ -176,12 +194,28 @@ function AppContent() {
         display: 'flex',
         alignItems: 'center',
         justify: 'center',
-        background: 'var(--bg-app, #f8fafc)',
+        background: '#0f172a',
       }}>
-        <div style={{ textAlign: 'center' }}>
-          <span className="spinner" style={{ width: 40, height: 40, borderWidth: 3 }} />
-          <p style={{ marginTop: '1rem', color: 'var(--text-muted)', fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>
-            GESCO — Chargement...
+        <div style={{ textAlign: 'center', color: '#ffffff' }}>
+          <div style={{
+            width: 64,
+            height: 64,
+            borderRadius: 18,
+            background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justify: 'center',
+            fontWeight: 900,
+            fontSize: '1.75rem',
+            margin: '0 auto 16px',
+            boxShadow: '0 12px 30px rgba(79, 70, 229, 0.4)',
+          }}>
+            G
+          </div>
+          <span className="spinner" style={{ width: 32, height: 32, borderWidth: 3 }} />
+          <p style={{ marginTop: '1rem', color: 'rgba(255,255,255,0.7)', fontFamily: "'Outfit', sans-serif", fontWeight: 700 }}>
+            GESCO ERP — Chargement de l'Établissement...
           </p>
         </div>
       </div>

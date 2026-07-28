@@ -1,7 +1,11 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// GESCO — Page de Connexion SaaS Premium (src/pages/LoginPage.tsx)
+// Glassmorphism, Dégradés Dynamiques & Boutons de Connexion Démo Instantanée
+// ─────────────────────────────────────────────────────────────────────────────
+
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { usernameToEmail } from '../services/supabaseClient';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, ShieldCheck, Sparkles, User, KeyRound, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -28,84 +32,111 @@ export default function LoginPage() {
     }
   };
 
+  const handleQuickLogin = async (user: string, pass: string) => {
+    setUsername(user);
+    setPassword(pass);
+    setError('');
+    setLoading(true);
+    try {
+      await login(user, pass);
+    } catch (err: any) {
+      setError(err.message || 'Identifiant ou mot de passe incorrect.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0a0f1e 0%, #1e293b 50%, #0f172a 100%)',
+      background: 'radial-gradient(ellipse at top left, #1e1b4b 0%, #0f172a 50%, #020617 100%)',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center',
-      padding: '1rem',
+      justify: 'center',
+      padding: '1.5rem',
       position: 'relative',
       overflow: 'hidden',
     }}>
-      {/* Arrière-plan décoratif */}
+      {/* Halos de lumière décoratifs */}
       <div style={{
         position: 'absolute',
-        inset: 0,
-        backgroundImage: `
-          radial-gradient(ellipse at 20% 30%, rgba(79,70,229,0.15) 0%, transparent 60%),
-          radial-gradient(ellipse at 80% 70%, rgba(16,185,129,0.1) 0%, transparent 50%)
-        `,
+        top: '-10%',
+        left: '15%',
+        width: '500px',
+        height: '500px',
+        background: 'radial-gradient(circle, rgba(99,102,241,0.25) 0%, transparent 70%)',
+        pointerEvents: 'none',
+      }} />
+      <div style={{
+        position: 'absolute',
+        bottom: '-10%',
+        right: '15%',
+        width: '500px',
+        height: '500px',
+        background: 'radial-gradient(circle, rgba(16,185,129,0.2) 0%, transparent 70%)',
         pointerEvents: 'none',
       }} />
 
       <div style={{
         width: '100%',
-        maxWidth: '400px',
+        maxWidth: '440px',
         position: 'relative',
         zIndex: 1,
       }}>
-        {/* Logo & Titre */}
+        
+        {/* Logo & Marque GESCO */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{
-            width: '80px', height: '80px',
-            background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
-            borderRadius: '20px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 1rem',
-            boxShadow: '0 8px 32px rgba(79,70,229,0.4)',
+            width: '76px',
+            height: '76px',
+            background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+            borderRadius: '22px',
+            display: 'flex',
+            alignItems: 'center',
+            justify: 'center',
+            margin: '0 auto 1.25rem',
+            boxShadow: '0 12px 30px rgba(79,70,229,0.4)',
+            border: '1px solid rgba(255,255,255,0.2)',
           }}>
-            <img
-              src="/logo-dark.png"
-              alt="GESCO"
-              style={{ width: '56px', height: '56px', objectFit: 'contain' }}
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-            />
+            <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: '2rem', fontWeight: 900, color: '#ffffff' }}>
+              G
+            </span>
           </div>
           <h1 style={{
             fontFamily: "'Outfit', sans-serif",
-            fontSize: '2rem',
+            fontSize: '2.25rem',
             fontWeight: 900,
             color: '#ffffff',
             letterSpacing: '-0.02em',
-            marginBottom: '0.25rem',
+            margin: 0,
           }}>
-            GESCO
+            GESCO ERP
           </h1>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem' }}>
-            Plateforme intégrée de gestion scolaire
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', marginTop: '4px' }}>
+            Solution Globale de Gestion Scolaire Ivoirienne
           </p>
         </div>
 
-        {/* Formulaire */}
+        {/* Formulaire Glassmorphic */}
         <div style={{
-          background: 'rgba(255,255,255,0.05)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: '20px',
+          background: 'rgba(255, 255, 255, 0.04)',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
+          borderRadius: '24px',
           padding: '2rem',
-          backdropFilter: 'blur(20px)',
-          boxShadow: '0 8px 40px rgba(0,0,0,0.3)',
+          backdropFilter: 'blur(24px)',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
         }}>
-          <h2 style={{ color: '#ffffff', fontSize: '1.25rem', marginBottom: '0.25rem' }}>Connexion</h2>
-          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', marginBottom: '1.5rem' }}>
-            Saisissez vos identifiants pour accéder à votre tableau de bord
-          </p>
+          <div style={{ marginBottom: '1.25rem' }}>
+            <h2 style={{ color: '#ffffff', fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Connexion Securisée</h2>
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8125rem', marginTop: '2px' }}>
+              Accédez à votre espace de gestion d'établissement
+            </p>
+          </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
             <div className="form-group">
-              <label htmlFor="login-username" className="form-label" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                Identifiant
+              <label htmlFor="login-username" className="form-label" style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem' }}>
+                Identifiant utilisateur
               </label>
               <input
                 id="login-username"
@@ -117,16 +148,19 @@ export default function LoginPage() {
                 autoCapitalize="none"
                 className="form-input"
                 style={{
-                  background: 'rgba(255,255,255,0.07)',
-                  border: '1px solid rgba(255,255,255,0.12)',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.15)',
                   color: '#ffffff',
+                  borderRadius: '12px',
+                  height: '44px',
+                  fontSize: '0.875rem',
                 }}
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="login-password" className="form-label" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                Mot de Passe
+              <label htmlFor="login-password" className="form-label" style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem' }}>
+                Mot de passe
               </label>
               <div style={{ position: 'relative' }}>
                 <input
@@ -138,10 +172,13 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   className="form-input"
                   style={{
-                    background: 'rgba(255,255,255,0.07)',
-                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.15)',
                     color: '#ffffff',
                     paddingRight: '2.5rem',
+                    borderRadius: '12px',
+                    height: '44px',
+                    fontSize: '0.875rem',
                   }}
                 />
                 <button
@@ -151,7 +188,7 @@ export default function LoginPage() {
                     position: 'absolute', right: '0.75rem', top: '50%',
                     transform: 'translateY(-50%)',
                     background: 'none', border: 'none', cursor: 'pointer',
-                    color: 'rgba(255,255,255,0.4)', padding: '4px',
+                    color: 'rgba(255,255,255,0.5)', padding: '4px',
                   }}
                   aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                 >
@@ -164,7 +201,7 @@ export default function LoginPage() {
               <div style={{
                 background: 'rgba(239,68,68,0.15)',
                 border: '1px solid rgba(239,68,68,0.3)',
-                borderRadius: '8px',
+                borderRadius: '10px',
                 padding: '0.625rem 0.875rem',
                 fontSize: '0.8125rem',
                 color: '#fca5a5',
@@ -177,16 +214,88 @@ export default function LoginPage() {
               id="btn-login"
               type="submit"
               disabled={loading}
-              className="btn btn-primary btn-lg"
-              style={{ marginTop: '0.25rem', width: '100%' }}
+              className="btn btn-primary"
+              style={{
+                marginTop: '0.25rem',
+                width: '100%',
+                height: '46px',
+                borderRadius: '12px',
+                fontWeight: 700,
+                fontSize: '0.9375rem',
+                background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                boxShadow: '0 4px 15px rgba(79,70,229,0.35)',
+              }}
             >
               {loading ? (
-                <><span className="spinner" style={{ width: '18px', height: '18px', borderWidth: '2px' }} /> Connexion...</>
+                <><span className="spinner" style={{ width: '18px', height: '18px', borderWidth: '2px' }} /> Connexion en cours...</>
               ) : (
-                '→ Se connecter'
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  Se connecter à GESCO <ArrowRight size={16} />
+                </span>
               )}
             </button>
           </form>
+
+          {/* BOUTONS D'ACCÈS RAPIDE DÉMO */}
+          <div style={{ marginTop: '1.75rem', paddingTop: '1.25rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600, display: 'block', marginBottom: '10px', textAlign: 'center' }}>
+              ⚡ ACCÈS RAPIDE DÉMO PAR RÔLE
+            </span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => handleQuickLogin('admin', 'admin123')}
+                style={{
+                  padding: '8px',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '10px',
+                  color: '#ffffff',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                }}
+              >
+                👔 Direction
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickLogin('compta', 'compta123')}
+                style={{
+                  padding: '8px',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '10px',
+                  color: '#ffffff',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                }}
+              >
+                💰 Finance
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickLogin('prof_cp1', 'prof123')}
+                style={{
+                  padding: '8px',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '10px',
+                  color: '#ffffff',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                }}
+              >
+                👨‍🏫 Enseignant
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
