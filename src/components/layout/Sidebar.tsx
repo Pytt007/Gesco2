@@ -121,15 +121,15 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
         transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
-      {/* ── BANDEAU MAGENTA LECTOR (LOGO & PROFIL) ───────────────────── */}
+      {/* ── BANDEAU BLEU ROYAL SUPÉRIEUR (LOGO & PROFIL) ───────────────────── */}
       <div style={{
-        background: 'linear-gradient(135deg, #e91e63 0%, #d81b60 100%)',
+        background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
         color: '#ffffff',
         padding: isCollapsed ? '1rem 0.5rem' : '1.25rem 1.25rem 1rem',
         display: 'flex',
         flexDirection: 'column',
         gap: '0.875rem',
-        boxShadow: '0 4px 14px rgba(233, 30, 99, 0.25)',
+        boxShadow: '0 4px 14px rgba(37, 99, 235, 0.25)',
       }}>
         {/* Ligne Logo & Toggle */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: isCollapsed ? 'center' : 'space-between' }}>

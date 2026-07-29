@@ -428,19 +428,19 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
       {isWidgetVisible('w-kpis') && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '2rem' }}>
           
-          {/* Card 1 : Magenta Pink (Lector Card 1) */}
+          {/* Card 1 : Royal Blue */}
           <div
             className="card-hover"
             onClick={() => handleNavigate('STUDENTS')}
             style={{
-              background: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
+              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
               borderRadius: '16px',
               padding: '1.5rem',
               color: '#ffffff',
               position: 'relative',
               overflow: 'hidden',
               cursor: 'pointer',
-              boxShadow: '0 8px 24px rgba(236, 72, 153, 0.28)'
+              boxShadow: '0 8px 24px rgba(37, 99, 235, 0.28)'
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
