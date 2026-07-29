@@ -60,9 +60,9 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOp
           <ChevronRight size={12} />
           <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{groupLabel}</span>
           <ChevronRight size={12} />
-          <span style={{ fontWeight: 700, color: '#6f42c1' }}>{pageTitle}</span>
+          <span style={{ fontWeight: 700, color: '#e91e63' }}>{pageTitle}</span>
         </nav>
-        <h1 className="header-title" style={{ fontSize: '1.25rem', fontWeight: 800, margin: '2px 0 0', color: '#1e293b' }}>
+        <h1 className="header-title" style={{ fontSize: '1.25rem', fontWeight: 800, margin: '2px 0 0', color: '#0f172a' }}>
           {pageTitle}
         </h1>
       </div>
@@ -71,8 +71,8 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOp
       <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         
         {/* Badge Enterprise Dataviz */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#e6f9f4', border: '1px solid #a7f3d0', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, color: '#047857' }}>
-          <ShieldCheck size={14} color="#20c997" /> Enterprise Edition
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#fce4ec', border: '1px solid #f87171', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, color: '#be123c' }}>
+          <ShieldCheck size={14} color="#e91e63" /> Enterprise Edition
         </div>
 
         {/* Raccourci Command Palette (CTRL + K) */}
@@ -93,14 +93,14 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOp
           }}
           title="Rechercher partout (CTRL + K)"
         >
-          <Search size={14} color="#6f42c1" />
+          <Search size={14} color="#e91e63" />
           <span>Recherche...</span>
           <span style={{ fontSize: '0.65rem', background: 'var(--border)', padding: '1px 6px', borderRadius: '4px', fontWeight: 700, color: 'var(--text-muted)' }}>
             ⌘K
           </span>
         </button>
 
-        {/* Sélecteur d'Année Scolaire Bouton Dataviz Violet */}
+        {/* Sélecteur d'Année Scolaire Bouton Lector Magenta */}
         <div style={{ position: 'relative' }}>
           <button
             id="btn-year-selector"
@@ -108,7 +108,7 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOp
             onClick={() => setYearDropdownOpen(!yearDropdownOpen)}
             aria-expanded={yearDropdownOpen}
             aria-haspopup="listbox"
-            style={{ borderRadius: '20px', padding: '6px 14px', fontSize: '0.8125rem', background: '#6f42c1', color: '#ffffff', border: 'none', boxShadow: '0 2px 8px rgba(111, 66, 193, 0.3)' }}
+            style={{ borderRadius: '20px', padding: '6px 14px', fontSize: '0.8125rem', background: '#e91e63', color: '#ffffff', border: 'none', boxShadow: '0 2px 8px rgba(233, 30, 99, 0.3)' }}
           >
             <CalendarRange size={15} style={{ color: '#ffffff' }} />
             <span style={{ fontWeight: 700 }}>{schoolYear}</span>

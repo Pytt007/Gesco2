@@ -428,19 +428,19 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
       {isWidgetVisible('w-kpis') && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '2rem' }}>
           
-          {/* Card 1 : Total Élèves (Violet Dataviz) */}
+          {/* Card 1 : Magenta Pink (Lector Card 1) */}
           <div
             className="card-hover"
             onClick={() => handleNavigate('STUDENTS')}
             style={{
-              background: 'linear-gradient(135deg, #7928ca 0%, #6f42c1 100%)',
+              background: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
               borderRadius: '16px',
               padding: '1.5rem',
               color: '#ffffff',
               position: 'relative',
               overflow: 'hidden',
               cursor: 'pointer',
-              boxShadow: '0 8px 24px rgba(111, 66, 193, 0.28)'
+              boxShadow: '0 8px 24px rgba(236, 72, 153, 0.28)'
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -465,19 +465,19 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
             </div>
           </div>
 
-          {/* Card 2 : Cantine / Sarcelle (Dataviz Teal) */}
+          {/* Card 2 : Purple Violet (Lector Card 2) */}
           <div
             className="card-hover"
             onClick={() => handleNavigate('CANTEEN')}
             style={{
-              background: 'linear-gradient(135deg, #17a2b8 0%, #20c997 100%)',
+              background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
               borderRadius: '16px',
               padding: '1.5rem',
               color: '#ffffff',
               position: 'relative',
               overflow: 'hidden',
               cursor: 'pointer',
-              boxShadow: '0 8px 24px rgba(32, 201, 151, 0.28)'
+              boxShadow: '0 8px 24px rgba(139, 92, 246, 0.28)'
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -502,19 +502,19 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
             </div>
           </div>
 
-          {/* Card 3 : Revenus / Bleu Roi (Dataviz Royal Blue) */}
+          {/* Card 3 : Cyan Teal (Lector Card 3) */}
           <div
             className="card-hover"
             onClick={() => handleNavigate('SCOLARITY')}
             style={{
-              background: 'linear-gradient(135deg, #007bff 0%, #2563eb 100%)',
+              background: 'linear-gradient(135deg, #06b6d4 0%, #0284c7 100%)',
               borderRadius: '16px',
               padding: '1.5rem',
               color: '#ffffff',
               position: 'relative',
               overflow: 'hidden',
               cursor: 'pointer',
-              boxShadow: '0 8px 24px rgba(0, 123, 255, 0.28)'
+              boxShadow: '0 8px 24px rgba(6, 182, 212, 0.28)'
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -533,11 +533,45 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
               <div style={{ fontSize: '2.4rem', fontWeight: 900, lineHeight: 1, fontFamily: "'Outfit', sans-serif" }}>
                 {`${(kpis?.collectedAmount ?? 0).toLocaleString('fr-FR')} F`}
               </div>
-              <div style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1 }}>
-                {`${kpis?.recoveryRatePercent ?? 0}%`}
-              </div>
               <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', marginTop: '0.5rem', fontWeight: 600 }}>
                 ↗ +0.5% ce mois
+              </div>
+            </div>
+          </div>
+
+          {/* Card 4 : Orange Amber (Lector Card 4) */}
+          <div
+            className="card-hover"
+            onClick={() => handleNavigate('STAFF')}
+            style={{
+              background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+              borderRadius: '16px',
+              padding: '1.5rem',
+              color: '#ffffff',
+              position: 'relative',
+              overflow: 'hidden',
+              cursor: 'pointer',
+              boxShadow: '0 8px 24px rgba(249, 115, 22, 0.28)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Briefcase size={18} color="#ffffff" />
+                </div>
+                <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#ffffff' }}>Personnel</span>
+              </div>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 10px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>
+                Enseignant RH
+              </span>
+            </div>
+
+            <div style={{ marginTop: '0.875rem' }}>
+              <div style={{ fontSize: '2.4rem', fontWeight: 900, lineHeight: 1, fontFamily: "'Outfit', sans-serif" }}>
+                18
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', marginTop: '0.5rem', fontWeight: 500 }}>
+                Professeurs & Remplaçants
               </div>
             </div>
           </div>
