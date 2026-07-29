@@ -584,17 +584,19 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
         {/* WIDGET 3 : BILAN FINANCIER & RECOUVREMENT (GRAPHIC AREA) */}
         {isWidgetVisible('w-financial-chart') && (
           <div className="card shadow-sm p-6" style={{ borderRadius: '16px', border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>
+                <h3 style={{ margin: 0, fontSize: '1.0625rem', fontWeight: 800, color: '#1e293b' }}>
                   Bilan Financier Mensuel
                 </h3>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Recettes scolarité vs Dépenses validées (FCFA)</span>
+                <span style={{ fontSize: '0.78125rem', color: 'var(--text-muted)' }}>Recettes scolarité vs Dépenses validées (FCFA)</span>
               </div>
-              <span className="badge badge-success">Recouvrement 84%</span>
+              <span className="badge badge-success" style={{ fontSize: '0.8125rem', padding: '0.4rem 0.875rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                Recouvrement 84%
+              </span>
             </div>
 
-            <div style={{ width: '100%', height: 220 }}>
+            <div style={{ width: '100%', height: 230 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={FINANCIAL_CHART_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
@@ -611,8 +613,8 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
                   <XAxis dataKey="mois" stroke="#94a3b8" fontSize={12} />
                   <YAxis stroke="#94a3b8" fontSize={11} tickFormatter={(v) => `${v / 1000000}M`} />
                   <Tooltip formatter={(value: any) => [`${Number(value).toLocaleString('fr-FR')} FCFA`, '']} />
-                  <Area type="monotone" dataKey="Recettes" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorRecettes)" />
-                  <Area type="monotone" dataKey="Dépenses" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#colorDepenses)" />
+                  <Area type="monotone" dataKey="Recettes" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRecettes)" />
+                  <Area type="monotone" dataKey="Dépenses" stroke="#ef4444" strokeWidth={2.5} fillOpacity={1} fill="url(#colorDepenses)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -622,14 +624,16 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
         {/* WIDGET 4 : TAUX DE PRÉSENCE QUOTIDIEN (DONUT CHART) */}
         {isWidgetVisible('w-attendance-chart') && (
           <div className="card shadow-sm p-6" style={{ borderRadius: '16px', border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>
+                <h3 style={{ margin: 0, fontSize: '1.0625rem', fontWeight: 800, color: '#1e293b' }}>
                   Assiduité & Présences du Jour
                 </h3>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Taux de présence globale des élèves</span>
+                <span style={{ fontSize: '0.78125rem', color: 'var(--text-muted)' }}>Taux de présence globale des élèves</span>
               </div>
-              <span className="badge badge-success">98.2% Présence</span>
+              <span className="badge badge-success" style={{ fontSize: '0.8125rem', padding: '0.4rem 0.875rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                98.2% Présence
+              </span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem', padding: '0.5rem 0' }}>
@@ -667,14 +671,16 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
         {/* WIDGET 5 : RÉPARTITION PAR NIVEAU ET GENRE (BAR CHART) */}
         {isWidgetVisible('w-gender-chart') && (
           <div className="card shadow-sm p-6" style={{ borderRadius: '16px', border: '1px solid var(--border-color)', gridColumn: 'span 2' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>
+                <h3 style={{ margin: 0, fontSize: '1.0625rem', fontWeight: 800, color: '#1e293b' }}>
                   Répartition des Effectifs par Niveau & Genre
                 </h3>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Proportion Filles / Garçons par classe</span>
+                <span style={{ fontSize: '0.78125rem', color: 'var(--text-muted)' }}>Proportion Filles / Garçons par classe</span>
               </div>
-              <span className="badge badge-info">142 Élèves Total</span>
+              <span className="badge badge-info" style={{ fontSize: '0.8125rem', padding: '0.4rem 0.875rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                142 Élèves Total
+              </span>
             </div>
 
             <div style={{ width: '100%', height: 230 }}>
@@ -701,11 +707,13 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
         {/* WIDGET 6 : CENTRE D'ALERTES INTELLIGENTES */}
         {isWidgetVisible('w-alerts') && alerts.length > 0 && (
           <div className="card shadow-sm p-4" style={{ borderRadius: '16px', border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#92400e', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.0625rem', fontWeight: 800, color: '#92400e', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <ShieldAlert size={18} color="#d97706" /> Centre d'Alertes Intelligentes
               </h3>
-              <span className="badge badge-warning">{alerts.length} alerte(s)</span>
+              <span className="badge badge-warning" style={{ fontSize: '0.8125rem', padding: '0.4rem 0.875rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                {alerts.length} alerte(s)
+              </span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
