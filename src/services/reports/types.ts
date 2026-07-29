@@ -13,18 +13,17 @@ export type ReportCategory =
 export interface ReportCategoryDefinition {
   key: ReportCategory;
   label: string;
-  emoji: string;
   description: string;
   color: string;
 }
 
 export const REPORT_CATEGORIES: ReportCategoryDefinition[] = [
-  { key: 'PEDAGOGY',  label: 'Pédagogie',  emoji: '🎓', description: 'Résultats, classements, moyennes et bulletins', color: '#2563eb' },
-  { key: 'FINANCE',   label: 'Finances',   emoji: '💰', description: 'Recettes, dépenses, créances et bilans',       color: '#16a34a' },
-  { key: 'STUDENTS',  label: 'Élèves',     emoji: '👨‍🎓', description: 'Effectifs, niveaux, inscrits et archives',    color: '#0ea5e9' },
-  { key: 'STAFF',     label: 'Personnel',  emoji: '👨‍🏫', description: 'Enseignants, administration et salaires',       color: '#9333ea' },
-  { key: 'CANTEEN',   label: 'Cantine',    emoji: '🍽', description: 'Abonnés, paiements, repas et menus',           color: '#f59e0b' },
-  { key: 'TRANSPORT', label: 'Transport',  emoji: '🚌', description: 'Lignes, élèves transportés et règlements',     color: '#dc2626' },
+  { key: 'PEDAGOGY',  label: 'Pédagogie',  description: 'Résultats, classements, moyennes et bulletins', color: '#2563eb' },
+  { key: 'FINANCE',   label: 'Finances',   description: 'Recettes, dépenses, créances et bilans',       color: '#16a34a' },
+  { key: 'STUDENTS',  label: 'Élèves',     description: 'Effectifs, niveaux, inscrits et archives',    color: '#0ea5e9' },
+  { key: 'STAFF',     label: 'Personnel',  description: 'Enseignants, administration et salaires',       color: '#9333ea' },
+  { key: 'CANTEEN',   label: 'Cantine',    description: 'Abonnés, paiements, repas et menus',           color: '#f59e0b' },
+  { key: 'TRANSPORT', label: 'Transport',  description: 'Lignes, élèves transportés et règlements',     color: '#dc2626' },
 ];
 
 export interface ReportDefinition {

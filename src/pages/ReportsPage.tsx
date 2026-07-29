@@ -221,7 +221,7 @@ export default function ReportsPage() {
             onClick={() => setActiveCategory(cat.key)}
             style={{ fontWeight: 600, borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6 }}
           >
-            <span>{cat.emoji}</span> {cat.label}
+            {cat.label}
           </button>
         ))}
       </div>

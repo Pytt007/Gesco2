@@ -26,14 +26,14 @@ interface NavItem {
 interface NavGroup {
   key: 'PEDAGOGY' | 'FINANCE' | 'ANALYSIS' | 'ADMINISTRATION';
   title: string;
-  emoji: string;
+  icon: React.ReactNode;
 }
 
 const NAV_GROUPS: NavGroup[] = [
-  { key: 'PEDAGOGY', title: 'PÉDAGOGIE', emoji: '👨‍🎓' },
-  { key: 'FINANCE', title: 'FINANCES', emoji: '💰' },
-  { key: 'ANALYSIS', title: 'ANALYSES', emoji: '📊' },
-  { key: 'ADMINISTRATION', title: 'ADMINISTRATION', emoji: '⚙️' },
+  { key: 'PEDAGOGY', title: 'PÉDAGOGIE', icon: <GraduationCap size={13} /> },
+  { key: 'FINANCE', title: 'FINANCES', icon: <TrendingDown size={13} /> },
+  { key: 'ANALYSIS', title: 'ANALYSES', icon: <FileBarChart size={13} /> },
+  { key: 'ADMINISTRATION', title: 'ADMINISTRATION', icon: <Settings size={13} /> },
 ];
 
 const ALL_NAV_ITEMS: NavItem[] = [
@@ -261,7 +261,7 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
                     padding: '0.5rem 1rem',
                   }}
                 >
-                  <span>{group.emoji} {group.title}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>{group.icon} {group.title}</span>
                   {isGroupCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
                 </div>
               ) : (

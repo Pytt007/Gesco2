@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Bus, ClipboardList, CreditCard, BarChart3 } from 'lucide-react';
 import { TransportLinesView } from '../components/transport/TransportLinesView';
 import { TransportEnrollmentView } from '../components/transport/TransportEnrollmentView';
 import { TransportPaymentView } from '../components/transport/TransportPaymentView';
@@ -6,11 +7,11 @@ import { TransportTrackingView } from '../components/transport/TransportTracking
 
 type TransportTab = 'LINES' | 'ENROLLMENT' | 'PAYMENT' | 'TRACKING';
 
-const TABS: { id: TransportTab; label: string; emoji: string }[] = [
-  { id: 'LINES',      label: 'Lignes de transport', emoji: '🚌' },
-  { id: 'ENROLLMENT', label: 'Inscription',          emoji: '📋' },
-  { id: 'PAYMENT',    label: 'Paiement',             emoji: '💳' },
-  { id: 'TRACKING',   label: 'Suivi transport',      emoji: '📊' },
+const TABS: { id: TransportTab; label: string; icon: React.ReactNode }[] = [
+  { id: 'LINES',      label: 'Lignes de transport', icon: <Bus size={15} /> },
+  { id: 'ENROLLMENT', label: 'Inscription',          icon: <ClipboardList size={15} /> },
+  { id: 'PAYMENT',    label: 'Paiement',             icon: <CreditCard size={15} /> },
+  { id: 'TRACKING',   label: 'Suivi transport',      icon: <BarChart3 size={15} /> },
 ];
 
 export default function TransportPage() {
@@ -27,7 +28,7 @@ export default function TransportPage() {
             onClick={() => setActiveTab(tab.id)}
             style={{ fontWeight: 600, borderRadius: '8px', display: 'flex', alignItems: 'center', gap: 6 }}
           >
-            <span>{tab.emoji}</span> {tab.label}
+            {tab.icon} {tab.label}
           </button>
         ))}
       </div>
