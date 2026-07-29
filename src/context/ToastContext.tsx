@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { toast } from 'sonner';
 import { ToastNotification, NotificationType } from '../types';
 
 interface ToastContextValue {
@@ -16,6 +17,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const addNotification = useCallback((type: NotificationType, message: string) => {
     const id = `notif-${Date.now()}-${Math.random()}`;
     setNotifications((prev) => [...prev, { id, type, message }]);
+
+    // Diffusion immédiate via Sonner Toast UI Primitive
+    if (type === 'success') {
+      toast.success(message);
+    } else if (type === 'error' || type === 'danger') {
+      toast.error(message);
+    } else if (type === 'warning') {
+      toast.warning(message);
+    } else {
+      toast.info(message);
+    }
+
     setTimeout(() => {
       setNotifications((prev) => prev.filter((n) => n.id !== id));
     }, 4500);

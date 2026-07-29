@@ -7,6 +7,7 @@ import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import CommandPalette from './components/layout/CommandPalette';
 import LoginPage from './pages/LoginPage';
+import { Toaster } from './components/ui/toaster';
 import './index.css';
 
 // Lazy loading des pages
@@ -281,6 +282,7 @@ function AppContent() {
         onNavigate={setCurrentView}
       />
       <ToastContainer />
+      <Toaster />
     </div>
   );
 }
