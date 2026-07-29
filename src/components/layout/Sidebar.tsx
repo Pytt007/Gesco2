@@ -121,15 +121,15 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
         transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
-      {/* ── BANDEAU VIOLET SUPÉRIEUR DATAVIZ (LOGO & PROFIL) ───────────────────── */}
+      {/* ── BANDEAU BLEU SUPÉRIEUR (LOGO & PROFIL) ───────────────────── */}
       <div style={{
-        background: 'linear-gradient(135deg, #7928ca 0%, #6f42c1 100%)',
+        background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)',
         color: '#ffffff',
         padding: isCollapsed ? '1rem 0.5rem' : '1.25rem 1.25rem 1rem',
         display: 'flex',
         flexDirection: 'column',
         gap: '0.875rem',
-        boxShadow: '0 4px 14px rgba(111, 66, 193, 0.25)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
       }}>
         {/* Ligne Logo & Toggle */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: isCollapsed ? 'center' : 'space-between' }}>
