@@ -144,19 +144,42 @@ export default function ParentsPage({ onNavigate }: ParentsPageProps) {
           </div>
         </div>
 
-        {/* CARTES STATISTIQUES PARENTS */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginTop: '1.25rem' }}>
-          <div style={{ padding: '12px 16px', background: '#eef2ff', borderRadius: '12px', border: '1px solid #c7d2fe' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#4338ca' }}>Total Responsables</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#312e81' }}>{totalCount}</div>
+        {/* CARTES STATISTIQUES PARENTS (STYLE DASHBOARD DYNAMIQUE) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '1.25rem' }}>
+          {/* Total Responsables - Royal Blue */}
+          <div className="card-hover" style={{ background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', borderRadius: '14px', padding: '1.25rem', color: '#ffffff', boxShadow: '0 6px 20px rgba(37, 99, 235, 0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>Global</span>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Users size={15} color="#ffffff" />
+              </div>
+            </div>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>Total Responsables</span>
+            <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{totalCount}</div>
           </div>
-          <div style={{ padding: '12px 16px', background: '#ecfdf5', borderRadius: '12px', border: '1px solid #a7f3d0' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#047857' }}>Actifs</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#064e3b' }}>{(parents || []).filter((p) => p.status === 'Actif').length}</div>
+
+          {/* Actifs - Émeraude */}
+          <div className="card-hover" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', borderRadius: '14px', padding: '1.25rem', color: '#ffffff', boxShadow: '0 6px 20px rgba(16, 185, 129, 0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>Actifs</span>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <UserCheck size={15} color="#ffffff" />
+              </div>
+            </div>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>Parents Actifs</span>
+            <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{(parents || []).filter((p) => p.status === 'Actif').length}</div>
           </div>
-          <div style={{ padding: '12px 16px', background: '#f0f9ff', borderRadius: '12px', border: '1px solid #bae6fd' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#0369a1' }}>Contacts WhatsApp</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0c4a6e' }}>{(parents || []).filter((p) => Boolean(p.whatsapp)).length}</div>
+
+          {/* Contacts WhatsApp - Cyan */}
+          <div className="card-hover" style={{ background: 'linear-gradient(135deg, #06b6d4 0%, #0284c7 100%)', borderRadius: '14px', padding: '1.25rem', color: '#ffffff', boxShadow: '0 6px 20px rgba(6, 182, 212, 0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>WhatsApp</span>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Phone size={15} color="#ffffff" />
+              </div>
+            </div>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>Contacts WhatsApp</span>
+            <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{(parents || []).filter((p) => Boolean(p.whatsapp)).length}</div>
           </div>
         </div>
       </div>

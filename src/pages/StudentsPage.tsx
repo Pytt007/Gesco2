@@ -18,7 +18,8 @@ import {
   Plus, Search, Download, Upload, X, Save, Eye, FileText, HeartPulse,
   History, ArrowUpDown, ChevronLeft, ChevronRight, RefreshCw, CheckCircle2,
   DollarSign, UtensilsCrossed, Bus, UserCheck, Image, Phone, MapPin, Check,
-  Filter, SlidersHorizontal, AlertCircle, Edit2, RotateCcw, Trash2
+  Filter, SlidersHorizontal, AlertCircle, Edit2, RotateCcw, Trash2,
+  Users, AlertTriangle, CreditCard
 } from 'lucide-react';
 import { GRADES } from '../constants/config';
 
@@ -227,23 +228,54 @@ export default function StudentsPage() {
           </div>
         </div>
 
-        {/* CARTES STATISTIQUES ÉLÈVES */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginTop: '1.25rem' }}>
-          <div style={{ padding: '12px 16px', background: '#eef2ff', borderRadius: '12px', border: '1px solid #c7d2fe' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#4338ca' }}>Total Inscrits</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#312e81' }}>{totalCount}</div>
+        {/* CARTES STATISTIQUES ÉLÈVES (STYLE DASHBOARD DYNAMIQUE) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '1.25rem' }}>
+          {/* Total Inscrits - Royal Blue */}
+          <div className="card-hover" style={{ background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', borderRadius: '14px', padding: '1.25rem', color: '#ffffff', boxShadow: '0 6px 20px rgba(37, 99, 235, 0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>Global</span>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Users size={15} color="#ffffff" />
+              </div>
+            </div>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>Total Inscrits</span>
+            <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{totalCount}</div>
           </div>
-          <div style={{ padding: '12px 16px', background: '#ecfdf5', borderRadius: '12px', border: '1px solid #a7f3d0' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#047857' }}>Actifs</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#064e3b' }}>{filteredStudents.filter((s) => s.status === 'Actif').length}</div>
+
+          {/* Actifs - Émeraude */}
+          <div className="card-hover" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', borderRadius: '14px', padding: '1.25rem', color: '#ffffff', boxShadow: '0 6px 20px rgba(16, 185, 129, 0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>Actifs</span>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <UserCheck size={15} color="#ffffff" />
+              </div>
+            </div>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>Élèves Actifs</span>
+            <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{filteredStudents.filter((s) => s.status === 'Actif').length}</div>
           </div>
-          <div style={{ padding: '12px 16px', background: '#fffbeb', borderRadius: '12px', border: '1px solid #fde68a' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#b45309' }}>Scolarité à Jour</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#78350f' }}>{filteredStudents.filter((s) => s.feesStatus === 'Payé').length}</div>
+
+          {/* Scolarité à jour - Cyan */}
+          <div className="card-hover" style={{ background: 'linear-gradient(135deg, #06b6d4 0%, #0284c7 100%)', borderRadius: '14px', padding: '1.25rem', color: '#ffffff', boxShadow: '0 6px 20px rgba(6, 182, 212, 0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>Scolarité</span>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CreditCard size={15} color="#ffffff" />
+              </div>
+            </div>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>Scolarité à Jour</span>
+            <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{filteredStudents.filter((s) => s.feesStatus === 'Payé').length}</div>
           </div>
-          <div style={{ padding: '12px 16px', background: '#fff1f2', borderRadius: '12px', border: '1px solid #fecdd3' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#be123c' }}>En Retard de Paiement</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#881337' }}>{filteredStudents.filter((s) => s.feesStatus === 'En retard').length}</div>
+
+          {/* En Retard - Rouge */}
+          <div className="card-hover" style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', borderRadius: '14px', padding: '1.25rem', color: '#ffffff', boxShadow: '0 6px 20px rgba(239, 68, 68, 0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>Alerte</span>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <AlertTriangle size={15} color="#ffffff" />
+              </div>
+            </div>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>En Retard</span>
+            <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{filteredStudents.filter((s) => s.feesStatus === 'En retard').length}</div>
           </div>
         </div>
       </div>

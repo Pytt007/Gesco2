@@ -58,13 +58,13 @@ export const CanteenTrackingView: React.FC = () => {
   }, [enrollments, search, filterLevel, filterStatus]);
 
   const kpiCards = [
-    { label: 'Élèves inscrits', value: kpis.totalEnrolled, icon: <Users size={22} />, color: '#0ea5e9', bg: '#f0f9ff' },
-    { label: 'À jour', value: kpis.upToDate, icon: <CheckCircle2 size={22} />, color: '#16a34a', bg: '#f0fdf4' },
-    { label: 'Paiement partiel', value: kpis.partial, icon: <AlertCircle size={22} />, color: '#d97706', bg: '#fffbeb' },
-    { label: 'Impayé', value: kpis.unpaid, icon: <XCircle size={22} />, color: '#dc2626', bg: '#fef2f2' },
-    { label: 'Total encaissé', value: kpis.totalCollected, icon: <DollarSign size={22} />, color: '#0369a1', bg: '#e0f2fe', isMoney: true },
-    { label: 'Reste à encaisser', value: kpis.totalRemaining, icon: <TrendingUp size={22} />, color: '#9333ea', bg: '#faf5ff', isMoney: true },
-    { label: 'Taux de recouvrement', value: kpis.recoveryRate, icon: <TrendingUp size={22} />, color: '#16a34a', bg: '#f0fdf4', isPercent: true },
+    { label: 'Élèves inscrits', value: kpis.totalEnrolled, icon: <Users size={15} color="#ffffff" />, tag: 'Subscribers', gradient: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', shadow: 'rgba(37, 99, 235, 0.25)' },
+    { label: 'À jour', value: kpis.upToDate, icon: <CheckCircle2 size={15} color="#ffffff" />, tag: 'Soldé', gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', shadow: 'rgba(16, 185, 129, 0.25)' },
+    { label: 'Paiement partiel', value: kpis.partial, icon: <AlertCircle size={15} color="#ffffff" />, tag: 'Acompte', gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', shadow: 'rgba(249, 115, 22, 0.25)' },
+    { label: 'Impayé', value: kpis.unpaid, icon: <XCircle size={15} color="#ffffff" />, tag: 'Relance', gradient: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', shadow: 'rgba(239, 68, 68, 0.25)' },
+    { label: 'Total encaissé', value: `${kpis.totalCollected.toLocaleString('fr-FR')} F`, icon: <DollarSign size={15} color="#ffffff" />, tag: 'Encaissé', gradient: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)', shadow: 'rgba(20, 184, 166, 0.25)' },
+    { label: 'Reste à encaisser', value: `${kpis.totalRemaining.toLocaleString('fr-FR')} F`, icon: <TrendingUp size={15} color="#ffffff" />, tag: 'Reste', gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', shadow: 'rgba(139, 92, 246, 0.25)' },
+    { label: 'Recouvrement', value: `${kpis.recoveryRate}%`, icon: <TrendingUp size={15} color="#ffffff" />, tag: 'Ratio', gradient: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', shadow: 'rgba(79, 70, 229, 0.25)' },
   ];
 
   return (
@@ -78,20 +78,31 @@ export const CanteenTrackingView: React.FC = () => {
         </p>
       </div>
 
-      {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 14, marginBottom: 24 }}>
+      {/* KPIs (STYLE DASHBOARD DYNAMIQUE) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: 24 }}>
         {kpiCards.map((k) => (
-          <div key={k.label} className="card" style={{ borderRadius: 12, border: '1px solid #e2e8f0' }}>
-            <div className="card-body p-3" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: k.color }}>
+          <div
+            key={k.label}
+            className="card-hover"
+            style={{
+              background: k.gradient,
+              borderRadius: '14px',
+              padding: '1.25rem',
+              color: '#ffffff',
+              boxShadow: `0 6px 20px ${k.shadow}`,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>
+                {k.tag}
+              </span>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {k.icon}
               </div>
-              <div>
-                <p style={{ margin: 0, fontWeight: 800, fontSize: k.isMoney ? '1rem' : '1.375rem', color: k.color, lineHeight: 1.2 }}>
-                  {k.isMoney ? `${k.value.toLocaleString('fr-FR')} F` : k.isPercent ? `${k.value}%` : k.value}
-                </p>
-                <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: '#64748b' }}>{k.label}</p>
-              </div>
+            </div>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>{k.label}</span>
+            <div style={{ fontSize: '1.5rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>
+              {k.value}
             </div>
           </div>
         ))}

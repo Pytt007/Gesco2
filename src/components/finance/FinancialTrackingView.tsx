@@ -109,84 +109,90 @@ export const FinancialTrackingView: React.FC = () => {
         </div>
       )}
 
-      {/* Cartes KPI (7 Indicateurs de suivi) */}
-      <div className="row g-3 mb-4">
-        <div className="col-12 col-sm-6 col-md-3 col-xl">
-          <div className="card p-3 shadow-sm h-100" style={{ borderRadius: '12px', borderLeft: '4px solid #2563eb' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>TOTAL ÉLÈVES</span>
-              <Users size={20} style={{ color: '#2563eb' }} />
-            </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
-              {kpis.totalStudents}
+      {/* Cartes KPI (7 Indicateurs de suivi - Style Dashboard Dynamique) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+        {/* Total Élèves - Royal Blue */}
+        <div className="card-hover" style={{ background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', borderRadius: '14px', padding: '1.25rem', color: '#ffffff', boxShadow: '0 6px 20px rgba(37, 99, 235, 0.25)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>Effectif</span>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Users size={15} color="#ffffff" />
             </div>
           </div>
+          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>Total Élèves</span>
+          <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{kpis.totalStudents}</div>
         </div>
 
-        <div className="col-12 col-sm-6 col-md-3 col-xl">
-          <div className="card p-3 shadow-sm h-100" style={{ borderRadius: '12px', borderLeft: '4px solid #16a34a' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#166534' }}>🟢 SOLDÉS</span>
-              <CheckCircle2 size={20} style={{ color: '#16a34a' }} />
-            </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#15803d', marginTop: '4px' }}>
-              {kpis.paidStudents}
+        {/* Soldés - Émeraude */}
+        <div className="card-hover" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', borderRadius: '14px', padding: '1.25rem', color: '#ffffff', boxShadow: '0 6px 20px rgba(16, 185, 129, 0.25)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>Payé</span>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CheckCircle2 size={15} color="#ffffff" />
             </div>
           </div>
+          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>Soldés</span>
+          <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{kpis.paidStudents}</div>
         </div>
 
-        <div className="col-12 col-sm-6 col-md-3 col-xl">
-          <div className="card p-3 shadow-sm h-100" style={{ borderRadius: '12px', borderLeft: '4px solid #d97706' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#92400e' }}>🟡 PARTIELS</span>
-              <Clock size={20} style={{ color: '#d97706' }} />
-            </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#b45309', marginTop: '4px' }}>
-              {kpis.partialStudents}
+        {/* Partiels - Orange Amber */}
+        <div className="card-hover" style={{ background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', borderRadius: '14px', padding: '1.25rem', color: '#ffffff', boxShadow: '0 6px 20px rgba(249, 115, 22, 0.25)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>Acompte</span>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Clock size={15} color="#ffffff" />
             </div>
           </div>
+          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>Partiels</span>
+          <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{kpis.partialStudents}</div>
         </div>
 
-        <div className="col-12 col-sm-6 col-md-3 col-xl">
-          <div className="card p-3 shadow-sm h-100" style={{ borderRadius: '12px', borderLeft: '4px solid #dc2626' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#991b1b' }}>🔴 IMPAYÉS</span>
-              <AlertTriangle size={20} style={{ color: '#dc2626' }} />
-            </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#b91c1c', marginTop: '4px' }}>
-              {kpis.unpaidStudents}
+        {/* Impayés - Rouge */}
+        <div className="card-hover" style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', borderRadius: '14px', padding: '1.25rem', color: '#ffffff', boxShadow: '0 6px 20px rgba(239, 68, 68, 0.25)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>Relance</span>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <AlertTriangle size={15} color="#ffffff" />
             </div>
           </div>
+          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>Impayés</span>
+          <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{kpis.unpaidStudents}</div>
         </div>
 
-        <div className="col-12 col-sm-6 col-md-4 col-xl">
-          <div className="card p-3 shadow-sm h-100" style={{ borderRadius: '12px', borderLeft: '4px solid #059669', backgroundColor: '#f0fdf4' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#166534' }}>TOTAL ENCAISSÉ</span>
-            <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#15803d', marginTop: '4px' }}>
-              {kpis.totalCollected.toLocaleString('fr-FR')} FCFA
+        {/* Total Encaissé - Sarcelle */}
+        <div className="card-hover" style={{ background: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)', borderRadius: '14px', padding: '1.25rem', color: '#ffffff', boxShadow: '0 6px 20px rgba(20, 184, 166, 0.25)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>Encaissé</span>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <TrendingUp size={15} color="#ffffff" />
             </div>
           </div>
+          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>Total Encaissé</span>
+          <div style={{ fontSize: '1.5rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{kpis.totalCollected.toLocaleString('fr-FR')} F</div>
         </div>
 
-        <div className="col-12 col-sm-6 col-md-4 col-xl">
-          <div className="card p-3 shadow-sm h-100" style={{ borderRadius: '12px', borderLeft: '4px solid #e11d48', backgroundColor: '#fff1f2' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#9f1239' }}>RESTE À ENCAISSER</span>
-            <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#be123c', marginTop: '4px' }}>
-              {kpis.totalRemaining.toLocaleString('fr-FR')} FCFA
+        {/* Reste à Encaisser - Crimson */}
+        <div className="card-hover" style={{ background: 'linear-gradient(135deg, #be123c 0%, #9f1239 100%)', borderRadius: '14px', padding: '1.25rem', color: '#ffffff', boxShadow: '0 6px 20px rgba(190, 18, 60, 0.25)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>Reste</span>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <AlertTriangle size={15} color="#ffffff" />
             </div>
           </div>
+          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>Reste à Encaisser</span>
+          <div style={{ fontSize: '1.5rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{kpis.totalRemaining.toLocaleString('fr-FR')} F</div>
         </div>
 
-        <div className="col-12 col-sm-6 col-md-4 col-xl">
-          <div className="card p-3 shadow-sm h-100" style={{ borderRadius: '12px', borderLeft: '4px solid #4f46e5', backgroundColor: '#eef2ff' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#3730a3' }}>RECOUVREMENT</span>
-              <TrendingUp size={18} style={{ color: '#4f46e5' }} />
-            </div>
-            <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#3730a3', marginTop: '4px' }}>
-              {kpis.recoveryRate}%
+        {/* Taux Recouvrement - Violet */}
+        <div className="card-hover" style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', borderRadius: '14px', padding: '1.25rem', color: '#ffffff', boxShadow: '0 6px 20px rgba(79, 70, 229, 0.25)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>Ratio</span>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <TrendingUp size={15} color="#ffffff" />
             </div>
           </div>
+          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>Recouvrement</span>
+          <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{kpis.recoveryRate}%</div>
         </div>
       </div>
 

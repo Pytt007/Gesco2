@@ -69,13 +69,13 @@ export const TransportTrackingView: React.FC = () => {
   }, [enrollments, search, filterLineId, filterStatus]);
 
   const kpiCards = [
-    { label: 'Lignes actives', value: kpis.activeLines, icon: <Bus size={20} />, color: '#2563eb', bg: '#eff6ff', fmt: (v: number) => String(v) },
-    { label: 'Élèves inscrits', value: kpis.totalEnrolled, icon: <Users size={20} />, color: '#0ea5e9', bg: '#f0f9ff', fmt: (v: number) => String(v) },
-    { label: 'Soldés', value: kpis.paidStudents, icon: <CheckCircle2 size={20} />, color: '#16a34a', bg: '#f0fdf4', fmt: (v: number) => String(v) },
-    { label: 'Paiement partiel', value: kpis.partialStudents, icon: <AlertCircle size={20} />, color: '#d97706', bg: '#fffbeb', fmt: (v: number) => String(v) },
-    { label: 'Impayés', value: kpis.unpaidStudents, icon: <XCircle size={20} />, color: '#dc2626', bg: '#fef2f2', fmt: (v: number) => String(v) },
-    { label: 'Total encaissé', value: kpis.totalCollected, icon: <DollarSign size={20} />, color: '#0369a1', bg: '#e0f2fe', fmt: (v: number) => `${v.toLocaleString('fr-FR')} F` },
-    { label: 'Recouvrement', value: kpis.recoveryRate, icon: <TrendingUp size={20} />, color: '#16a34a', bg: '#f0fdf4', fmt: (v: number) => `${v}%` },
+    { label: 'Lignes actives', value: String(kpis.activeLines), icon: <Bus size={15} color="#ffffff" />, tag: 'Réseau', gradient: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', shadow: 'rgba(37, 99, 235, 0.25)' },
+    { label: 'Élèves inscrits', value: String(kpis.totalEnrolled), icon: <Users size={15} color="#ffffff" />, tag: 'Passagers', gradient: 'linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)', shadow: 'rgba(14, 165, 233, 0.25)' },
+    { label: 'Soldés', value: String(kpis.paidStudents), icon: <CheckCircle2 size={15} color="#ffffff" />, tag: 'Payé', gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', shadow: 'rgba(16, 185, 129, 0.25)' },
+    { label: 'Paiement partiel', value: String(kpis.partialStudents), icon: <AlertCircle size={15} color="#ffffff" />, tag: 'Acompte', gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', shadow: 'rgba(249, 115, 22, 0.25)' },
+    { label: 'Impayés', value: String(kpis.unpaidStudents), icon: <XCircle size={15} color="#ffffff" />, tag: 'Relance', gradient: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', shadow: 'rgba(239, 68, 68, 0.25)' },
+    { label: 'Total encaissé', value: `${kpis.totalCollected.toLocaleString('fr-FR')} F`, icon: <DollarSign size={15} color="#ffffff" />, tag: 'Encaissé', gradient: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)', shadow: 'rgba(20, 184, 166, 0.25)' },
+    { label: 'Recouvrement', value: `${kpis.recoveryRate}%`, icon: <TrendingUp size={15} color="#ffffff" />, tag: 'Ratio', gradient: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', shadow: 'rgba(79, 70, 229, 0.25)' },
   ];
 
   return (
@@ -87,18 +87,31 @@ export const TransportTrackingView: React.FC = () => {
         </p>
       </div>
 
-      {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 12, marginBottom: 22 }}>
+      {/* KPIs (STYLE DASHBOARD DYNAMIQUE) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: 22 }}>
         {kpiCards.map((k) => (
-          <div key={k.label} className="card" style={{ borderRadius: 12, border: '1px solid #e2e8f0' }}>
-            <div className="card-body p-3" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <div style={{ width: 38, height: 38, borderRadius: 10, background: k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: k.color, flexShrink: 0 }}>
+          <div
+            key={k.label}
+            className="card-hover"
+            style={{
+              background: k.gradient,
+              borderRadius: '14px',
+              padding: '1.25rem',
+              color: '#ffffff',
+              boxShadow: `0 6px 20px ${k.shadow}`,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>
+                {k.tag}
+              </span>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {k.icon}
               </div>
-              <div style={{ minWidth: 0 }}>
-                <p style={{ margin: 0, fontWeight: 800, fontSize: '1.0625rem', color: k.color, lineHeight: 1.2, whiteSpace: 'nowrap' }}>{k.fmt(k.value)}</p>
-                <p style={{ margin: '2px 0 0', fontSize: '0.7rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.label}</p>
-              </div>
+            </div>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>{k.label}</span>
+            <div style={{ fontSize: '1.5rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>
+              {k.value}
             </div>
           </div>
         ))}

@@ -144,19 +144,42 @@ export default function AcademicPage({ onNavigate }: AcademicPageProps) {
           </div>
         </div>
 
-        {/* CARTES STATISTIQUES CLASSES */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginTop: '1.25rem' }}>
-          <div style={{ padding: '12px 16px', background: '#eef2ff', borderRadius: '12px', border: '1px solid #c7d2fe' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#4338ca' }}>Total Classes</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#312e81' }}>{classroomsHook.totalCount}</div>
+        {/* CARTES STATISTIQUES CLASSES (STYLE DASHBOARD DYNAMIQUE) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '1.25rem' }}>
+          {/* Total Classes - Royal Blue */}
+          <div className="card-hover" style={{ background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', borderRadius: '14px', padding: '1.25rem', color: '#ffffff', boxShadow: '0 6px 20px rgba(37, 99, 235, 0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>Global</span>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <GraduationCap size={15} color="#ffffff" />
+              </div>
+            </div>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>Total Classes</span>
+            <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{classroomsHook.totalCount}</div>
           </div>
-          <div style={{ padding: '12px 16px', background: '#ecfdf5', borderRadius: '12px', border: '1px solid #a7f3d0' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#047857' }}>Classes Actives</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#064e3b' }}>{(classroomsHook.classrooms || []).filter((c) => c.isActive).length}</div>
+
+          {/* Classes Actives - Émeraude */}
+          <div className="card-hover" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', borderRadius: '14px', padding: '1.25rem', color: '#ffffff', boxShadow: '0 6px 20px rgba(16, 185, 129, 0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>Actives</span>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CheckCircle2 size={15} color="#ffffff" />
+              </div>
+            </div>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>Classes Actives</span>
+            <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{(classroomsHook.classrooms || []).filter((c) => c.isActive).length}</div>
           </div>
-          <div style={{ padding: '12px 16px', background: '#faf5ff', borderRadius: '12px', border: '1px solid #e9d5ff' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#7e22ce' }}>Capacité Globale</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#581c87' }}>
+
+          {/* Capacité Globale - Violet */}
+          <div className="card-hover" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', borderRadius: '14px', padding: '1.25rem', color: '#ffffff', boxShadow: '0 6px 20px rgba(139, 92, 246, 0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>Capacité</span>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Users size={15} color="#ffffff" />
+              </div>
+            </div>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>Capacité Globale</span>
+            <div style={{ fontSize: '1.75rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>
               {(classroomsHook.classrooms || []).reduce((acc, c) => acc + (c.capacity || 35), 0)} Places
             </div>
           </div>

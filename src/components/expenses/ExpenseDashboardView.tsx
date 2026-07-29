@@ -133,12 +133,12 @@ export const ExpenseDashboardView: React.FC = () => {
   };
 
   const kpiCards = [
-    { label: 'Dépenses du mois', value: formatFCFA(stats.totalMonth), icon: <TrendingDown size={20} />, color: '#dc2626', bg: '#fef2f2' },
-    { label: 'Dépenses annuelles', value: formatFCFA(stats.totalYear), icon: <DollarSign size={20} />, color: '#2563eb', bg: '#eff6ff' },
-    { label: 'Budget annuel', value: formatFCFA(stats.annualBudget), icon: <Building size={20} />, color: '#16a34a', bg: '#f0fdf4' },
-    { label: 'Budget restant', value: formatFCFA(stats.remainingBudget), icon: <Shield size={20} />, color: stats.remainingBudget > 0 ? '#0369a1' : '#dc2626', bg: stats.remainingBudget > 0 ? '#f0f9ff' : '#fef2f2' },
-    { label: 'Nombre de dépenses', value: `${stats.totalExpenseCount}`, icon: <Hash size={20} />, color: '#9333ea', bg: '#faf5ff' },
-    { label: 'Moyenne par mois', value: formatFCFA(stats.averagePerMonth), icon: <Calculator size={20} />, color: '#d97706', bg: '#fffbeb' },
+    { label: 'Dépenses du mois', value: formatFCFA(stats.totalMonth), icon: <TrendingDown size={15} color="#ffffff" />, tag: 'Mensuel', gradient: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', shadow: 'rgba(239, 68, 68, 0.25)' },
+    { label: 'Dépenses annuelles', value: formatFCFA(stats.totalYear), icon: <DollarSign size={15} color="#ffffff" />, tag: 'Cumul', gradient: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', shadow: 'rgba(37, 99, 235, 0.25)' },
+    { label: 'Budget annuel', value: formatFCFA(stats.annualBudget), icon: <Building size={15} color="#ffffff" />, tag: 'Alloué', gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', shadow: 'rgba(16, 185, 129, 0.25)' },
+    { label: 'Budget restant', value: formatFCFA(stats.remainingBudget), icon: <Shield size={15} color="#ffffff" />, tag: 'Solde', gradient: 'linear-gradient(135deg, #06b6d4 0%, #0284c7 100%)', shadow: 'rgba(6, 182, 212, 0.25)' },
+    { label: 'Nombre de dépenses', value: `${stats.totalExpenseCount}`, icon: <Hash size={15} color="#ffffff" />, tag: 'Nombre', gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', shadow: 'rgba(139, 92, 246, 0.25)' },
+    { label: 'Moyenne par mois', value: formatFCFA(stats.averagePerMonth), icon: <Calculator size={15} color="#ffffff" />, tag: 'Moyenne', gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', shadow: 'rgba(249, 115, 22, 0.25)' },
   ];
 
   return (
@@ -219,22 +219,31 @@ export const ExpenseDashboardView: React.FC = () => {
         </div>
       </div>
 
-      {/* INDICATEURS (6 KPIs) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+      {/* INDICATEURS (6 KPIs - STYLE DASHBOARD DYNAMIQUE) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
         {kpiCards.map((kpi) => (
-          <div key={kpi.label} className="card" style={{ borderRadius: 14, border: '1px solid #e2e8f0' }}>
-            <div className="card-body p-3" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <div style={{ width: 42, height: 42, borderRadius: 12, background: kpi.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: kpi.color, flexShrink: 0 }}>
+          <div
+            key={kpi.label}
+            className="card-hover"
+            style={{
+              background: kpi.gradient,
+              borderRadius: '14px',
+              padding: '1.25rem',
+              color: '#ffffff',
+              boxShadow: `0 6px 20px ${kpi.shadow}`,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>
+                {kpi.tag}
+              </span>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {kpi.icon}
               </div>
-              <div style={{ minWidth: 0 }}>
-                <p style={{ margin: 0, fontWeight: 800, fontSize: '1.125rem', color: kpi.color, lineHeight: 1.2, whiteSpace: 'nowrap' }}>
-                  {kpi.value}
-                </p>
-                <p style={{ margin: '3px 0 0', fontSize: '0.725rem', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {kpi.label}
-                </p>
-              </div>
+            </div>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>{kpi.label}</span>
+            <div style={{ fontSize: '1.5rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>
+              {kpi.value}
             </div>
           </div>
         ))}
