@@ -303,7 +303,7 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
 
       {/* ── FOOTER UTILISATEUR & DÉCONNEXION ─────────────────────────────────── */}
       {currentUser && (
-        <div className="sidebar-footer" style={{ padding: '0.75rem 0.5rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="sidebar-footer" style={{ padding: '0.75rem 0.5rem', borderTop: '1px solid var(--border)' }}>
           <div
             className="sidebar-user"
             onClick={() => onNavigate('SETTINGS')}
@@ -318,8 +318,8 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
             />
             {!isCollapsed && (
               <div className="sidebar-user-info">
-                <div className="sidebar-user-name" style={{ fontSize: '0.8125rem' }}>{currentUser.fullName}</div>
-                <div className="sidebar-user-role" style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.5)' }}>
+                <div className="sidebar-user-name" style={{ fontSize: '0.8125rem', color: '#0f172a', fontWeight: 700 }}>{currentUser.fullName}</div>
+                <div className="sidebar-user-role" style={{ fontSize: '0.6875rem', color: '#64748b', fontWeight: 600 }}>
                   {ROLE_LABELS[currentUser.role] || currentUser.role}
                 </div>
               </div>

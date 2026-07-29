@@ -288,8 +288,8 @@ p { color: var(--text-secondary); line-height: 1.7; }
 .sidebar-item.active .sidebar-item-icon { opacity: 1; }
 
 .sidebar-footer {
-  padding: 1rem 1.25rem;
-  border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 0.75rem 0.5rem;
+  border-top: 1px solid var(--border);
 }
 
 .sidebar-user {
@@ -310,23 +310,24 @@ p { color: var(--text-secondary); line-height: 1.7; }
   border-radius: var(--radius-full);
   object-fit: cover;
   flex-shrink: 0;
-  border: 2px solid rgba(255,255,255,0.15);
+  border: 2px solid var(--border);
 }
 
 .sidebar-user-info { flex: 1; min-width: 0; }
 
 .sidebar-user-name {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #0f172a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .sidebar-user-role {
-  font-size: 0.625rem;
-  color: rgba(255,255,255,0.4);
+  font-size: 0.6875rem;
+  color: #64748b;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   white-space: nowrap;
