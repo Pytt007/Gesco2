@@ -14,7 +14,7 @@ import {
   FileText, BarChart2, Calendar, AlertCircle, CheckCircle2,
   Clock, ArrowUpRight, ArrowRight, X, ShieldAlert, Sparkles,
   Maximize2, RefreshCw, EyeOff, MoreVertical, Layers, TrendingUp,
-  Bell, Check, Filter, User, HelpCircle, LayoutGrid, CheckSquare
+  Bell, Check, Filter, User, HelpCircle, CheckSquare
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer,
@@ -368,38 +368,13 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
               <RefreshCw size={14} className={loading ? 'spin' : ''} />
             </button>
 
-            {/* Personnaliser Widgets */}
-            <button className="btn btn-outline btn-sm" title="Personnaliser les widgets" onClick={() => setShowWidgetConfig(!showWidgetConfig)}>
-              <LayoutGrid size={14} /> Layout
-            </button>
+
 
           </div>
         </div>
       </div>
 
-      {/* ── PANNEAU DE PERSONNALISATION DES WIDGETS ─────────────────────────── */}
-      {showWidgetConfig && (
-        <div className="card p-3 shadow-sm animate-fade-in" style={{ borderRadius: '12px', border: '1px solid #c7d2fe', backgroundColor: '#eef2ff' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <h6 style={{ margin: 0, fontWeight: 700, color: '#3730a3', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <SlidersHorizontal size={16} /> Personnalisation de votre Tableau de Bord
-            </h6>
-            <button className="btn btn-ghost btn-sm" onClick={() => setShowWidgetConfig(false)}><X size={16} /></button>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px' }}>
-            {widgets.map((w) => (
-              <div key={w.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#ffffff', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.8125rem' }}>
-                <span style={{ fontWeight: 600, color: w.visible ? '#0f172a' : '#94a3b8' }}>{w.title}</span>
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  <button className={`btn btn-sm ${w.visible ? 'btn-success' : 'btn-outline'}`} style={{ padding: '2px 8px', fontSize: '0.7rem' }} onClick={() => toggleWidgetVisibility(w.id)}>
-                    {w.visible ? 'Visible' : 'Masqué'}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+
 
       {/* ── HEADER & BADGE ANNÉE SCOLAIRE ─────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
