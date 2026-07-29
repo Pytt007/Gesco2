@@ -8,7 +8,7 @@ import { useToast } from '../../context/ToastContext';
 import { useSchoolYear } from '../../context/SchoolYearContext';
 import {
   Search, User, UtensilsCrossed, CheckCircle2, AlertCircle,
-  Phone, DollarSign, Tag, RotateCcw,
+  Phone, DollarSign, Tag, RotateCcw, X,
 } from 'lucide-react';
 
 const LEVEL_ORDER: CanteenLevelCode[] = ['PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
@@ -140,16 +140,20 @@ export const CanteenEnrollmentView: React.FC = () => {
               <h6 style={{ fontWeight: 700, color: '#0f172a', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Search size={16} color="#0ea5e9" /> Rechercher un élève
               </h6>
-              <div style={{ position: 'relative' }}>
-                <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <div className="search-bar-wrapper">
+                <Search size={16} className="search-bar-icon" />
                 <input
                   type="text"
-                  className="form-control"
+                  className="search-bar-input"
                   placeholder="Nom, prénom, matricule, classe..."
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
-                  style={{ paddingLeft: 36, borderRadius: 10 }}
                 />
+                {searchQuery && (
+                  <button className="search-bar-clear" onClick={() => handleSearch('')}>
+                    <X size={14} />
+                  </button>
+                )}
               </div>
               {searchResults.length > 0 && (
                 <div style={{ marginTop: 8, border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>

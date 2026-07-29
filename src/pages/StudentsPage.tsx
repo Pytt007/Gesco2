@@ -285,17 +285,21 @@ export default function StudentsPage() {
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
           
           <div style={{ display: 'flex', gap: '10px', flex: 1, minWidth: 260 }}>
-            {/* Recherche */}
-            <div style={{ position: 'relative', flex: 1 }}>
-              <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+            {/* Recherche Ultra-Moderne */}
+            <div className="search-bar-wrapper" style={{ flex: 1 }}>
+              <Search size={16} className="search-bar-icon" />
               <input
                 type="text"
-                className="form-input"
+                className="search-bar-input"
                 placeholder="Rechercher un élève (Nom, Prénom, Matricule...)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ paddingLeft: 36, height: 38, borderRadius: 10, fontSize: '0.875rem' }}
               />
+              {searchQuery && (
+                <button className="search-bar-clear" onClick={() => setSearchQuery('')}>
+                  <X size={14} />
+                </button>
+              )}
             </div>
 
             {/* Filtre Classe */}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useStudentFinancialEnrollment } from '../../hooks/finance/useStudentFinancialEnrollment';
 import { StudentFinancialEnrollment, DiscountType, TuitionLevelCode } from '../../services/finance/types';
 import { StudentFinancialEnrollmentModal } from './StudentFinancialEnrollmentModal';
-import { Plus, Search, Edit2, Archive, CheckCircle2, AlertCircle, DollarSign, UserCheck, Calendar } from 'lucide-react';
+import { Plus, Search, Edit2, Archive, CheckCircle2, AlertCircle, DollarSign, UserCheck, Calendar, X } from 'lucide-react';
 import { useAcademicYears } from '../../hooks/academic';
 
 export const FinancialEnrollmentView: React.FC = () => {
@@ -161,16 +161,20 @@ export const FinancialEnrollmentView: React.FC = () => {
             </select>
           </div>
 
-          <div style={{ position: 'relative', width: '280px' }}>
-            <Search size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+          <div className="search-bar-wrapper" style={{ width: '320px' }}>
+            <Search size={16} className="search-bar-icon" />
             <input
               type="text"
-              className="form-input text-sm"
-              style={{ paddingLeft: '32px' }}
+              className="search-bar-input"
               placeholder="Rechercher élève, matricule, classe..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+            {search && (
+              <button className="search-bar-clear" onClick={() => setSearch('')}>
+                <X size={14} />
+              </button>
+            )}
           </div>
         </div>
       </div>

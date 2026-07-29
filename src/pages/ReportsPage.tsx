@@ -60,16 +60,20 @@ export default function ReportsPage() {
         </div>
 
         {/* Barre de recherche rapide */}
-        <div style={{ position: 'relative', width: 280 }}>
-          <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+        <div className="search-bar-wrapper" style={{ width: 320 }}>
+          <Search size={15} className="search-bar-icon" />
           <input
             type="text"
-            className="form-control"
+            className="search-bar-input"
             placeholder="Rechercher un rapport..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ paddingLeft: 36, borderRadius: 10, fontSize: '0.875rem' }}
           />
+          {searchQuery && (
+            <button className="search-bar-clear" onClick={() => setSearchQuery('')}>
+              <X size={14} />
+            </button>
+          )}
         </div>
       </div>
 

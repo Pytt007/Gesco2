@@ -231,9 +231,14 @@ export const TransportPaymentView: React.FC = () => {
               <h6 style={{ fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Search size={16} color="#2563eb" /> Rechercher un élève
               </h6>
-              <div style={{ position: 'relative' }}>
-                <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                <input type="text" className="form-control" placeholder="Nom, matricule, classe, ligne..." value={searchQuery} onChange={(e) => handleSearch(e.target.value)} style={{ paddingLeft: 36, borderRadius: 10 }} />
+              <div className="search-bar-wrapper">
+                <Search size={16} className="search-bar-icon" />
+                <input type="text" className="search-bar-input" placeholder="Nom, matricule, classe, ligne..." value={searchQuery} onChange={(e) => handleSearch(e.target.value)} />
+                {searchQuery && (
+                  <button className="search-bar-clear" onClick={() => handleSearch('')}>
+                    <X size={14} />
+                  </button>
+                )}
               </div>
               {isSearching && <p className="text-muted text-xs mt-2">Recherche...</p>}
               {searchResults.length > 0 && (

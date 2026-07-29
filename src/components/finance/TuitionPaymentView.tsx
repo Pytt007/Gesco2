@@ -16,6 +16,7 @@ import {
   FileText,
   RotateCcw,
   ShieldAlert,
+  X,
 } from 'lucide-react';
 import { useAcademicYears } from '../../hooks/academic';
 
@@ -144,16 +145,20 @@ export const TuitionPaymentView: React.FC = () => {
         style={{ borderRadius: '12px', border: '1px solid var(--border-color, #e2e8f0)', backgroundColor: '#ffffff' }}
       >
         <div className="card-body p-3" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative', flex: 1, minWidth: '280px' }}>
-            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+          <div className="search-bar-wrapper" style={{ flex: 1, minWidth: '280px' }}>
+            <Search size={16} className="search-bar-icon" />
             <input
               type="text"
-              className="form-input text-sm"
-              style={{ paddingLeft: '36px' }}
+              className="search-bar-input"
               placeholder="Rechercher élève par Nom, Prénom, Matricule ou Classe..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+            {search && (
+              <button className="search-bar-clear" onClick={() => setSearch('')}>
+                <X size={14} />
+              </button>
+            )}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

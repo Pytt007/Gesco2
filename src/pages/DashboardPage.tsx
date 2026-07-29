@@ -323,18 +323,18 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
             
             {/* Barre de Recherche Globale Instantanée */}
-            <div style={{ position: 'relative', width: 280 }}>
-              <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+            <div className="search-bar-wrapper" style={{ width: 280 }}>
+              <Search size={16} className="search-bar-icon" />
               <input
                 type="text"
-                className="form-input"
-                placeholder="Recherche rapide (Élève, Parent, Classe...)"
+                className="search-bar-input"
+                placeholder="Recherche rapide (Élève, Parent...)"
                 value={searchQuery}
                 onChange={(e) => handleGlobalSearch(e.target.value)}
-                style={{ paddingLeft: 36, paddingRight: searchQuery ? 32 : 12, height: 40, borderRadius: 10, fontSize: '0.8125rem' }}
+                style={{ height: 40, fontSize: '0.8125rem' }}
               />
               {searchQuery && (
-                <button onClick={clearSearch} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                <button className="search-bar-clear" onClick={clearSearch}>
                   <X size={14} />
                 </button>
               )}

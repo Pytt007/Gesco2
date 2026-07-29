@@ -310,16 +310,20 @@ export const CanteenPaymentView: React.FC = () => {
               <h6 style={{ fontWeight: 700, color: '#0f172a', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Search size={16} color="#0ea5e9" /> Rechercher un élève
               </h6>
-              <div style={{ position: 'relative' }}>
-                <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <div className="search-bar-wrapper">
+                <Search size={16} className="search-bar-icon" />
                 <input
                   type="text"
-                  className="form-control"
+                  className="search-bar-input"
                   placeholder="Nom, matricule, classe..."
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
-                  style={{ paddingLeft: 36, borderRadius: 10 }}
                 />
+                {searchQuery && (
+                  <button className="search-bar-clear" onClick={() => handleSearch('')}>
+                    <X size={14} />
+                  </button>
+                )}
               </div>
               {isSearching && <p className="text-muted text-xs mt-2">Recherche en cours...</p>}
               {searchResults.length > 0 && (

@@ -19,6 +19,7 @@ import {
   Eye,
   PlusCircle,
   TrendingUp,
+  X,
 } from 'lucide-react';
 
 const LEVEL_OPTIONS: { code: TuitionLevelCode | 'ALL'; name: string }[] = [
@@ -229,16 +230,20 @@ export const FinancialTrackingView: React.FC = () => {
           <div className="row g-3 align-items-center">
             {/* Recherche texte */}
             <div className="col-12 col-md-4">
-              <div style={{ position: 'relative' }}>
-                <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <div className="search-bar-wrapper">
+                <Search size={16} className="search-bar-icon" />
                 <input
                   type="text"
-                  className="form-input text-sm"
-                  style={{ paddingLeft: '36px' }}
+                  className="search-bar-input"
                   placeholder="Recherche par Nom, Prénom, Matricule ou Responsable..."
                   value={filters.search}
                   onChange={(e) => updateFilter('search', e.target.value)}
                 />
+                {filters.search && (
+                  <button className="search-bar-clear" onClick={() => updateFilter('search', '')}>
+                    <X size={14} />
+                  </button>
+                )}
               </div>
             </div>
 
