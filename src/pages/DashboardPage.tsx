@@ -632,11 +632,11 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
               <span className="badge badge-success">98.2% Présence</span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', height: 220 }}>
-              <div style={{ width: 160, height: 160 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1.5rem', height: 240, padding: '0 0.5rem' }}>
+              <div style={{ width: 150, height: 150, flexShrink: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={ATTENDANCE_PIE_DATA} innerRadius={50} outerRadius={75} dataKey="value" paddingAngle={4}>
+                    <Pie data={ATTENDANCE_PIE_DATA} innerRadius={48} outerRadius={72} dataKey="value" paddingAngle={4}>
                       {ATTENDANCE_PIE_DATA.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
@@ -646,12 +646,16 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
                 </ResponsiveContainer>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8125rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, minWidth: 0 }}>
                 {ATTENDANCE_PIE_DATA.map((item) => (
-                  <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: 12, height: 12, borderRadius: '3px', background: item.color }} />
-                    <span style={{ fontWeight: 600 }}>{item.name} :</span>
-                    <strong style={{ color: '#0f172a' }}>{item.value}%</strong>
+                  <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '3px', background: item.color, flexShrink: 0 }} />
+                    <span style={{ fontWeight: 600, color: 'var(--text-secondary, #475569)', fontSize: '0.8125rem', whiteSpace: 'nowrap' }}>
+                      {item.name} :
+                    </span>
+                    <strong style={{ color: '#0f172a', fontWeight: 800, fontSize: '0.8125rem', marginLeft: 'auto' }}>
+                      {item.value}%
+                    </strong>
                   </div>
                 ))}
               </div>
