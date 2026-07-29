@@ -53,16 +53,16 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOp
   return (
     <header className="header" style={{ padding: '0.875rem 2rem', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
       
-      {/* ── FIL D'ARIANE (BREADCRUMB) ────────────────────────────────────────── */}
+      {/* ── FIL D'ARIANE (BREADCRUMB DATAVIZ) ────────────────────────────────── */}
       <div>
         <nav aria-label="Fil d'ariane" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78125rem', color: 'var(--text-muted)' }}>
           <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>GESCO</span>
           <ChevronRight size={12} />
           <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{groupLabel}</span>
           <ChevronRight size={12} />
-          <span style={{ fontWeight: 700, color: '#4f46e5' }}>{pageTitle}</span>
+          <span style={{ fontWeight: 700, color: '#6f42c1' }}>{pageTitle}</span>
         </nav>
-        <h1 className="header-title" style={{ fontSize: '1.25rem', fontWeight: 800, margin: '2px 0 0' }}>
+        <h1 className="header-title" style={{ fontSize: '1.25rem', fontWeight: 800, margin: '2px 0 0', color: '#1e293b' }}>
           {pageTitle}
         </h1>
       </div>
@@ -70,9 +70,9 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOp
       {/* ── ACTIONS DROITE (RECHERCHE CTRL+K, ANNÉE, ENTERPRISE BADGE, THEME) ── */}
       <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         
-        {/* Badge Enterprise 30k€ */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, color: '#047857' }}>
-          <ShieldCheck size={14} color="#10b981" /> Enterprise Edition
+        {/* Badge Enterprise Dataviz */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#e6f9f4', border: '1px solid #a7f3d0', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, color: '#047857' }}>
+          <ShieldCheck size={14} color="#20c997" /> Enterprise Edition
         </div>
 
         {/* Raccourci Command Palette (CTRL + K) */}
@@ -85,37 +85,37 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOp
             gap: '8px',
             background: 'var(--bg-surface-hover)',
             border: '1px solid var(--border)',
-            borderRadius: '10px',
-            padding: '6px 12px',
+            borderRadius: '20px',
+            padding: '6px 14px',
             color: 'var(--text-secondary)',
             fontSize: '0.8125rem',
             fontWeight: 500,
           }}
           title="Rechercher partout (CTRL + K)"
         >
-          <Search size={14} color="#4f46e5" />
-          <span>Recherche</span>
+          <Search size={14} color="#6f42c1" />
+          <span>Recherche...</span>
           <span style={{ fontSize: '0.65rem', background: 'var(--border)', padding: '1px 6px', borderRadius: '4px', fontWeight: 700, color: 'var(--text-muted)' }}>
             ⌘K
           </span>
         </button>
 
-        {/* Sélecteur d'Année Scolaire */}
+        {/* Sélecteur d'Année Scolaire Bouton Dataviz Violet */}
         <div style={{ position: 'relative' }}>
           <button
             id="btn-year-selector"
-            className="year-selector"
+            className="btn"
             onClick={() => setYearDropdownOpen(!yearDropdownOpen)}
             aria-expanded={yearDropdownOpen}
             aria-haspopup="listbox"
-            style={{ borderRadius: '10px', padding: '6px 12px', fontSize: '0.8125rem' }}
+            style={{ borderRadius: '20px', padding: '6px 14px', fontSize: '0.8125rem', background: '#6f42c1', color: '#ffffff', border: 'none', boxShadow: '0 2px 8px rgba(111, 66, 193, 0.3)' }}
           >
-            <CalendarRange size={15} style={{ color: '#4f46e5' }} />
-            <span>{schoolYear}</span>
+            <CalendarRange size={15} style={{ color: '#ffffff' }} />
+            <span style={{ fontWeight: 700 }}>{schoolYear}</span>
             <ChevronDown
               size={13}
               style={{
-                color: 'var(--text-muted)',
+                color: '#ffffff',
                 transform: yearDropdownOpen ? 'rotate(180deg)' : 'none',
                 transition: 'transform 0.2s ease',
               }}

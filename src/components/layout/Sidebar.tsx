@@ -121,64 +121,81 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
         transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
-      {/* ── EN-TÊTE LOGO & BOUTON TOGGLE ────────────────────────────────────── */}
-      <div className="sidebar-logo" style={{ justifyContent: isCollapsed ? 'center' : 'space-between', padding: '1.25rem 1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <img
-            src="/logo-dark.png"
-            alt="GESCO"
-            style={{ width: 36, height: 36, objectFit: 'contain' }}
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-          />
-          {!isCollapsed && (
-            <div className="sidebar-logo-text">
-              <span className="sidebar-logo-title">GESCO</span>
-              <span className="sidebar-logo-subtitle">ERP Primaire</span>
-            </div>
-          )}
-        </div>
-
-        <button
-          className="btn btn-ghost btn-sm"
-          onClick={toggleCollapse}
-          title={isCollapsed ? 'Déplier la sidebar' : 'Réduire la sidebar'}
-          style={{ color: 'rgba(255,255,255,0.7)', padding: '4px' }}
-        >
-          {isCollapsed ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
-        </button>
-      </div>
-
-      {/* ── BADGE ANNÉE SCOLAIRE & BOUTON COMMAND PALETTE ────────────────────── */}
-      {!isCollapsed && (
-        <div style={{ padding: '0 1rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div
-            onClick={onOpenCommandPalette}
-            style={{
+      {/* ── BANDEAU VIOLET SUPÉRIEUR DATAVIZ (LOGO & PROFIL) ───────────────────── */}
+      <div style={{
+        background: 'linear-gradient(135deg, #7928ca 0%, #6f42c1 100%)',
+        color: '#ffffff',
+        padding: isCollapsed ? '1rem 0.5rem' : '1.25rem 1.25rem 1rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.875rem',
+        boxShadow: '0 4px 14px rgba(111, 66, 193, 0.25)',
+      }}>
+        {/* Ligne Logo & Toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: isCollapsed ? 'center' : 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{
+              width: 32,
+              height: 32,
+              borderRadius: '10px',
+              background: 'rgba(255,255,255,0.22)',
+              backdropFilter: 'blur(4px)',
               display: 'flex',
               alignItems: 'center',
-              justify: 'space-between',
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '8px',
-              padding: '0.45rem 0.75rem',
-              color: 'rgba(255,255,255,0.75)',
-              fontSize: '0.78125rem',
-              cursor: 'pointer',
-            }}
-          >
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Search size={14} /> Recherche...
-            </span>
-            <span style={{ fontSize: '0.65rem', background: 'rgba(255,255,255,0.15)', padding: '1px 5px', borderRadius: '4px' }}>
-              Ctrl+K
-            </span>
+              justify: 'center',
+              fontWeight: 900,
+              fontSize: '1rem',
+              color: '#ffffff',
+            }}>
+              G
+            </div>
+            {!isCollapsed && (
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: '1.0625rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.01em', lineHeight: 1.1 }}>
+                  GESCO
+                </span>
+                <span style={{ fontSize: '0.625rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  ERP Scolaire
+                </span>
+              </div>
+            )}
           </div>
 
-          <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', background: 'rgba(79,70,229,0.2)', padding: '4px 8px', borderRadius: '6px', textAlign: 'center', fontWeight: 600 }}>
-            📅 Année Scolaire {schoolYear}
-          </div>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={toggleCollapse}
+            title={isCollapsed ? 'Déplier' : 'Réduire'}
+            style={{ color: '#ffffff', padding: '4px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px' }}
+          >
+            {isCollapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
+          </button>
         </div>
-      )}
+
+        {/* Profil Utilisateur Intégré au Bandeau Violet (Format Dataviz Mockup) */}
+        {!isCollapsed && currentUser && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            paddingTop: '0.625rem',
+            borderTop: '1px solid rgba(255,255,255,0.2)',
+          }}>
+            <img
+              src={currentUser.avatarUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${currentUser.username}`}
+              alt={currentUser.fullName}
+              style={{ width: 38, height: 38, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.6)', objectFit: 'cover' }}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+              <span style={{ fontSize: '0.84375rem', fontWeight: 800, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {currentUser.fullName}
+              </span>
+              <span style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>
+                {ROLE_LABELS[currentUser.role] || currentUser.role}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* ── LISTE DE NAVIGATION PRINCIPALE ─────────────────────────────────── */}
       <div className="sidebar-nav" style={{ padding: '0.5rem 0' }}>

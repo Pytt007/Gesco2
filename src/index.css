@@ -7,64 +7,64 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap');
 
-/* ─── Variables Design Tokens ─────────────────────────────────────────────── */
+/* ─── Variables Design Tokens (Charte Dataviz Dashboard) ─────────────────── */
 :root {
-  /* Couleurs Primaires — Bleus Vifs */
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-primary-light: #eff6ff;
-  --color-primary-glass: rgba(37, 99, 235, 0.12);
+  /* Palette de marque Dataviz */
+  --color-primary: #6f42c1;
+  --color-primary-hover: #59359a;
+  --color-primary-light: #f3ebfc;
+  --color-primary-glass: rgba(111, 66, 193, 0.12);
 
-  /* Couleurs Secondaires & Gradients */
-  --color-success: #10b981;
-  --color-success-light: #d1fae5;
-  --color-warning: #f97316;
-  --color-warning-light: #ffedd5;
-  --color-danger: #ef4444;
-  --color-danger-light: #fee2e2;
-  --color-info: #3b82f6;
-  --color-info-light: #dbeafe;
+  --color-success: #20c997;
+  --color-success-light: #e6f9f4;
+  --color-warning: #ffc107;
+  --color-warning-light: #fff9e6;
+  --color-danger: #dc3545;
+  --color-danger-light: #fce8ea;
+  --color-info: #007bff;
+  --color-info-light: #e6f0ff;
+  --color-dark: #2b303a;
 
-  /* Gradients KPI Design */
-  --kpi-gradient-blue: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
-  --kpi-gradient-pink: linear-gradient(135deg, #e11d48 0%, #ec4899 100%);
-  --kpi-gradient-orange: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
-  --kpi-gradient-green: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  /* Gradients Dataviz Top KPI */
+  --kpi-gradient-violet: linear-gradient(135deg, #7928ca 0%, #6f42c1 100%);
+  --kpi-gradient-teal: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
+  --kpi-gradient-blue: linear-gradient(135deg, #007bff 0%, #2563eb 100%);
+  --kpi-gradient-dark: linear-gradient(135deg, #343a40 0%, #2b303a 100%);
 
-  /* Surfaces (Mode Clair) */
-  --bg-app: #f4f6fc;
+  /* Surfaces (Dataviz Light Theme) */
+  --bg-app: #f2f4f8;
   --bg-surface: #ffffff;
-  --bg-surface-hover: #f8fafc;
-  --bg-sidebar: #2251d2;
-  --bg-sidebar-hover: rgba(255, 255, 255, 0.12);
-  --bg-sidebar-active: rgba(255, 255, 255, 0.22);
+  --bg-surface-hover: #f8f9fa;
+  --bg-sidebar: #ffffff;
+  --bg-sidebar-header: #6f42c1;
+  --bg-sidebar-hover: #f3ebfc;
+  --bg-sidebar-active: #6f42c1;
 
   /* Textes */
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
   --text-muted: #94a3b8;
-  --text-sidebar: rgba(255,255,255,0.85);
+  --text-sidebar: #495057;
   --text-sidebar-active: #ffffff;
 
   /* Bordures */
-  --border: #e2e8f0;
-  --border-light: rgba(226, 232, 240, 0.6);
+  --border: #e9ecef;
+  --border-light: rgba(233, 236, 239, 0.7);
 
-  /* Ombres */
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
-  --shadow-colored: 0 4px 20px rgba(79, 70, 229, 0.2);
+  /* Ombres Douces Dataviz */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.08);
 
   /* Sidebar */
-  --sidebar-width: 240px;
-  --sidebar-collapsed-width: 68px;
+  --sidebar-width: 250px;
+  --sidebar-collapsed-width: 72px;
 
   /* Transitions */
   --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* Border Radius */
+  /* Border Radius Dataviz */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;

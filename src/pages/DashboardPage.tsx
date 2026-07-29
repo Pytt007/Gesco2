@@ -428,141 +428,111 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
       {isWidgetVisible('w-kpis') && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '2rem' }}>
           
-          {/* Card 1 : Total Élèves (Bleu) */}
+          {/* Card 1 : Total Élèves (Violet Dataviz) */}
           <div
             className="card-hover"
             onClick={() => handleNavigate('STUDENTS')}
             style={{
-              background: 'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)',
+              background: 'linear-gradient(135deg, #7928ca 0%, #6f42c1 100%)',
               borderRadius: '16px',
-              padding: '1.35rem 1.25rem',
+              padding: '1.5rem',
               color: '#ffffff',
               position: 'relative',
               overflow: 'hidden',
               cursor: 'pointer',
-              boxShadow: '0 8px 20px rgba(37, 99, 235, 0.25)'
+              boxShadow: '0 8px 24px rgba(111, 66, 193, 0.28)'
             }}
           >
-            <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)' }} />
-            
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em', color: 'rgba(255,255,255,0.85)' }}>
-                TOTAL ÉLÈVES
-              </span>
-              <div style={{ width: 38, height: 38, borderRadius: '10px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <GraduationCap size={20} color="#ffffff" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <GraduationCap size={18} color="#ffffff" />
+                </div>
+                <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#ffffff' }}>Élèves</span>
               </div>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 10px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>
+                Actifs +2
+              </span>
             </div>
 
-            <div style={{ marginTop: '0.5rem' }}>
-              <div style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1 }}>
+            <div style={{ marginTop: '0.875rem' }}>
+              <div style={{ fontSize: '2.4rem', fontWeight: 900, lineHeight: 1, fontFamily: "'Outfit', sans-serif" }}>
                 {kpis?.totalStudents ?? 0}
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', marginTop: '0.5rem', fontWeight: 600 }}>
-                ↗ +2 ce mois
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', marginTop: '0.5rem', fontWeight: 500 }}>
+                Total inscrits cette année
               </div>
             </div>
           </div>
 
-          {/* Card 2 : Revenus Mois (Rose/Magenta) */}
+          {/* Card 2 : Cantine / Sarcelle (Dataviz Teal) */}
           <div
             className="card-hover"
-            onClick={() => handleNavigate('SCOLARITY')}
+            onClick={() => handleNavigate('CANTEEN')}
             style={{
-              background: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
+              background: 'linear-gradient(135deg, #17a2b8 0%, #20c997 100%)',
               borderRadius: '16px',
-              padding: '1.35rem 1.25rem',
+              padding: '1.5rem',
               color: '#ffffff',
               position: 'relative',
               overflow: 'hidden',
               cursor: 'pointer',
-              boxShadow: '0 8px 20px rgba(236, 72, 153, 0.25)'
+              boxShadow: '0 8px 24px rgba(32, 201, 151, 0.28)'
             }}
           >
-            <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)' }} />
-
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em', color: 'rgba(255,255,255,0.85)' }}>
-                REVENUS (MOIS)
-              </span>
-              <div style={{ width: 38, height: 38, borderRadius: '10px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <CreditCard size={20} color="#ffffff" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <UtensilsCrossed size={18} color="#ffffff" />
+                </div>
+                <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#ffffff' }}>Cantine</span>
               </div>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 10px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>
+                Abonnés 83%
+              </span>
             </div>
 
-            <div style={{ marginTop: '0.5rem' }}>
-              <div style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1 }}>
+            <div style={{ marginTop: '0.875rem' }}>
+              <div style={{ fontSize: '2.4rem', fontWeight: 900, lineHeight: 1, fontFamily: "'Outfit', sans-serif" }}>
+                {kpis?.canteenSubscribersCount ?? 118}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', marginTop: '0.5rem', fontWeight: 500 }}>
+                Inscrits au service repas
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3 : Revenus / Bleu Roi (Dataviz Royal Blue) */}
+          <div
+            className="card-hover"
+            onClick={() => handleNavigate('SCOLARITY')}
+            style={{
+              background: 'linear-gradient(135deg, #007bff 0%, #2563eb 100%)',
+              borderRadius: '16px',
+              padding: '1.5rem',
+              color: '#ffffff',
+              position: 'relative',
+              overflow: 'hidden',
+              cursor: 'pointer',
+              boxShadow: '0 8px 24px rgba(0, 123, 255, 0.28)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CreditCard size={18} color="#ffffff" />
+                </div>
+                <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#ffffff' }}>Revenus</span>
+              </div>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 10px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>
+                Encaissements
+              </span>
+            </div>
+
+            <div style={{ marginTop: '0.875rem' }}>
+              <div style={{ fontSize: '2.4rem', fontWeight: 900, lineHeight: 1, fontFamily: "'Outfit', sans-serif" }}>
                 {`${(kpis?.collectedAmount ?? 0).toLocaleString('fr-FR')} F`}
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', marginTop: '0.5rem', fontWeight: 600 }}>
-                ↗ +5% ce mois
-              </div>
-            </div>
-          </div>
-
-          {/* Card 3 : Frais en Retard (Orange) */}
-          <div
-            className="card-hover"
-            onClick={() => handleNavigate('SCOLARITY')}
-            style={{
-              background: 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)',
-              borderRadius: '16px',
-              padding: '1.35rem 1.25rem',
-              color: '#ffffff',
-              position: 'relative',
-              overflow: 'hidden',
-              cursor: 'pointer',
-              boxShadow: '0 8px 20px rgba(234, 88, 12, 0.25)'
-            }}
-          >
-            <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)' }} />
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em', color: 'rgba(255,255,255,0.85)' }}>
-                FRAIS EN RETARD
-              </span>
-              <div style={{ width: 38, height: 38, borderRadius: '10px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <AlertCircle size={20} color="#ffffff" />
-              </div>
-            </div>
-
-            <div style={{ marginTop: '0.5rem' }}>
-              <div style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1 }}>
-                {(kpis?.remainingAmount ?? 0) > 0 ? (kpis?.remainingAmount ?? 0).toLocaleString('fr-FR') : '0'}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', marginTop: '0.5rem', fontWeight: 600 }}>
-                &nbsp;
-              </div>
-            </div>
-          </div>
-
-          {/* Card 4 : Taux de Présence (Vert) */}
-          <div
-            className="card-hover"
-            onClick={() => handleNavigate('ATTENDANCE')}
-            style={{
-              background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
-              borderRadius: '16px',
-              padding: '1.35rem 1.25rem',
-              color: '#ffffff',
-              position: 'relative',
-              overflow: 'hidden',
-              cursor: 'pointer',
-              boxShadow: '0 8px 20px rgba(5, 150, 105, 0.25)'
-            }}
-          >
-            <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)' }} />
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em', color: 'rgba(255,255,255,0.85)' }}>
-                TAUX DE PRÉSENCE
-              </span>
-              <div style={{ width: 38, height: 38, borderRadius: '10px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <CheckCircle2 size={20} color="#ffffff" />
-              </div>
-            </div>
-
-            <div style={{ marginTop: '0.5rem' }}>
               <div style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1 }}>
                 {`${kpis?.recoveryRatePercent ?? 0}%`}
               </div>
