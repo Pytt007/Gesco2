@@ -752,23 +752,28 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
         {/* WIDGET 7 : CHRONOLOGIE DES ACTIVITÉS RÉCENTES */}
         {isWidgetVisible('w-activities') && (
           <div className="card shadow-sm p-4" style={{ borderRadius: '16px', border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Clock size={18} color="#4f46e5" /> Activités Récentes & Audit Logs
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.0625rem', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Clock size={18} color="#6f42c1" /> Activités Récentes & Audit Logs
               </h3>
               
-              <select
-                className="form-select"
-                style={{ width: 130, padding: '2px 8px', fontSize: '0.75rem' }}
-                value={activityFilter}
-                onChange={(e) => setActivityFilter(e.target.value)}
-              >
-                <option value="ALL">Toutes</option>
-                <option value="PAYMENT">Paiements</option>
-                <option value="ENROLLMENT">Inscriptions</option>
-                <option value="EXPENSE">Dépenses</option>
-                <option value="REPORT">Bulletins</option>
-              </select>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="badge badge-info" style={{ fontSize: '0.8125rem', padding: '0.4rem 0.875rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                  Flux Direct
+                </span>
+                <select
+                  className="form-select"
+                  style={{ width: 130, padding: '4px 8px', fontSize: '0.75rem', borderRadius: '12px' }}
+                  value={activityFilter}
+                  onChange={(e) => setActivityFilter(e.target.value)}
+                >
+                  <option value="ALL">Toutes</option>
+                  <option value="PAYMENT">Paiements</option>
+                  <option value="ENROLLMENT">Inscriptions</option>
+                  <option value="EXPENSE">Dépenses</option>
+                  <option value="REPORT">Bulletins</option>
+                </select>
+              </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
