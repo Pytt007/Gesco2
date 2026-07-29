@@ -426,7 +426,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
 
       {/* ── WIDGET 1 : CARTES KPI AVEC DÉGRADÉS FLUIDES (IMAGE REF) ───────── */}
       {isWidgetVisible('w-kpis') && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '2rem' }}>
           
           {/* Card 1 : Total Élèves (Bleu) */}
           <div
@@ -609,11 +609,11 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
       )}
 
       {/* ── DISPOSITION EN GRILLE DES WIDGETS ANONYMES (2 COLONNES) ─────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '2rem' }}>
         
         {/* WIDGET 3 : BILAN FINANCIER & RECOUVREMENT (GRAPHIC AREA) */}
         {isWidgetVisible('w-financial-chart') && (
-          <div className="card shadow-sm p-4" style={{ borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+          <div className="card shadow-sm p-6" style={{ borderRadius: '16px', border: '1px solid var(--border-color)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>
@@ -651,7 +651,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
 
         {/* WIDGET 4 : TAUX DE PRÉSENCE QUOTIDIEN (DONUT CHART) */}
         {isWidgetVisible('w-attendance-chart') && (
-          <div className="card shadow-sm p-4" style={{ borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+          <div className="card shadow-sm p-6" style={{ borderRadius: '16px', border: '1px solid var(--border-color)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>
@@ -691,7 +691,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
 
         {/* WIDGET 5 : RÉPARTITION PAR NIVEAU ET GENRE (BAR CHART) */}
         {isWidgetVisible('w-gender-chart') && (
-          <div className="card shadow-sm p-4" style={{ borderRadius: '16px', border: '1px solid var(--border-color)', gridColumn: 'span 2' }}>
+          <div className="card shadow-sm p-6" style={{ borderRadius: '16px', border: '1px solid var(--border-color)', gridColumn: 'span 2' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>

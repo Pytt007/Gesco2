@@ -154,7 +154,7 @@ p { color: var(--text-secondary); line-height: 1.7; }
 
 .gesco-content {
   flex: 1;
-  padding: 1.5rem 2rem;
+  padding: 2.25rem 2.75rem;
   overflow-x: hidden;
 }
 
@@ -363,9 +363,13 @@ p { color: var(--text-secondary); line-height: 1.7; }
   transform: translateY(-3px) scale(1.002);
 }
 
-.card-body { padding: 1.5rem; }
-.card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-light); background: rgba(255,255,255,0.02); }
-.card-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border-light); background: var(--bg-surface-hover); }
+.card-body { padding: 1.875rem 2rem; }
+.card-header { padding: 1.5rem 2rem; border-bottom: 1px solid var(--border-light); background: rgba(255,255,255,0.02); }
+.card-footer { padding: 1.25rem 2rem; border-top: 1px solid var(--border-light); background: var(--bg-surface-hover); }
+
+/* Utility classes pour du padding généreux */
+.p-4 { padding: 1.75rem 2rem !important; }
+.p-6 { padding: 2rem 2.25rem !important; }
 
 /* ─── Cartes Colorées avec Dégradés ─────────────────────────────────────── */
 /* Violet / Indigo (Élèves, Dashboard) */
@@ -920,13 +924,13 @@ tbody tr:hover td {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
-  gap: 1rem;
+  margin-bottom: 2.25rem;
+  gap: 1.5rem;
   flex-wrap: wrap;
 }
 
-.page-title { font-size: 1.375rem; font-weight: 800; }
-.page-subtitle { font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.125rem; }
+.page-title { font-size: 1.5rem; font-weight: 800; line-height: 1.3; }
+.page-subtitle { font-size: 0.84375rem; color: var(--text-muted); margin-top: 0.25rem; }
 
 /* ─── Select Année Scolaire ───────────────────────────────────────────────── */
 .year-selector {
