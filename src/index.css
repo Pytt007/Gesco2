@@ -169,11 +169,11 @@ p { color: var(--text-secondary); line-height: 1.7; }
 
 .gesco-content {
   flex: 1;
-  padding: 2.25rem 2.75rem;
+  padding: 2.5rem 3.25rem;
   overflow-x: hidden;
 }
 
-/* ─── Sidebar (Sans Scroll Horizontal) ─────────────────────────────────── */
+/* ─── Sidebar (Sans Scroll Horizontal & Espacement Aéré) ─────────────────── */
 .sidebar {
   position: fixed;
   top: 0;
@@ -191,10 +191,10 @@ p { color: var(--text-secondary); line-height: 1.7; }
 }
 
 .sidebar-logo {
-  padding: 1.5rem 1.25rem 1rem;
+  padding: 1.75rem 1.5rem 1.25rem;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.875rem;
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
@@ -231,7 +231,7 @@ p { color: var(--text-secondary); line-height: 1.7; }
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden !important;
-  padding: 0.75rem 0;
+  padding: 1rem 0;
 }
 
 .sidebar-section-label {
@@ -240,14 +240,14 @@ p { color: var(--text-secondary); line-height: 1.7; }
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #94a3b8;
-  padding: 1rem 1.25rem 0.375rem;
+  padding: 1.25rem 1.25rem 0.5rem;
 }
 
 .sidebar-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.625rem 1.25rem;
+  gap: 0.875rem;
+  padding: 0.6875rem 1.25rem;
   cursor: pointer;
   border-radius: 0;
   color: #475569;
@@ -260,7 +260,7 @@ p { color: var(--text-secondary); line-height: 1.7; }
   background: none;
   width: 100%;
   text-align: left;
-  margin: 0.0625rem 0;
+  margin: 0.125rem 0;
   white-space: nowrap;
 }
 
@@ -288,15 +288,15 @@ p { color: var(--text-secondary); line-height: 1.7; }
 .sidebar-item.active .sidebar-item-icon { opacity: 1; }
 
 .sidebar-footer {
-  padding: 0.75rem 0.5rem;
+  padding: 1rem 0.75rem;
   border-top: 1px solid var(--border);
 }
 
 .sidebar-user {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
-  padding: 0.625rem;
+  gap: 0.75rem;
+  padding: 0.75rem;
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: var(--transition);
@@ -305,8 +305,8 @@ p { color: var(--text-secondary); line-height: 1.7; }
 .sidebar-user:hover { background: var(--bg-sidebar-hover); }
 
 .sidebar-avatar {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: var(--radius-full);
   object-fit: cover;
   flex-shrink: 0;
@@ -342,11 +342,11 @@ p { color: var(--text-secondary); line-height: 1.7; }
   z-index: 50;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-light);
-  padding: 0.875rem 2rem;
+  padding: 1rem 2.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 1.25rem;
   box-shadow: var(--shadow-sm);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -357,10 +357,10 @@ p { color: var(--text-secondary); line-height: 1.7; }
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
+  gap: 0.75rem;
 }
 
-/* ─── Cards ───────────────────────────────────────────────────────────────── */
+/* ─── Cards (Aérées & Spacieuses) ─────────────────────────────────────────── */
 .card {
   background: var(--bg-surface);
   border: 1px solid var(--border-light);
@@ -383,13 +383,13 @@ p { color: var(--text-secondary); line-height: 1.7; }
   transform: translateY(-3px) scale(1.002);
 }
 
-.card-body { padding: 1.875rem 2rem; }
-.card-header { padding: 1.5rem 2rem; border-bottom: 1px solid var(--border-light); background: rgba(255,255,255,0.02); }
-.card-footer { padding: 1.25rem 2rem; border-top: 1px solid var(--border-light); background: var(--bg-surface-hover); }
+.card-body { padding: 2rem 2.25rem; }
+.card-header { padding: 1.75rem 2.25rem; border-bottom: 1px solid var(--border-light); background: rgba(255,255,255,0.02); }
+.card-footer { padding: 1.5rem 2.25rem; border-top: 1px solid var(--border-light); background: var(--bg-surface-hover); }
 
-/* Utility classes pour du padding généreux */
-.p-4 { padding: 1.75rem 2rem !important; }
-.p-6 { padding: 2rem 2.25rem !important; }
+/* Utility classes pour un padding généreux et aéré */
+.p-4 { padding: 1.875rem 2.25rem !important; }
+.p-6 { padding: 2.25rem 2.75rem !important; }
 
 /* ─── Cartes Colorées avec Dégradés ─────────────────────────────────────── */
 /* Violet / Indigo (Élèves, Dashboard) */
@@ -464,7 +464,7 @@ p { color: var(--text-secondary); line-height: 1.7; }
 }
 .card-amber:hover { transform: translateY(-3px) scale(1.01); box-shadow: 0 18px 48px rgba(245,158,11,0.45); }
 
-/* Rouge Corail (Dépenses, Danger) */
+/* Rose / Rouge (Alertes) */
 .card-rose {
   background: linear-gradient(135deg, #dc2626 0%, #ef4444 60%, #f87171 100%);
   border: 1px solid rgba(255,255,255,0.15);
@@ -595,7 +595,7 @@ p { color: var(--text-secondary); line-height: 1.7; }
   background: var(--bg-surface);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
-  padding: 1.375rem;
+  padding: 1.625rem 1.75rem;
   box-shadow: 0 2px 10px rgba(0,0,0,0.04);
   position: relative;
   overflow: hidden;
@@ -639,14 +639,14 @@ p { color: var(--text-secondary); line-height: 1.7; }
 }
 
 /* ─── Stat Cards avec fond coloré ────────────────────────────────────────── */
-.stat-card-indigo  { background: linear-gradient(135deg,#4f46e5,#7c3aed); border:none; color:#fff; box-shadow:0 8px 32px rgba(79,70,229,0.3); }
-.stat-card-emerald { background: linear-gradient(135deg,#059669,#10b981); border:none; color:#fff; box-shadow:0 8px 32px rgba(16,185,129,0.3); }
-.stat-card-amber   { background: linear-gradient(135deg,#d97706,#f59e0b); border:none; color:#fff; box-shadow:0 8px 32px rgba(245,158,11,0.3); }
-.stat-card-rose    { background: linear-gradient(135deg,#dc2626,#ef4444); border:none; color:#fff; box-shadow:0 8px 32px rgba(239,68,68,0.3); }
-.stat-card-sky     { background: linear-gradient(135deg,#0284c7,#0ea5e9); border:none; color:#fff; box-shadow:0 8px 32px rgba(14,165,233,0.3); }
-.stat-card-teal    { background: linear-gradient(135deg,#0d9488,#14b8a6); border:none; color:#fff; box-shadow:0 8px 32px rgba(20,184,166,0.3); }
-.stat-card-fuchsia { background: linear-gradient(135deg,#a21caf,#d946ef); border:none; color:#fff; box-shadow:0 8px 32px rgba(217,70,239,0.3); }
-.stat-card-orange  { background: linear-gradient(135deg,#c2410c,#ea580c); border:none; color:#fff; box-shadow:0 8px 32px rgba(234,88,12,0.3); }
+.stat-card-indigo  { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: #ffffff; border: none; }
+.stat-card-emerald { background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: #ffffff; border: none; }
+.stat-card-amber   { background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%); color: #ffffff; border: none; }
+.stat-card-rose    { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color: #ffffff; border: none; }
+.stat-card-sky     { background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%); color: #ffffff; border: none; }
+.stat-card-teal    { background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); color: #ffffff; border: none; }
+.stat-card-fuchsia { background: linear-gradient(135deg, #a21caf 0%, #d946ef 100%); color: #ffffff; border: none; }
+.stat-card-orange  { background: linear-gradient(135deg, #c2410c 0%, #ea580c 100%); color: #ffffff; border: none; }
 
 .stat-card-indigo:hover, .stat-card-emerald:hover, .stat-card-amber:hover,
 .stat-card-rose:hover, .stat-card-sky:hover, .stat-card-teal:hover,
@@ -678,8 +678,8 @@ p { color: var(--text-secondary); line-height: 1.7; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4375rem;
-  padding: 0.5625rem 1.125rem;
+  gap: 0.5rem;
+  padding: 0.6875rem 1.375rem;
   border-radius: var(--radius-md);
   font-size: 0.8125rem;
   font-weight: 600;
@@ -750,12 +750,12 @@ p { color: var(--text-secondary); line-height: 1.7; }
 }
 .btn-ghost:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
 
-.btn-sm { padding: 0.375rem 0.75rem; font-size: 0.75rem; border-radius: var(--radius-sm); }
-.btn-lg { padding: 0.75rem 1.5rem; font-size: 0.9375rem; border-radius: var(--radius-md); }
-.btn-xl { padding: 0.875rem 1.75rem; font-size: 1rem; border-radius: var(--radius-lg); }
+.btn-sm { padding: 0.4375rem 0.875rem; font-size: 0.75rem; border-radius: var(--radius-sm); }
+.btn-lg { padding: 0.875rem 1.75rem; font-size: 0.9375rem; border-radius: var(--radius-md); }
+.btn-xl { padding: 1rem 2rem; font-size: 1rem; border-radius: var(--radius-lg); }
 
 /* ─── Formulaires Modernes ───────────────────────────────────────────────── */
-.form-group { display: flex; flex-direction: column; gap: 0.4375rem; }
+.form-group { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem; }
 
 .form-label {
   font-size: 0.6875rem;
@@ -771,12 +771,13 @@ p { color: var(--text-secondary); line-height: 1.7; }
   background: var(--bg-surface);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 0.625rem 0.9375rem;
+  padding: 0.75rem 1.125rem;
   font-size: 0.875rem;
   font-family: inherit;
   font-weight: 500;
   color: var(--text-primary);
   width: 100%;
+  min-height: 44px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
   box-shadow: 0 1px 2px rgba(0,0,0,0.02);
@@ -793,8 +794,8 @@ p { color: var(--text-secondary); line-height: 1.7; }
 .form-input::placeholder { color: var(--text-muted); font-weight: 400; }
 .form-select { cursor: pointer; appearance: none; }
 
-/* ─── Tableaux Modernisés ─────────────────────────────────────────────────── */
-.table-wrapper {
+/* ─── Tableaux Ultra-Respirants ─────────────────────────────────────────── */
+.table-container {
   overflow-x: auto;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-light);
@@ -807,18 +808,18 @@ table { width: 100%; border-collapse: collapse; }
 thead th {
   background: var(--bg-app);
   font-size: 0.6875rem;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-muted);
-  padding: 0.875rem 1.125rem;
+  padding: 1.125rem 1.375rem;
   text-align: left;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 
 tbody td {
-  padding: 0.875rem 1.125rem;
+  padding: 1.125rem 1.375rem;
   font-size: 0.8125rem;
   color: var(--text-primary);
   border-bottom: 1px solid var(--border-light);
@@ -836,12 +837,12 @@ tbody tr:hover td {
   background: var(--bg-surface-hover);
 }
 
-/* ─── Badges Pilules Modernes avec Bordure Translucide ───────────────────── */
+/* ─── Badges Pilules Modernes Aérés ───────────────────────────────────────── */
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.3125rem;
-  padding: 0.25rem 0.6875rem;
+  gap: 0.375rem;
+  padding: 0.35rem 0.75rem;
   border-radius: var(--radius-full);
   font-size: 0.6875rem;
   font-weight: 700;
@@ -856,7 +857,7 @@ tbody tr:hover td {
 .badge-info    { background: var(--color-info-light);    color: #1d4ed8; border: 1px solid rgba(59, 130, 246, 0.25); }
 .badge-neutral { background: var(--bg-app); color: var(--text-secondary); border: 1px solid var(--border); }
 
-/* ─── Modales ─────────────────────────────────────────────────────────────── */
+/* ─── Modales Spacieuses ─────────────────────────────────────────────────── */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -866,7 +867,7 @@ tbody tr:hover td {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: 1.5rem;
   animation: fadeIn 0.2s ease;
 }
 
