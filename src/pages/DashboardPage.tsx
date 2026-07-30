@@ -588,7 +588,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
       )}
 
       {/* ── DISPOSITION EN GRILLE DES WIDGETS ANONYMES (2 COLONNES) ─────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem' }}>
         
         {/* WIDGET 3 : BILAN FINANCIER & RECOUVREMENT (GRAPHIC AREA) */}
         {isWidgetVisible('w-financial-chart') && (
