@@ -288,8 +288,6 @@ function AppContent() {
   );
 }
 
-import { ConfirmProvider } from './context/ConfirmContext';
-
 export default function App() {
   return (
     <ErrorBoundary>
