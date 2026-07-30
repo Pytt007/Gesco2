@@ -60,6 +60,8 @@ export default function StaffPage() {
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
 
+  const detailStaff = useMemo(() => staffMembers.find((s) => s.id === selectedStaffId), [staffMembers, selectedStaffId]);
+
   const emptyForm = (): Partial<StaffMember> => ({
     firstName: '',
     lastName: '',
@@ -287,8 +289,23 @@ export default function StaffPage() {
 
                     <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                        <button className="btn btn-ghost btn-sm" title="Voir Dossier" onClick={() => setSelectedStaffId(s.id)}>
+                          <Eye size={15} color="#4f46e5" />
+                        </button>
                         <button className="btn btn-ghost btn-sm" title="Modifier" onClick={() => handleOpenEdit(s)}>
                           <Edit2 size={15} color="#0ea5e9" />
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          title="Archiver / Supprimer"
+                          onClick={async () => {
+                            if (window.confirm(`Voulez-vous vraiment archiver l'employé ${s.lastName} ${s.firstName} ?`)) {
+                              const ok = await archive(s.id);
+                              if (ok) addNotification('success', `L'employé ${s.lastName} ${s.firstName} a été archivé avec succès.`);
+                            }
+                          }}
+                        >
+                          <Trash2 size={15} color="#ef4444" />
                         </button>
                       </div>
                     </td>
@@ -437,6 +454,54 @@ export default function StaffPage() {
         </div>
       )}
 
+      {/* ── POPUP MODAL CENTRAL DOSSIER EMPLOYE ────────────────────────────── */}
+      {detailStaff && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(15,23,42,0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ width: '100%', maxWidth: '560px', background: '#ffffff', borderRadius: '16px', boxShadow: '0 20px 50px rgba(0,0,0,0.25)', overflow: 'hidden', animation: 'slideUp 0.2s ease-out' }}>
+            <div style={{ padding: '16px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.125rem' }}>
+                  {detailStaff.firstName.charAt(0)}{detailStaff.lastName.charAt(0)}
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800, color: '#0f172a' }}>{detailStaff.lastName} {detailStaff.firstName}</h3>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Matricule : {detailStaff.matricule || detailStaff.id}</span>
+                </div>
+              </div>
+              <button className="btn btn-ghost btn-sm" onClick={() => setSelectedStaffId(null)}><X size={18} /></button>
+            </div>
+
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ padding: '14px', background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>FONCTION & STATUT</div>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f172a', marginTop: 4 }}>{detailStaff.role} ({detailStaff.jobTitle || 'Non renseigné'})</div>
+                <div style={{ marginTop: 6 }}>
+                  {STATUS_BADGES[detailStaff.status] || <span className="badge badge-neutral">{detailStaff.status}</span>}
+                </div>
+              </div>
+
+              <div style={{ padding: '14px', background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>CONTACT & REMUNERATION</div>
+                <div style={{ fontSize: '0.875rem', color: '#0f172a', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Phone size={13} color="#2563eb" /> {detailStaff.phone}
+                </div>
+                {detailStaff.email && (
+                  <div style={{ fontSize: '0.875rem', color: '#0f172a', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Mail size={13} color="#64748b" /> {detailStaff.email}
+                  </div>
+                )}
+                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a', marginTop: 8 }}>
+                  Salaire de base : {detailStaff.baseSalary ? `${detailStaff.baseSalary.toLocaleString('fr-FR')} FCFA` : 'Non renseigné'}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ padding: '12px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn btn-outline btn-sm" onClick={() => setSelectedStaffId(null)}>Fermer</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
