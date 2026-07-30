@@ -639,7 +639,20 @@ export default function CatalogPage() {
                             <button
                               className="btn-icon text-danger"
                               title={cat.isActive ? 'Désactiver' : 'Restaurer'}
-                              onClick={() => cat.isActive ? categoriesHook.archiveCategory(cat.id) : categoriesHook.restoreCategory(cat.id)}
+                              onClick={async () => {
+                                if (cat.isActive) {
+                                  const isConfirmed = await confirm({
+                                    title: 'Désactiver la catégorie',
+                                    message: `Désactiver la catégorie de matières "${cat.name}" ?`,
+                                    confirmText: 'Oui, désactiver',
+                                    cancelText: 'Annuler',
+                                    variant: 'warning',
+                                  });
+                                  if (isConfirmed) categoriesHook.archiveCategory(cat.id);
+                                } else {
+                                  categoriesHook.restoreCategory(cat.id);
+                                }
+                              }}
                               aria-label={`Basculer statut ${cat.name}`}
                             >
                               {cat.isActive ? <Trash2 size={16} /> : <RotateCcw size={16} />}

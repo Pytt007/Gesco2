@@ -6,6 +6,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSchoolYear } from '../context/SchoolYearContext';
 import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 import { useStudents, useMedicalRecord, useStudentDocuments, useStudentHistory } from '../hooks/students';
 import { useStudentParents } from '../hooks/parents/useStudentParents';
 import { listParents } from '../services/parents/parentsService';
@@ -39,6 +40,7 @@ const FEES_BADGE: Record<string, React.ReactNode> = {
 export default function StudentsPage() {
   const { schoolYear } = useSchoolYear();
   const { addNotification } = useToast();
+  const confirm = useConfirm();
 
   const {
     students = [],
@@ -409,7 +411,20 @@ export default function StudentsPage() {
                             <RotateCcw size={15} color="#10b981" />
                           </button>
                         ) : (
-                          <button className="btn btn-ghost btn-sm" title="Archiver" onClick={() => archive(st.id)}>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            title="Archiver"
+                            onClick={async () => {
+                              const isConfirmed = await confirm({
+                                title: "Archiver l'élève",
+                                message: `Voulez-vous vraiment archiver le dossier de l'élève ${st.lastName} ${st.firstName} ?`,
+                                confirmText: 'Oui, archiver',
+                                cancelText: 'Annuler',
+                                variant: 'danger',
+                              });
+                              if (isConfirmed) archive(st.id);
+                            }}
+                          >
                             <Trash2 size={15} color="#ef4444" />
                           </button>
                         )}
