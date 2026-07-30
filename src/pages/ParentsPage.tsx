@@ -285,6 +285,18 @@ export default function ParentsPage({ onNavigate }: ParentsPageProps) {
                         <button className="btn btn-ghost btn-sm" title="Modifier" onClick={() => handleOpenEdit(p)}>
                           <Edit2 size={15} color="#0ea5e9" />
                         </button>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          title="Archiver / Supprimer"
+                          onClick={async () => {
+                            if (window.confirm(`Voulez-vous vraiment archiver le responsable ${p.lastName} ${p.firstName} ?`)) {
+                              const ok = await archive(p.id);
+                              if (ok) addNotification('success', `Le responsable ${p.lastName} ${p.firstName} a été archivé.`);
+                            }
+                          }}
+                        >
+                          <Trash2 size={15} color="#ef4444" />
+                        </button>
                       </div>
                     </td>
                   </tr>
