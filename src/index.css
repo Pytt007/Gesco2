@@ -870,6 +870,60 @@ p { color: var(--text-secondary); line-height: 1.7; }
 .form-input::placeholder { color: var(--text-muted); font-weight: 400; }
 .form-select { cursor: pointer; appearance: none; }
 
+/* ─── Style de Liste Épurée avec Puces Colorées ──────────────────────────── */
+.gesco-dot-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.gesco-dot-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s ease;
+}
+
+.gesco-dot-item:last-child {
+  border-bottom: none;
+}
+
+.gesco-dot-bullet {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.gesco-dot-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.gesco-dot-title {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: #0f172a;
+  line-height: 1.3;
+  margin-bottom: 2px;
+}
+
+.gesco-dot-subtitle {
+  font-size: 0.8125rem;
+  color: #64748b;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.gesco-dot-time {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
 /* ─── Tableaux Ultra-Respirants ─────────────────────────────────────────── */
 .table-container {
   overflow-x: auto;

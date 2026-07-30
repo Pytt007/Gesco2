@@ -721,7 +721,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
         {/* WIDGET 6 : CENTRE D'ALERTES INTELLIGENTES */}
         {isWidgetVisible('w-alerts') && alerts.length > 0 && (
           <div className="card shadow-sm p-4" style={{ borderRadius: '16px', border: '1px solid var(--border-color)' }}>
-            <div style={{ marginBottom: '1.25rem' }}>
+            <div style={{ marginBottom: '1rem' }}>
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.375rem' }}>
                 <span className="badge badge-warning" style={{ fontSize: '0.8125rem', padding: '0.4rem 0.875rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
                   {alerts.length} alerte(s)
@@ -732,29 +732,19 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
               </h3>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div className="gesco-dot-list">
               {alerts.map((alt) => (
-                <div
-                  key={alt.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '12px 14px',
-                    background: '#f8fafc',
-                    borderRadius: '10px',
-                    borderLeft: `4px solid ${alt.colorHex}`,
-                  }}
-                >
-                  <div>
-                    <h5 style={{ margin: 0, fontWeight: 700, fontSize: '0.85rem', color: '#0f172a' }}>{alt.title}</h5>
-                    <p style={{ margin: '2px 0 0', fontSize: '0.78125rem', color: '#64748b' }}>{alt.message}</p>
+                <div key={alt.id} className="gesco-dot-item">
+                  <div className="gesco-dot-bullet" style={{ backgroundColor: alt.colorHex }} />
+                  <div className="gesco-dot-content">
+                    <div className="gesco-dot-title">{alt.title}</div>
+                    <div className="gesco-dot-subtitle">{alt.message}</div>
                   </div>
                   {alt.actionView && canAccess(alt.actionView) && (
                     <button
                       className="btn btn-outline btn-sm"
                       onClick={() => handleNavigate(alt.actionView!)}
-                      style={{ fontSize: '0.7rem', padding: '4px 10px', borderRadius: '6px', flexShrink: 0, marginLeft: 8 }}
+                      style={{ fontSize: '0.75rem', padding: '4px 12px', borderRadius: '8px', flexShrink: 0, marginLeft: 8 }}
                     >
                       {alt.actionText || 'Consulter'}
                     </button>
@@ -768,7 +758,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
         {/* WIDGET 7 : CHRONOLOGIE DES ACTIVITÉS RÉCENTES */}
         {isWidgetVisible('w-activities') && (
           <div className="card shadow-sm p-4" style={{ borderRadius: '16px', border: '1px solid var(--border-color)' }}>
-            <div style={{ marginBottom: '1.25rem' }}>
+            <div style={{ marginBottom: '1rem' }}>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginBottom: '0.375rem' }}>
                 <span className="badge badge-info" style={{ fontSize: '0.8125rem', padding: '0.4rem 0.875rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
                   Flux Direct
@@ -791,15 +781,15 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
               </h3>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="gesco-dot-list">
               {filteredActivities.slice(0, 5).map((act) => (
-                <div key={act.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', paddingBottom: '10px', borderBottom: '1px solid #f1f5f9' }}>
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: act.badgeColor, marginTop: 6, flexShrink: 0 }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#0f172a' }}>{act.title}</div>
-                    <div style={{ fontSize: '0.78125rem', color: '#64748b', marginTop: '2px' }}>{act.description}</div>
+                <div key={act.id} className="gesco-dot-item">
+                  <div className="gesco-dot-bullet" style={{ backgroundColor: act.badgeColor }} />
+                  <div className="gesco-dot-content">
+                    <div className="gesco-dot-title">{act.title}</div>
+                    <div className="gesco-dot-subtitle">{act.description}</div>
                   </div>
-                  <span style={{ fontSize: '0.725rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>{act.timestamp}</span>
+                  <span className="gesco-dot-time">{act.timestamp}</span>
                 </div>
               ))}
             </div>

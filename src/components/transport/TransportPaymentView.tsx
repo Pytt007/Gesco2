@@ -242,16 +242,25 @@ export const TransportPaymentView: React.FC = () => {
               </div>
               {isSearching && <p className="text-muted text-xs mt-2">Recherche...</p>}
               {searchResults.length > 0 && (
-                <div style={{ marginTop: 8, border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
-                  {searchResults.map((e) => (
-                    <button key={e.id} className="btn btn-light w-100 text-start" style={{ borderRadius: 0, padding: '10px 14px', borderBottom: '1px solid #f1f5f9' }} onClick={() => handleSelectEnrollment(e)}>
-                      <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{e.studentName}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{e.lineName} · {e.matricule}</div>
-                      <div style={{ fontSize: '0.75rem', color: e.remainingBalance === 0 ? '#16a34a' : '#ef4444', fontWeight: 600 }}>
-                        {e.remainingBalance === 0 ? '✅ Soldé' : `${e.remainingBalance.toLocaleString('fr-FR')} F restants`}
+                <div style={{ marginTop: 8, border: '1px solid #e2e8f0', borderRadius: 12, background: '#ffffff', overflow: 'hidden', padding: '0 12px' }}>
+                  <div className="gesco-dot-list">
+                    {searchResults.map((e) => (
+                      <div
+                        key={e.id}
+                        className="gesco-dot-item"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => handleSelectEnrollment(e)}
+                      >
+                        <div className="gesco-dot-bullet" style={{ backgroundColor: e.remainingBalance === 0 ? '#10b981' : '#ef4444' }} />
+                        <div className="gesco-dot-content">
+                          <div className="gesco-dot-title">{e.studentName}</div>
+                          <div className="gesco-dot-subtitle">
+                            {e.lineName} · {e.matricule} · {e.remainingBalance === 0 ? 'Soldé' : `${e.remainingBalance.toLocaleString('fr-FR')} F restants`}
+                          </div>
+                        </div>
                       </div>
-                    </button>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

@@ -156,20 +156,23 @@ export const CanteenEnrollmentView: React.FC = () => {
                 )}
               </div>
               {searchResults.length > 0 && (
-                <div style={{ marginTop: 8, border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
-                  {searchResults.map((s) => (
-                    <button
-                      key={s.id}
-                      className="btn btn-light w-100 text-start"
-                      style={{ borderRadius: 0, padding: '10px 14px', borderBottom: '1px solid #f1f5f9' }}
-                      onClick={() => handleSelectStudent(s)}
-                    >
-                      <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#1e293b' }}>{s.name}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                        {s.matricule} — {s.className}
+                <div style={{ marginTop: 8, border: '1px solid #e2e8f0', borderRadius: 12, background: '#ffffff', overflow: 'hidden', padding: '0 12px' }}>
+                  <div className="gesco-dot-list">
+                    {searchResults.map((s) => (
+                      <div
+                        key={s.id}
+                        className="gesco-dot-item"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => handleSelectStudent(s)}
+                      >
+                        <div className="gesco-dot-bullet" style={{ backgroundColor: '#2563eb' }} />
+                        <div className="gesco-dot-content">
+                          <div className="gesco-dot-title">{s.name}</div>
+                          <div className="gesco-dot-subtitle">{s.matricule} — {s.className}</div>
+                        </div>
                       </div>
-                    </button>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
