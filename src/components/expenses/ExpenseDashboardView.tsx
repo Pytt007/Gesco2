@@ -6,8 +6,8 @@ import { useAcademicYears } from '../../hooks/academic';
 import { useSchoolYear } from '../../context/SchoolYearContext';
 import { downloadExcel } from '../../utils/exportUtils';
 import {
-  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, Legend,
+  PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, Tooltip,
+  ResponsiveContainer, Legend, CartesianGrid,
 } from 'recharts';
 import {
   TrendingDown, DollarSign, Building, Shield, Hash, Calculator,
@@ -295,16 +295,19 @@ export const ExpenseDashboardView: React.FC = () => {
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      outerRadius={90}
-                      innerRadius={50}
-                      paddingAngle={3}
+                      outerRadius={105}
+                      innerRadius={70}
+                      paddingAngle={2}
+                      startAngle={90}
+                      endAngle={-270}
                     >
                       {stats.categoryDistribution.map((entry) => (
-                        <Cell key={entry.categoryId} fill={entry.color} />
+                        <Cell key={entry.categoryId} fill={entry.color} strokeWidth={0} />
                       ))}
                     </Pie>
                     <Tooltip
                       formatter={(value: any) => [`${Number(value).toLocaleString('fr-FR')} FCFA`, 'Montant']}
+                      contentStyle={{ borderRadius: 10, border: '1px solid #e2e8f0', fontSize: '0.8125rem' }}
                     />
                     <Legend />
                   </PieChart>
@@ -323,12 +326,16 @@ export const ExpenseDashboardView: React.FC = () => {
 
             <div style={{ height: 280, width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats.monthlyEvolution} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#64748b' }} />
-                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `${(val / 1000).toLocaleString()}k`} />
-                  <Tooltip formatter={(value: any) => [`${Number(value).toLocaleString('fr-FR')} FCFA`, 'Dépenses']} />
-                  <Bar dataKey="amount" name="Montant mensuel" fill="#2563eb" radius={[6, 6, 0, 0]} />
-                </BarChart>
+                <LineChart data={stats.monthlyEvolution} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `${(val / 1000).toLocaleString()}k`} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    formatter={(value: any) => [`${Number(value).toLocaleString('fr-FR')} FCFA`, 'Dépenses']}
+                    contentStyle={{ borderRadius: 10, border: '1px solid #e2e8f0', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', fontSize: '0.8125rem' }}
+                  />
+                  <Line type="natural" dataKey="amount" name="Montant mensuel" stroke="#2563eb" strokeWidth={2.5} dot={false} activeDot={{ r: 5, fill: '#2563eb' }} />
+                </LineChart>
               </ResponsiveContainer>
             </div>
           </div>

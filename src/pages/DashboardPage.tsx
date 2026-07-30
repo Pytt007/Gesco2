@@ -17,7 +17,7 @@ import {
   Bell, Check, Filter, User, HelpCircle, CheckSquare
 } from 'lucide-react';
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer,
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer,
   XAxis, YAxis, Tooltip, CartesianGrid, Legend
 } from 'recharts';
 
@@ -58,9 +58,9 @@ const FINANCIAL_CHART_DATA = [
 
 // Graphique Présences
 const ATTENDANCE_PIE_DATA = [
-  { name: 'Présents', value: 98.2, color: '#10b981' },
-  { name: 'Absents Justifiés', value: 1.2, color: '#f59e0b' },
-  { name: 'Absences Non Justifiées', value: 0.6, color: '#ef4444' },
+  { name: 'Présents', value: 98.2, color: '#a855f7' },
+  { name: 'Absents Justifiés', value: 1.2, color: '#eab308' },
+  { name: 'Absences Non Justifiées', value: 0.6, color: '#2563eb' },
 ];
 
 // Graphique Répartition Genre par Niveau
@@ -607,24 +607,17 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
 
             <div style={{ width: '100%', height: 230 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={FINANCIAL_CHART_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorRecettes" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorDepenses" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="mois" stroke="#94a3b8" fontSize={12} />
-                  <YAxis stroke="#94a3b8" fontSize={11} tickFormatter={(v) => `${v / 1000000}M`} />
-                  <Tooltip formatter={(value: any) => [`${Number(value).toLocaleString('fr-FR')} FCFA`, '']} />
-                  <Area type="monotone" dataKey="Recettes" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRecettes)" />
-                  <Area type="monotone" dataKey="Dépenses" stroke="#ef4444" strokeWidth={2.5} fillOpacity={1} fill="url(#colorDepenses)" />
-                </AreaChart>
+                <LineChart data={FINANCIAL_CHART_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="mois" stroke="#94a3b8" fontSize={12} axisLine={false} tickLine={false} />
+                  <YAxis stroke="#94a3b8" fontSize={11} tickFormatter={(v) => `${v / 1000000}M`} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: 10, border: '1px solid #e2e8f0', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', fontSize: '0.8125rem' }}
+                    formatter={(value: any) => [`${Number(value).toLocaleString('fr-FR')} FCFA`, '']}
+                  />
+                  <Line type="natural" dataKey="Recettes" stroke="#2563eb" strokeWidth={2.5} dot={false} activeDot={{ r: 5, fill: '#2563eb' }} />
+                  <Line type="natural" dataKey="Dépenses" stroke="#e11d48" strokeWidth={2.5} dot={false} activeDot={{ r: 5, fill: '#e11d48' }} />
+                </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
@@ -646,17 +639,29 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem', padding: '0.5rem 0' }}>
-              <div style={{ width: 170, height: 170, flexShrink: 0 }}>
+              <div style={{ width: 190, height: 190, flexShrink: 0, position: 'relative' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={ATTENDANCE_PIE_DATA} innerRadius={50} outerRadius={75} dataKey="value" paddingAngle={4}>
+                    <Pie
+                      data={ATTENDANCE_PIE_DATA}
+                      innerRadius={62}
+                      outerRadius={88}
+                      dataKey="value"
+                      paddingAngle={2}
+                      startAngle={90}
+                      endAngle={-270}
+                    >
                       {ATTENDANCE_PIE_DATA.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                        <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(val: any) => [`${val}%`, 'Taux']} />
+                    <Tooltip formatter={(val: any) => [`${val}%`, 'Taux']} contentStyle={{ borderRadius: 10, border: '1px solid #e2e8f0', fontSize: '0.8125rem' }} />
                   </PieChart>
                 </ResponsiveContainer>
+                {/* Label central */}
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0f172a', fontFamily: "'Outfit', sans-serif", lineHeight: 1 }}>98.2%</div>
+                </div>
               </div>
 
               {/* Légende toujours positionnée en bas */}
