@@ -890,11 +890,11 @@ p { color: var(--text-secondary); line-height: 1.7; }
 }
 
 .gesco-dot-bullet {
-  width: 10px;
-  height: 10px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
-  margin-top: 5px;
+  margin-top: 6px;
 }
 
 .gesco-dot-content {
