@@ -316,8 +316,8 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
             />
             {!isCollapsed && (
               <div className="sidebar-user-info">
-                <div className="sidebar-user-name" style={{ fontSize: '0.8125rem', color: '#0f172a', fontWeight: 700 }}>{currentUser.fullName}</div>
-                <div className="sidebar-user-role" style={{ fontSize: '0.6875rem', color: '#64748b', fontWeight: 600 }}>
+                <div className="sidebar-user-name">{currentUser.fullName}</div>
+                <div className="sidebar-user-role">
                   {ROLE_LABELS[currentUser.role] || currentUser.role}
                 </div>
               </div>
@@ -327,11 +327,11 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
           <button
             className="sidebar-item"
             onClick={logout}
-            style={{ margin: '0.25rem 0.5rem 0', color: '#ef4444', borderRadius: '8px' }}
+            style={{ margin: '0.25rem 0.5rem 0', color: '#fca5a5', borderRadius: '8px' }}
             title={isCollapsed ? 'Déconnexion' : undefined}
           >
-            <LogOut size={16} style={{ flexShrink: 0 }} />
-            {!isCollapsed && <span>Déconnexion</span>}
+            <LogOut size={16} style={{ flexShrink: 0, color: '#fca5a5' }} />
+            {!isCollapsed && <span style={{ color: '#fca5a5' }}>Déconnexion</span>}
           </button>
         </div>
       )}
