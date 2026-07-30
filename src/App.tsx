@@ -11,25 +11,24 @@ import LoginPage from './pages/LoginPage';
 import { Toaster } from './components/ui/toaster';
 import './index.css';
 
-// Lazy loading des pages
-const DashboardPage       = lazy(() => import('./pages/DashboardPage'));
-const StudentsPage        = lazy(() => import('./pages/StudentsPage'));
-const ParentsPage         = lazy(() => import('./pages/ParentsPage'));
-const StaffPage           = lazy(() => import('./pages/StaffPage'));
-const ScolarityPage       = lazy(() => import('./pages/ScolarityPage'));
-const ExpensesPage        = lazy(() => import('./pages/ExpensesPage'));
-const SettingsPage        = lazy(() => import('./pages/SettingsPage'));
-const AcademicPage        = lazy(() => import('./pages/AcademicPage'));
-const CatalogPage         = lazy(() => import('./pages/CatalogPage'));
-const GradeEntryPage       = lazy(() => import('./pages/GradeEntryPage'));
-const ReportCardsPage      = lazy(() => import('./pages/ReportCardsPage'));
-const CanteenPage         = lazy(() => import('./pages/CanteenPage'));
-const TransportPage       = lazy(() => import('./pages/TransportPage'));
-const TimetablePage       = lazy(() => import('./pages/TimetablePage'));
-const AttendancePage       = lazy(() => import('./pages/AttendancePage'));
-const StaffAttendancePage  = lazy(() => import('./pages/StaffAttendancePage'));
-const ReportsPage          = lazy(() => import('./pages/ReportsPage'));
-const PlaceholderPage     = lazy(() => import('./pages/PlaceholderPage'));
+import DashboardPage from './pages/DashboardPage';
+import StudentsPage from './pages/StudentsPage';
+import ParentsPage from './pages/ParentsPage';
+import StaffPage from './pages/StaffPage';
+import ScolarityPage from './pages/ScolarityPage';
+import ExpensesPage from './pages/ExpensesPage';
+import SettingsPage from './pages/SettingsPage';
+import AcademicPage from './pages/AcademicPage';
+import CatalogPage from './pages/CatalogPage';
+import GradeEntryPage from './pages/GradeEntryPage';
+import ReportCardsPage from './pages/ReportCardsPage';
+import CanteenPage from './pages/CanteenPage';
+import TransportPage from './pages/TransportPage';
+import TimetablePage from './pages/TimetablePage';
+import AttendancePage from './pages/AttendancePage';
+import StaffAttendancePage from './pages/StaffAttendancePage';
+import ReportsPage from './pages/ReportsPage';
+import PlaceholderPage from './pages/PlaceholderPage';
 
 // ─── ERROR BOUNDARY ──────────────────────────────────────────────────────────
 
@@ -65,28 +64,30 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     if (this.state.hasError) {
       return (
         <div style={{
-          minHeight: '100vh',
+          width: '100%',
+          minHeight: '60vh',
           display: 'flex',
           alignItems: 'center',
-          justify: 'center',
-          background: '#0f172a',
-          color: 'white',
+          justifyContent: 'center',
           padding: '2rem',
+          boxSizing: 'border-box',
         }}>
           <div style={{
+            width: '100%',
             maxWidth: 480,
-            background: '#1e293b',
-            padding: '2rem',
+            background: 'var(--bg-surface, #ffffff)',
+            color: 'var(--text-main, #0f172a)',
+            padding: '2.5rem 2rem',
             borderRadius: 16,
-            border: '1px solid #334155',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)',
+            border: '1px solid var(--border, #e2e8f0)',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.12)',
             textAlign: 'center',
           }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.5rem', color: '#f8fafc' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.5rem', color: 'var(--text-main, #0f172a)' }}>
               Une erreur est survenue lors de l'affichage
             </h2>
-            <p style={{ fontSize: '0.875rem', color: '#94a3b8', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted, #64748b)', marginBottom: '1.5rem', lineHeight: 1.5 }}>
               L'application a rencontré un problème inattendu ({this.state.error?.message || 'Erreur inconnue'}).
             </p>
             <button
