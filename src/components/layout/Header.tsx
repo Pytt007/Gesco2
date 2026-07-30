@@ -6,7 +6,8 @@
 import React, { useState } from 'react';
 import { useSchoolYear } from '../../context/SchoolYearContext';
 import { useAuth } from '../../context/AuthContext';
-import { CalendarRange, Moon, Sun, ChevronDown, ChevronRight, Search, Command, Sparkles, ShieldCheck } from 'lucide-react';
+import { useSettings } from '../../hooks/useSettings';
+import { CalendarRange, Moon, Sun, ChevronDown, ChevronRight, Search, Command, Sparkles, ShieldCheck, Building2 } from 'lucide-react';
 import { VIEW_LABELS } from '../../constants/routes';
 
 interface HeaderProps {
@@ -40,6 +41,7 @@ const BREADCRUMB_GROUPS: Record<string, string> = {
 export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOpenCommandPalette }: HeaderProps) {
   const { schoolYear, schoolYears, setSchoolYear } = useSchoolYear();
   const { currentUser } = useAuth();
+  const { schoolInfo } = useSettings();
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
 
   const handleYearChange = async (year: string) => {
@@ -49,6 +51,7 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOp
 
   const groupLabel = BREADCRUMB_GROUPS[currentView] || 'GESCO';
   const pageTitle = VIEW_LABELS[currentView] || currentView;
+  const schoolName = schoolInfo?.name || 'Établissement GESCO';
 
   return (
     <header className="header" style={{ padding: '0.875rem 2rem', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
@@ -56,7 +59,9 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOp
       {/* ── FIL D'ARIANE (BREADCRUMB DATAVIZ) ────────────────────────────────── */}
       <div>
         <nav aria-label="Fil d'ariane" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78125rem', color: 'var(--text-muted)' }}>
-          <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>GESCO</span>
+          <span style={{ fontWeight: 700, color: '#1d4ed8', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <Building2 size={13} color="#2563eb" /> {schoolName}
+          </span>
           <ChevronRight size={12} />
           <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{groupLabel}</span>
           <ChevronRight size={12} />

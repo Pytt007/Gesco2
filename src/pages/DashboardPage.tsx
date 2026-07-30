@@ -8,13 +8,14 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSchoolYear } from '../context/SchoolYearContext';
 import { useAuth } from '../context/AuthContext';
 import { useDashboard } from '../hooks/dashboard';
+import { useSettings } from '../hooks/useSettings';
 import {
   Users, Briefcase, GraduationCap, DollarSign, UtensilsCrossed,
   Bus, TrendingDown, Award, Search, Plus, CreditCard, BookOpen,
   FileText, BarChart2, Calendar, AlertCircle, CheckCircle2,
   Clock, ArrowUpRight, ArrowRight, X, ShieldAlert, Sparkles,
   Maximize2, RefreshCw, EyeOff, MoreVertical, Layers, TrendingUp,
-  Bell, Check, Filter, User, HelpCircle, CheckSquare
+  Bell, Check, Filter, User, HelpCircle, CheckSquare, Building2
 } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer,
@@ -77,6 +78,7 @@ const GENDER_LEVEL_DATA = [
 export default function DashboardPage({ onNavigate }: DashboardPageProps) {
   const { schoolYear } = useSchoolYear();
   const { currentUser, canAccess } = useAuth();
+  const { schoolInfo } = useSettings();
   
   const currentAcademicYearId = schoolYear?.id || 'ay-2026';
   
@@ -314,6 +316,9 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
                 <span className="badge badge-neutral" style={{ fontSize: '0.75rem' }}>{roleLabel}</span>
               </div>
               <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: 'var(--text-muted, #64748b)' }}>
+                <Building2 size={13} style={{ display: 'inline', marginRight: 4, marginBottom: 2, color: '#2563eb' }} />
+                <strong style={{ color: '#0f172a', fontWeight: 700 }}>{schoolInfo?.name || 'GESCO — Complexe Scolaire d\'Excellence'}</strong>
+                <span style={{ margin: '0 6px', opacity: 0.5 }}>·</span>
                 <Calendar size={13} style={{ display: 'inline', marginRight: 4, marginBottom: 2 }} />
                 {dateStr} · Année scolaire active : <strong style={{ color: '#4f46e5' }}>2026-2027</strong>
               </p>
