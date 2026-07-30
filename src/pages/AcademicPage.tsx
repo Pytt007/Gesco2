@@ -268,6 +268,18 @@ export default function AcademicPage({ onNavigate }: AcademicPageProps) {
                         <button className="btn btn-ghost btn-sm" title="Modifier" onClick={() => handleOpenEditClass(c)}>
                           <Edit2 size={15} color="#0ea5e9" />
                         </button>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          title="Archiver / Supprimer"
+                          onClick={async () => {
+                            if (window.confirm(`Voulez-vous vraiment archiver la classe ${c.name} ?`)) {
+                              const ok = await classroomsHook.archiveClassroom(c.id);
+                              if (ok) addNotification('success', `La classe ${c.name} a été archivée avec succès.`);
+                            }
+                          }}
+                        >
+                          <Trash2 size={15} color="#ef4444" />
+                        </button>
                       </div>
                     </td>
                   </tr>
