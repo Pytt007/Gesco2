@@ -436,10 +436,10 @@ export default function StudentsPage() {
         </div>
       </div>
 
-      {/* ── DRAWER LATÉRAL DOSSIER ÉLÈVE DÉTAILLÉ ─────────────────────────── */}
+      {/* ── POPUP MODAL CENTRAL DOSSIER ÉLÈVE DÉTAILLÉ ─────────────────────── */}
       {detailStudent && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'flex-end' }}>
-          <div style={{ width: '100%', maxWidth: '580px', height: '100%', background: '#ffffff', boxShadow: '-10px 0 30px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', animation: 'slideLeft 0.2s ease-out' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(15,23,42,0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ width: '100%', maxWidth: '680px', maxHeight: '90vh', background: '#ffffff', borderRadius: '16px', boxShadow: '0 20px 50px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', overflow: 'hidden', animation: 'slideUp 0.2s ease-out' }}>
             
             {/* Header Drawer */}
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
