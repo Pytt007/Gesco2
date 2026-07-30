@@ -6,6 +6,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 import {
   useSubjectCategories,
   useSubjects,
@@ -34,6 +35,7 @@ import {
 
 export default function CatalogPage() {
   const { addNotification } = useToast();
+  const confirm = useConfirm();
 
   // Onglet courant du Catalogue : 'SUBJECTS' | 'CATEGORIES' | 'COMPOSITES' | 'LEVELS'
   const [activeTab, setActiveTab] = useState<'SUBJECTS' | 'CATEGORIES' | 'COMPOSITES' | 'LEVELS'>('SUBJECTS');
@@ -152,7 +154,14 @@ export default function CatalogPage() {
 
   const handleToggleArchiveSubject = async (subj: Subject) => {
     if (subj.isActive) {
-      if (window.confirm(`Désactiver la matière "${subj.name}" ?`)) {
+      const isConfirmed = await confirm({
+        title: 'Désactivation de matière',
+        message: `Désactiver la matière "${subj.name}" ?`,
+        confirmText: 'Oui, désactiver',
+        cancelText: 'Annuler',
+        variant: 'warning',
+      });
+      if (isConfirmed) {
         const ok = await subjectsHook.archiveSubject(subj.id);
         if (ok) addNotification('info', 'Matière désactivée.');
       }
@@ -228,7 +237,14 @@ export default function CatalogPage() {
   };
 
   const handleRemoveComponent = async (childId: string) => {
-    if (window.confirm('Retirer cette sous-matière de la matière composée ?')) {
+    const isConfirmed = await confirm({
+      title: 'Retirer la sous-matière',
+      message: 'Retirer cette sous-matière de la matière composée ?',
+      confirmText: 'Oui, retirer',
+      cancelText: 'Annuler',
+      variant: 'warning',
+    });
+    if (isConfirmed) {
       const ok = await componentsHook.removeComponent(childId);
       if (ok) addNotification('info', 'Sous-matière retirée.');
     }
@@ -254,7 +270,14 @@ export default function CatalogPage() {
   };
 
   const handleRemoveLevelSubject = async (subjId: string) => {
-    if (window.confirm('Retirer cette matière du programme de ce niveau ?')) {
+    const isConfirmed = await confirm({
+      title: 'Retirer du programme',
+      message: 'Retirer cette matière du programme de ce niveau ?',
+      confirmText: 'Oui, retirer',
+      cancelText: 'Annuler',
+      variant: 'warning',
+    });
+    if (isConfirmed) {
       const ok = await levelSubjectsHook.removeSubject(subjId);
       if (ok) addNotification('info', 'Matière retirée du niveau.');
     }

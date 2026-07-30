@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useConfirm } from '../../context/ConfirmContext';
 import { useCanteenFees } from '../../hooks/canteen/useCanteenFees';
 import { CanteenFeeSchedule, CanteenLevelCode } from '../../services/canteen/types';
 import { Plus, Copy, Edit2, Archive, Calendar, AlertCircle, CheckCircle2, UtensilsCrossed } from 'lucide-react';
@@ -157,6 +158,7 @@ const CanteenFeeModal: React.FC<CanteenFeeModalProps> = ({ isOpen, onClose, onSa
 
 export const CanteenConfigView: React.FC = () => {
   const { academicYears } = useAcademicYears();
+  const confirm = useConfirm();
   const [selectedYearId, setSelectedYearId] = useState<string>('ay-2026');
 
   const {
@@ -194,7 +196,14 @@ export const CanteenConfigView: React.FC = () => {
   };
 
   const handleArchive = async (s: CanteenFeeSchedule) => {
-    if (window.confirm(`Archiver le tarif cantine du niveau ${s.levelName} ?`)) {
+    const isConfirmed = await confirm({
+      title: 'Archiver le tarif cantine',
+      message: `Archiver le tarif cantine du niveau ${s.levelName} ?`,
+      confirmText: 'Oui, archiver',
+      cancelText: 'Annuler',
+      variant: 'warning',
+    });
+    if (isConfirmed) {
       const result = await archiveSchedule(s.id);
       if (result.success) {
         setSuccessMsg(`Tarif du niveau ${s.levelName} archivé.`);
@@ -205,7 +214,14 @@ export const CanteenConfigView: React.FC = () => {
 
   const handleDuplicate = async () => {
     const prevYearId = selectedYearId === 'ay-2026' ? 'ay-2025' : 'ay-2026';
-    if (window.confirm("Dupliquer tous les tarifs cantine de l'année précédente ?")) {
+    const isConfirmed = await confirm({
+      title: 'Dupliquer la grille tarifaire',
+      message: "Dupliquer tous les tarifs cantine de l'année précédente ?",
+      confirmText: 'Oui, dupliquer',
+      cancelText: 'Annuler',
+      variant: 'info',
+    });
+    if (isConfirmed) {
       const result = await duplicatePreviousYear(prevYearId, selectedYearId);
       if (result.success) {
         setSuccessMsg('Tarifs cantine dupliqués avec succès.');

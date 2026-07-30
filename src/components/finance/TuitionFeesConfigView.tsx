@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useConfirm } from '../../context/ConfirmContext';
 import { useTuitionFees } from '../../hooks/finance/useTuitionFees';
 import { TuitionFeeSchedule, TuitionLevelCode } from '../../services/finance/types';
 import { TuitionFeeModal } from './TuitionFeeModal';
@@ -7,6 +8,7 @@ import { useAcademicYears } from '../../hooks/academic';
 
 export const TuitionFeesConfigView: React.FC = () => {
   const { academicYears } = useAcademicYears();
+  const confirm = useConfirm();
   const [selectedYearId, setSelectedYearId] = useState<string>('ay-2026');
 
   const {
@@ -63,7 +65,14 @@ export const TuitionFeesConfigView: React.FC = () => {
   };
 
   const handleArchive = async (schedule: TuitionFeeSchedule) => {
-    if (window.confirm(`Voulez-vous vraiment archiver les tarifs du niveau ${schedule.levelName} ?`)) {
+    const isConfirmed = await confirm({
+      title: 'Archiver les tarifs',
+      message: `Voulez-vous vraiment archiver les tarifs du niveau ${schedule.levelName} ?`,
+      confirmText: 'Oui, archiver',
+      cancelText: 'Annuler',
+      variant: 'warning',
+    });
+    if (isConfirmed) {
       const ok = await archiveFeeSchedule(schedule.id);
       if (ok) {
         setSuccessMessage(`Tarifs du niveau ${schedule.levelName} archivés.`);
@@ -74,7 +83,14 @@ export const TuitionFeesConfigView: React.FC = () => {
 
   const handleDuplicatePrevious = async () => {
     const prevYearId = selectedYearId === 'ay-2026' ? 'ay-2025' : 'ay-2026';
-    if (window.confirm(`Dupliquer tous les tarifs de l'année précédente vers l'année sélectionnée ?`)) {
+    const isConfirmed = await confirm({
+      title: 'Dupliquer la grille tarifaire',
+      message: `Dupliquer tous les tarifs de l'année précédente vers l'année sélectionnée ?`,
+      confirmText: 'Oui, dupliquer',
+      cancelText: 'Annuler',
+      variant: 'info',
+    });
+    if (isConfirmed) {
       const ok = await duplicatePreviousYear(prevYearId);
       if (ok) {
         setSuccessMessage(`Les tarifs de l'année précédente ont été dupliqués avec succès.`);

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useConfirm } from '../../context/ConfirmContext';
 import { useStudentFinancialEnrollment } from '../../hooks/finance/useStudentFinancialEnrollment';
 import { StudentFinancialEnrollment, DiscountType, TuitionLevelCode } from '../../services/finance/types';
 import { StudentFinancialEnrollmentModal } from './StudentFinancialEnrollmentModal';
@@ -7,6 +8,7 @@ import { useAcademicYears } from '../../hooks/academic';
 
 export const FinancialEnrollmentView: React.FC = () => {
   const { academicYears } = useAcademicYears();
+  const confirm = useConfirm();
   const [selectedYearId, setSelectedYearId] = useState<string>('ay-2026');
 
   const {
@@ -69,7 +71,14 @@ export const FinancialEnrollmentView: React.FC = () => {
   };
 
   const handleArchive = async (enrollment: StudentFinancialEnrollment) => {
-    if (window.confirm(`Voulez-vous vraiment archiver le dossier financier de ${enrollment.studentName} ?`)) {
+    const isConfirmed = await confirm({
+      title: 'Archiver le dossier financier',
+      message: `Voulez-vous vraiment archiver le dossier financier de ${enrollment.studentName} ?`,
+      confirmText: 'Oui, archiver',
+      cancelText: 'Annuler',
+      variant: 'danger',
+    });
+    if (isConfirmed) {
       const ok = await archiveEnrollment(enrollment.id);
       if (ok) {
         setSuccessMessage(`Dossier financier de ${enrollment.studentName} archivé.`);

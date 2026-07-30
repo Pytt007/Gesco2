@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useConfirm } from '../context/ConfirmContext';
 import { useTimetable } from '../hooks/timetable/useTimetable';
 import { useAcademicYears } from '../hooks/academic';
 import { useSchoolYear } from '../context/SchoolYearContext';
@@ -16,6 +17,7 @@ import {
 
 export default function TimetablePage() {
   const { schoolYear } = useSchoolYear();
+  const confirm = useConfirm();
   const { academicYears } = useAcademicYears();
   const [selectedYearId, setSelectedYearId] = useState<string>(schoolYear?.id || 'ay-2026');
 
@@ -124,7 +126,14 @@ export default function TimetablePage() {
   // Supprimer créneau
   const handleDeleteSlot = async (slotId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm('Voulez-vous supprimer ce cours du planning ?')) {
+    const isConfirmed = await confirm({
+      title: 'Supprimer ce cours',
+      message: 'Voulez-vous supprimer ce cours du planning ?',
+      confirmText: 'Oui, supprimer',
+      cancelText: 'Annuler',
+      variant: 'danger',
+    });
+    if (isConfirmed) {
       await deleteSlot(slotId);
       setShowSlotModal(false);
     }

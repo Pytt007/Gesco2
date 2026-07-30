@@ -44,6 +44,7 @@ interface AcademicPageProps {
 
 export default function AcademicPage({ onNavigate }: AcademicPageProps) {
   const { addNotification } = useToast();
+  const confirm = useConfirm();
 
   const [activeTab, setActiveTab] = useState<'CLASSES' | 'YEARS' | 'LEVELS' | 'ASSIGNMENTS'>('CLASSES');
 
@@ -272,7 +273,14 @@ export default function AcademicPage({ onNavigate }: AcademicPageProps) {
                           className="btn btn-ghost btn-sm"
                           title="Archiver / Supprimer"
                           onClick={async () => {
-                            if (window.confirm(`Voulez-vous vraiment archiver la classe ${c.name} ?`)) {
+                            const isConfirmed = await confirm({
+                              title: 'Archiver la classe',
+                              message: `Voulez-vous vraiment archiver la classe ${c.name} ?`,
+                              confirmText: 'Oui, archiver',
+                              cancelText: 'Annuler',
+                              variant: 'danger',
+                            });
+                            if (isConfirmed) {
                               const ok = await classroomsHook.archiveClassroom(c.id);
                               if (ok) addNotification('success', `La classe ${c.name} a été archivée avec succès.`);
                             }

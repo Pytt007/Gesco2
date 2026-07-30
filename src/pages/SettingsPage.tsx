@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 import { useSettings } from '../hooks/useSettings';
 import { useUsers, useRoles, usePermissions } from '../hooks/users';
 import { UserRole, UserAccount } from '../types';
@@ -20,6 +21,7 @@ const ROLES: { value: UserRole; label: string; color: string; description: strin
 export default function SettingsPage() {
   const { currentUser } = useAuth();
   const { addNotification } = useToast();
+  const confirm = useConfirm();
 
   // Hooks d'Architecture 5 Couches
   const {
@@ -143,7 +145,14 @@ export default function SettingsPage() {
       addNotification('error', 'Vous ne pouvez pas supprimer votre propre compte.');
       return;
     }
-    if (!window.confirm(`Supprimer le compte de ${user.fullName} ?`)) return;
+    const isConfirmed = await confirm({
+      title: 'Suppression de compte',
+      message: `Voulez-vous vraiment supprimer le compte utilisateur de ${user.fullName} ?`,
+      confirmText: 'Oui, supprimer',
+      cancelText: 'Annuler',
+      variant: 'danger',
+    });
+    if (!isConfirmed) return;
     await archiveAccountViaHook(user.id);
   };
 
@@ -379,7 +388,14 @@ export default function SettingsPage() {
                               className="btn btn-ghost btn-sm"
                               style={{ color: 'var(--color-danger)' }}
                               onClick={async () => {
-                                if (window.confirm(`Clôturer définitivement l'année ${year.label} ?`)) {
+                                const isConfirmed = await confirm({
+                                  title: "Clôture d'année scolaire",
+                                  message: `Clôturer définitivement l'année ${year.label} ? Cette action est irréversible.`,
+                                  confirmText: 'Oui, clôturer',
+                                  cancelText: 'Annuler',
+                                  variant: 'danger',
+                                });
+                                if (isConfirmed) {
                                   const res = await closeSchoolYear(year.id);
                                   if (res.error) addNotification('error', res.error);
                                   else addNotification('success', `Année ${year.label} clôturée.`);

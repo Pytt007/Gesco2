@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useConfirm } from '../../context/ConfirmContext';
 import { useTransportLines } from '../../hooks/transport/useTransportLines';
 import {
   TransportLine, TransportLineInput, TransportLineStatus,
@@ -355,6 +356,7 @@ type SubView = 'LINES' | 'VEHICLES' | 'DRIVERS';
 
 export const TransportLinesView: React.FC = () => {
   const { schoolYear } = useSchoolYear();
+  const confirm = useConfirm();
   const { academicYears } = useAcademicYears();
   const [yearId, setYearId] = useState(schoolYear?.id || 'ay-2026');
 
@@ -388,7 +390,14 @@ export const TransportLinesView: React.FC = () => {
     const labels: Record<TransportLineStatus, string> = {
       ACTIVE: 'réactiver', SUSPENDED: 'suspendre', OUT_OF_SERVICE: 'mettre hors service', ARCHIVED: 'archiver',
     };
-    if (window.confirm(`Voulez-vous ${labels[status]} la ligne "${line.name}" ?`)) {
+    const isConfirmed = await confirm({
+      title: 'Modification statut de ligne',
+      message: `Voulez-vous ${labels[status]} la ligne "${line.name}" ?`,
+      confirmText: 'Oui, confirmer',
+      cancelText: 'Annuler',
+      variant: 'warning',
+    });
+    if (isConfirmed) {
       await setLineStatus(line.id, status);
     }
   };
@@ -697,7 +706,21 @@ export const TransportLinesView: React.FC = () => {
                       <td style={{ padding: '12px 16px' }}>
                         <div style={{ display: 'flex', gap: 8 }}>
                           <button className="btn btn-sm btn-outline-secondary" onClick={() => { setEditingVehicle(v); setVehicleModal(true); }}><Edit2 size={13} /></button>
-                          <button className="btn btn-sm btn-outline-danger" onClick={() => { if (window.confirm(`Supprimer le véhicule "${v.name}" ?`)) deleteVehicle(v.id); }}><Archive size={13} /></button>
+                          <button
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={async () => {
+                              const isConfirmed = await confirm({
+                                title: 'Supprimer le véhicule',
+                                message: `Supprimer le véhicule "${v.name}" ?`,
+                                confirmText: 'Oui, supprimer',
+                                cancelText: 'Annuler',
+                                variant: 'danger',
+                              });
+                              if (isConfirmed) deleteVehicle(v.id);
+                            }}
+                          >
+                            <Archive size={13} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -743,7 +766,21 @@ export const TransportLinesView: React.FC = () => {
                       <td style={{ padding: '12px 16px' }}>
                         <div style={{ display: 'flex', gap: 8 }}>
                           <button className="btn btn-sm btn-outline-secondary" onClick={() => { setEditingDriver(d); setDriverModal(true); }}><Edit2 size={13} /></button>
-                          <button className="btn btn-sm btn-outline-danger" onClick={() => { if (window.confirm(`Supprimer le chauffeur "${d.name}" ?`)) deleteDriver(d.id); }}><Archive size={13} /></button>
+                          <button
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={async () => {
+                              const isConfirmed = await confirm({
+                                title: 'Supprimer le chauffeur',
+                                message: `Supprimer le chauffeur "${d.name}" ?`,
+                                confirmText: 'Oui, supprimer',
+                                cancelText: 'Annuler',
+                                variant: 'danger',
+                              });
+                              if (isConfirmed) deleteDriver(d.id);
+                            }}
+                          >
+                            <Archive size={13} />
+                          </button>
                         </div>
                       </td>
                     </tr>

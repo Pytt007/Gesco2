@@ -2,6 +2,7 @@ import React, { useState, Suspense, lazy, useEffect, Component, ReactNode } from
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SchoolYearProvider } from './context/SchoolYearContext';
 import { ToastProvider } from './context/ToastContext';
+import { ConfirmProvider } from './context/ConfirmContext';
 import ToastContainer from './components/common/ToastContainer';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
@@ -287,15 +288,19 @@ function AppContent() {
   );
 }
 
+import { ConfirmProvider } from './context/ConfirmContext';
+
 export default function App() {
   return (
     <ErrorBoundary>
       <ToastProvider>
-        <AuthProvider>
-          <SchoolYearProvider>
-            <AppContent />
-          </SchoolYearProvider>
-        </AuthProvider>
+        <ConfirmProvider>
+          <AuthProvider>
+            <SchoolYearProvider>
+              <AppContent />
+            </SchoolYearProvider>
+          </AuthProvider>
+        </ConfirmProvider>
       </ToastProvider>
     </ErrorBoundary>
   );

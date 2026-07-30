@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 import {
   useParents,
   useParent,
@@ -38,6 +39,7 @@ interface ParentsPageProps {
 
 export default function ParentsPage({ onNavigate }: ParentsPageProps) {
   const { addNotification } = useToast();
+  const confirm = useConfirm();
 
   const {
     parents,
@@ -289,9 +291,16 @@ export default function ParentsPage({ onNavigate }: ParentsPageProps) {
                           className="btn btn-ghost btn-sm"
                           title="Archiver / Supprimer"
                           onClick={async () => {
-                            if (window.confirm(`Voulez-vous vraiment archiver le responsable ${p.lastName} ${p.firstName} ?`)) {
+                            const isConfirmed = await confirm({
+                              title: 'Archiver le responsable',
+                              message: `Voulez-vous vraiment archiver la fiche de ${p.lastName} ${p.firstName} ?`,
+                              confirmText: 'Oui, archiver',
+                              cancelText: 'Annuler',
+                              variant: 'danger',
+                            });
+                            if (isConfirmed) {
                               const ok = await archive(p.id);
-                              if (ok) addNotification('success', `Le responsable ${p.lastName} ${p.firstName} a été archivé.`);
+                              if (ok) addNotification('success', `Le responsable ${p.lastName} ${p.firstName} a été archivé avec succès.`);
                             }
                           }}
                         >

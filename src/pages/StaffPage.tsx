@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 import { useStaff } from '../hooks/staff';
 import { StaffMember } from '../services/staff/staffService';
 import { downloadExcel } from '../utils/exportUtils';
@@ -33,6 +34,7 @@ const STATUS_BADGES: Record<string, React.ReactNode> = {
 
 export default function StaffPage() {
   const { addNotification } = useToast();
+  const confirm = useConfirm();
 
   const {
     staffMembers: staff = [],
@@ -299,7 +301,14 @@ export default function StaffPage() {
                           className="btn btn-ghost btn-sm"
                           title="Archiver / Supprimer"
                           onClick={async () => {
-                            if (window.confirm(`Voulez-vous vraiment archiver l'employé ${s.lastName} ${s.firstName} ?`)) {
+                            const isConfirmed = await confirm({
+                              title: "Archiver le membre du personnel",
+                              message: `Voulez-vous vraiment archiver l'employé ${s.lastName} ${s.firstName} ?`,
+                              confirmText: 'Oui, archiver',
+                              cancelText: 'Annuler',
+                              variant: 'danger',
+                            });
+                            if (isConfirmed) {
                               const ok = await archive(s.id);
                               if (ok) addNotification('success', `L'employé ${s.lastName} ${s.firstName} a été archivé avec succès.`);
                             }
