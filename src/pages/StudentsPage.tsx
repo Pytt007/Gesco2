@@ -281,8 +281,7 @@ export default function StudentsPage() {
       </div>
 
       {/* ── BARRE D'ACTIONS & FILTRES UNIFIÉE ─────────────────────────────── */}
-      <div className="card shadow-sm p-3" style={{ borderRadius: '14px', border: '1px solid var(--border-color)', background: '#ffffff' }}>
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
           
           <div style={{ display: 'flex', gap: '10px', flex: 1, minWidth: 260 }}>
             {/* Recherche Ultra-Moderne */}
@@ -332,8 +331,8 @@ export default function StudentsPage() {
           <button className="btn btn-outline btn-sm" onClick={refresh} title="Actualiser" disabled={loading}>
             <RefreshCw size={14} className={loading ? 'spin' : ''} /> Actualiser
           </button>
-        </div>
       </div>
+
 
       {/* ── TABLEAU DE DONNÉES PREMIUM UNIFIÉ ─────────────────────────────── */}
       <div className="card shadow-sm" style={{ borderRadius: '16px', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
