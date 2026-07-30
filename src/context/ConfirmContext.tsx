@@ -77,13 +77,20 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
           style={{
             position: 'fixed',
             inset: 0,
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
             zIndex: 99999,
             background: 'rgba(15, 23, 42, 0.65)',
             backdropFilter: 'blur(4px)',
             display: 'flex',
             alignItems: 'center',
-            justify: 'center',
+            justifyContent: 'center',
             padding: '16px',
+            boxSizing: 'border-box',
             animation: 'fadeIn 0.15s ease-out',
           }}
           onClick={handleCancel}
@@ -92,6 +99,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             style={{
               width: '100%',
               maxWidth: '440px',
+              margin: 'auto',
               background: '#ffffff',
               borderRadius: '20px',
               boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25)',

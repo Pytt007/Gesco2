@@ -142,7 +142,7 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
               backdropFilter: 'blur(4px)',
               display: 'flex',
               alignItems: 'center',
-              justify: 'center',
+              justifyContent: 'center',
               fontWeight: 900,
               fontSize: '1rem',
               color: '#ffffff',

@@ -119,7 +119,7 @@ function PageLoader() {
           color: '#ffffff',
           display: 'flex',
           alignItems: 'center',
-          justify: 'center',
+          justifyContent: 'center',
           fontWeight: 900,
           fontSize: '1.25rem',
           margin: '0 auto 12px',
@@ -196,7 +196,7 @@ function AppContent() {
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
-        justify: 'center',
+        justifyContent: 'center',
         background: '#0f172a',
       }}>
         <div style={{ textAlign: 'center', color: '#ffffff' }}>
@@ -208,7 +208,7 @@ function AppContent() {
             color: '#ffffff',
             display: 'flex',
             alignItems: 'center',
-            justify: 'center',
+            justifyContent: 'center',
             fontWeight: 900,
             fontSize: '1.75rem',
             margin: '0 auto 16px',
