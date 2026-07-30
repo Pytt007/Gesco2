@@ -315,10 +315,10 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
                 </h1>
                 <span className="badge badge-neutral" style={{ fontSize: '0.75rem' }}>{roleLabel}</span>
               </div>
-              <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: 'var(--text-muted, #64748b)' }}>
-                <Building2 size={13} style={{ display: 'inline', marginRight: 4, marginBottom: 2, color: '#2563eb' }} />
-                <strong style={{ color: '#0f172a', fontWeight: 700 }}>{schoolInfo?.name || 'GESCO — Complexe Scolaire d\'Excellence'}</strong>
-                <span style={{ margin: '0 6px', opacity: 0.5 }}>·</span>
+              <div style={{ margin: '4px 0 2px', fontSize: '0.9375rem', fontWeight: 700, color: '#0f172a' }}>
+                {schoolInfo?.name || 'GESCO — Complexe Scolaire d\'Excellence'}
+              </div>
+              <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--text-muted, #64748b)' }}>
                 <Calendar size={13} style={{ display: 'inline', marginRight: 4, marginBottom: 2 }} />
                 {dateStr} · Année scolaire active : <strong style={{ color: '#4f46e5' }}>2026-2027</strong>
               </p>

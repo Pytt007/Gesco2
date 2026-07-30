@@ -59,8 +59,8 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOp
       {/* ── FIL D'ARIANE (BREADCRUMB DATAVIZ) ────────────────────────────────── */}
       <div>
         <nav aria-label="Fil d'ariane" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78125rem', color: 'var(--text-muted)' }}>
-          <span style={{ fontWeight: 700, color: '#1d4ed8', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-            <Building2 size={13} color="#2563eb" /> {schoolName}
+          <span style={{ fontWeight: 700, color: '#1d4ed8' }}>
+            {schoolName}
           </span>
           <ChevronRight size={12} />
           <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{groupLabel}</span>
