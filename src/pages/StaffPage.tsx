@@ -267,8 +267,14 @@ export default function StaffPage() {
                     </td>
 
                     <td style={{ padding: '12px 16px' }}>
-                      <div style={{ fontWeight: 600, color: '#334155' }}>📞 {s.phone}</div>
-                      {s.email && <div style={{ fontSize: '0.75rem', color: '#64748b' }}>✉️ {s.email}</div>}
+                      <div style={{ fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Phone size={13} color="#2563eb" /> {s.phone}
+                      </div>
+                      {s.email && (
+                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <Mail size={13} color="#64748b" /> {s.email}
+                        </div>
+                      )}
                     </td>
 
                     <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: '#0f172a' }}>

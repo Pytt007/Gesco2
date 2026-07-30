@@ -483,7 +483,9 @@ export default function StudentsPage() {
                   <div style={{ padding: '14px', background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0' }}>
                     <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>RESPONSABLE PAYEUR / PARENT</div>
                     <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f172a', marginTop: 4 }}>{detailStudent.parentName || 'Non renseigné'}</div>
-                    <div style={{ fontSize: '0.8125rem', color: '#475569', marginTop: 2 }}>📞 {detailStudent.parentPhone || '—'}</div>
+                    <div style={{ fontSize: '0.8125rem', color: '#475569', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Phone size={13} color="#2563eb" /> {detailStudent.parentPhone || '—'}
+                    </div>
                   </div>
 
                   <div style={{ padding: '14px', background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0' }}>

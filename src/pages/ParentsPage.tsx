@@ -263,8 +263,14 @@ export default function ParentsPage({ onNavigate }: ParentsPageProps) {
                     </td>
 
                     <td style={{ padding: '12px 16px' }}>
-                      <div style={{ fontWeight: 600, color: '#334155' }}>📞 {p.phonePrimary}</div>
-                      {p.email && <div style={{ fontSize: '0.75rem', color: '#64748b' }}>✉️ {p.email}</div>}
+                      <div style={{ fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Phone size={13} color="#2563eb" /> {p.phonePrimary}
+                      </div>
+                      {p.email && (
+                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <Mail size={13} color="#64748b" /> {p.email}
+                        </div>
+                      )}
                     </td>
 
                     <td style={{ padding: '12px 16px', textAlign: 'center' }}>

@@ -195,7 +195,9 @@ export default function ReportCardsPage() {
                       <RefreshCw size={18} className="spin" /> Génération en cours...
                     </>
                   ) : (
-                    <>📄 Générer les bulletins</>
+                    <>
+                      <FileText size={18} /> Générer les bulletins
+                    </>
                   )}
                 </button>
               </div>
