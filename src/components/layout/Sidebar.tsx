@@ -230,9 +230,8 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
                   <span>{item.label}</span>
                 </div>
                 <Star
-                  size={13}
-                  fill="#f59e0b"
-                  color="#f59e0b"
+                  size={15}
+                  className="sidebar-pin-star pinned"
                   onClick={(e) => togglePin(e, item.id)}
                   title="Désépingler"
                 />
@@ -286,9 +285,8 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
 
                       {!isCollapsed && (
                         <Star
-                          size={13}
-                          color={isPinned ? '#f59e0b' : 'rgba(255,255,255,0.2)'}
-                          fill={isPinned ? '#f59e0b' : 'none'}
+                          size={15}
+                          className={`sidebar-pin-star${isPinned ? ' pinned' : ''}`}
                           onClick={(e) => togglePin(e, item.id)}
                           title={isPinned ? 'Désépingler' : 'Épingler dans les favoris'}
                         />

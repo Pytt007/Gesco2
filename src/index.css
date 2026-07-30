@@ -287,6 +287,25 @@ p { color: var(--text-secondary); line-height: 1.7; }
 
 .sidebar-item.active .sidebar-item-icon { opacity: 1; }
 
+.sidebar-pin-star {
+  opacity: 0.5;
+  color: #94a3b8;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sidebar-item:hover .sidebar-pin-star {
+  opacity: 1;
+  color: #f59e0b;
+}
+
+.sidebar-pin-star.pinned {
+  opacity: 1 !important;
+  color: #f59e0b !important;
+  fill: #f59e0b !important;
+}
+
 .sidebar-footer {
   padding: 1rem 0.75rem;
   border-top: 1px solid var(--border);
