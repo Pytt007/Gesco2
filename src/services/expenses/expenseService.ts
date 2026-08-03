@@ -59,47 +59,48 @@ function initDemoData() {
     DEFAULT_EXPENSE_CATEGORIES.forEach((c) => categoryStore.set(c.id, c));
   }
 
-  if (!budgetStore.has('ay-2026')) {
-    budgetStore.set('ay-2026', 20000000); // 20 Millions budget annuel prévu par défaut
+  if (!budgetStore.has('2024-2025')) {
+    budgetStore.set('2024-2025', 20000000);
   }
 
   if (expenseStore.size === 0) {
     const demos: ExpenseRecord[] = [
+      // ─── 2024-2025 / ay-2026 ───
       {
         id: 'exp-001',
-        date: '2026-07-05',
+        date: '2025-02-05',
         categoryId: 'cat-cie',
         categoryName: 'CIE',
         categoryColor: '#eab308',
-        description: 'Facture d\'électricité du mois de Juin',
+        description: 'Facture d\'électricité du mois de Janvier',
         amount: 345000,
         paymentMode: 'CASH',
         supplier: 'CIE Côte d\'Ivoire',
         status: 'VALIDATED',
-        academicYearId: 'ay-2026',
+        academicYearId: '2024-2025',
         createdBy: 'Comptable',
-        createdAt: '2026-07-05T10:00:00Z',
-        updatedAt: '2026-07-05T10:00:00Z',
+        createdAt: '2025-02-05T10:00:00Z',
+        updatedAt: '2025-02-05T10:00:00Z',
       },
       {
         id: 'exp-002',
-        date: '2026-07-10',
+        date: '2025-02-10',
         categoryId: 'cat-salaires',
         categoryName: 'Salaires',
         categoryColor: '#4f46e5',
-        description: 'Salaires enseignants et personnel administratif - Juin',
+        description: 'Salaires enseignants et personnel administratif - Janvier',
         amount: 6800000,
         paymentMode: 'TRANSFER',
         supplier: 'Banque Atlantique',
         status: 'VALIDATED',
-        academicYearId: 'ay-2026',
+        academicYearId: '2024-2025',
         createdBy: 'Directeur',
-        createdAt: '2026-07-10T14:30:00Z',
-        updatedAt: '2026-07-10T14:30:00Z',
+        createdAt: '2025-02-10T14:30:00Z',
+        updatedAt: '2025-02-10T14:30:00Z',
       },
       {
         id: 'exp-003',
-        date: '2026-07-15',
+        date: '2025-02-15',
         categoryId: 'cat-fourn-bur',
         categoryName: 'Fournitures',
         categoryColor: '#14b8a6',
@@ -108,106 +109,62 @@ function initDemoData() {
         paymentMode: 'ORANGE_MONEY',
         supplier: 'Librairie de France',
         status: 'VALIDATED',
-        academicYearId: 'ay-2026',
+        academicYearId: '2024-2025',
         createdBy: 'Gestionnaire',
-        createdAt: '2026-07-15T09:15:00Z',
-        updatedAt: '2026-07-15T09:15:00Z',
+        createdAt: '2025-02-15T09:15:00Z',
+        updatedAt: '2025-02-15T09:15:00Z',
       },
+
+      // ─── 2023-2024 ───
       {
-        id: 'exp-004',
-        date: '2026-07-20',
-        categoryId: 'cat-entretien',
-        categoryName: 'Entretien',
-        categoryColor: '#f59e0b',
-        description: 'Produits de désinfection et nettoyage des salles',
-        amount: 145000,
-        paymentMode: 'WAVE',
-        supplier: 'ProClean SARL',
-        status: 'VALIDATED',
-        academicYearId: 'ay-2026',
-        createdBy: 'Gestionnaire',
-        createdAt: '2026-07-20T11:00:00Z',
-        updatedAt: '2026-07-20T11:00:00Z',
-      },
-      {
-        id: 'exp-005',
-        date: '2026-06-05',
-        categoryId: 'cat-salaires',
-        categoryName: 'Salaires',
-        categoryColor: '#4f46e5',
-        description: 'Salaires personnel - Mai',
-        amount: 6500000,
-        paymentMode: 'TRANSFER',
-        supplier: 'Banque Atlantique',
-        status: 'VALIDATED',
-        academicYearId: 'ay-2026',
-        createdBy: 'Directeur',
-        createdAt: '2026-06-05T10:00:00Z',
-        updatedAt: '2026-06-05T10:00:00Z',
-      },
-      {
-        id: 'exp-006',
-        date: '2026-06-12',
+        id: 'exp-101',
+        date: '2024-03-05',
         categoryId: 'cat-sodeci',
         categoryName: 'SODECI',
         categoryColor: '#06b6d4',
-        description: 'Facture d\'eau bimestrielle SODECI',
+        description: 'Facture d\'eau Février 2024',
         amount: 195000,
         paymentMode: 'CHECK',
         supplier: 'SODECI',
         status: 'VALIDATED',
-        academicYearId: 'ay-2026',
+        academicYearId: '2023-2024',
         createdBy: 'Comptable',
-        createdAt: '2026-06-12T09:00:00Z',
-        updatedAt: '2026-06-12T09:00:00Z',
+        createdAt: '2024-03-05T09:00:00Z',
+        updatedAt: '2024-03-05T09:00:00Z',
       },
       {
-        id: 'exp-007',
-        date: '2026-06-25',
-        categoryId: 'cat-repar-vehic',
-        categoryName: 'Réparations',
-        categoryColor: '#dc2626',
-        description: 'Réparation d\'urgence du moteur du Bus 02 (Dépense Inhabituelle)',
-        amount: 1450000,
-        paymentMode: 'TRANSFER',
-        supplier: 'Garage Central Abidjan',
-        status: 'VALIDATED',
-        academicYearId: 'ay-2026',
-        createdBy: 'Gestionnaire',
-        createdAt: '2026-06-25T15:00:00Z',
-        updatedAt: '2026-06-25T15:00:00Z',
-      },
-      {
-        id: 'exp-008',
-        date: '2026-05-10',
+        id: 'exp-102',
+        date: '2024-03-10',
         categoryId: 'cat-salaires',
         categoryName: 'Salaires',
         categoryColor: '#4f46e5',
-        description: 'Salaires personnel - Avril',
-        amount: 6500000,
+        description: 'Salaires personnel - Février 2024',
+        amount: 6200000,
         paymentMode: 'TRANSFER',
-        supplier: 'Banque Atlantique',
+        supplier: 'Société Générale',
         status: 'VALIDATED',
-        academicYearId: 'ay-2026',
+        academicYearId: '2023-2024',
         createdBy: 'Directeur',
-        createdAt: '2026-05-10T10:00:00Z',
-        updatedAt: '2026-05-10T10:00:00Z',
+        createdAt: '2024-03-10T11:00:00Z',
+        updatedAt: '2024-03-10T11:00:00Z',
       },
+
+      // ─── 2022-2023 ───
       {
-        id: 'exp-009',
-        date: '2026-05-18',
-        categoryId: 'cat-internet',
-        categoryName: 'Internet',
-        categoryColor: '#3b82f6',
-        description: 'Abonnement mensuel Fibre Optique Orange',
-        amount: 120000,
-        paymentMode: 'ORANGE_MONEY',
-        supplier: 'Orange CI',
+        id: 'exp-201',
+        date: '2023-04-12',
+        categoryId: 'cat-entretien',
+        categoryName: 'Entretien',
+        categoryColor: '#f59e0b',
+        description: 'Peinture et rénovation des salles de classe',
+        amount: 450000,
+        paymentMode: 'CASH',
+        supplier: 'Entreprise Bâtiment CI',
         status: 'VALIDATED',
-        academicYearId: 'ay-2026',
-        createdBy: 'Comptable',
-        createdAt: '2026-05-18T14:00:00Z',
-        updatedAt: '2026-05-18T14:00:00Z',
+        academicYearId: '2022-2023',
+        createdBy: 'Gestionnaire',
+        createdAt: '2023-04-12T10:00:00Z',
+        updatedAt: '2023-04-12T10:00:00Z',
       },
     ];
 
@@ -250,7 +207,7 @@ export const expenseService = {
     if (existing) return { success: false, error: `La catégorie "${cleanName}" existe déjà.` };
 
     const item: ExpenseCategoryItem = {
-      id: `cat-custom-${Date.now()}`,
+      id: `cat-${Date.now()}`,
       name: cleanName,
       color,
       isSystem: false,
@@ -261,7 +218,7 @@ export const expenseService = {
     return { success: true, data: item, message: 'Nouvelle catégorie ajoutée.' };
   },
 
-  getBudget(academicYearId: string = 'ay-2026'): number {
+  getBudget(academicYearId: string = '2024-2025'): number {
     initDemoData();
     return budgetStore.get(academicYearId) || 20000000;
   },
@@ -274,8 +231,10 @@ export const expenseService = {
 
   async getExpenses(filter: ExpenseFilter = {}): Promise<ExpenseRecord[]> {
     initDemoData();
-    const yearId = filter.academicYearId || 'ay-2026';
-    let list = Array.from(expenseStore.values()).filter((e) => e.academicYearId === yearId);
+    const yearId = filter.academicYearId || '2024-2025';
+    let list = Array.from(expenseStore.values()).filter(
+      (e) => !e.academicYearId || e.academicYearId === yearId || (yearId === '2024-2025' && e.academicYearId === 'ay-2026')
+    );
 
     if (filter.categoryId && filter.categoryId !== 'ALL') {
       list = list.filter((e) => e.categoryId === filter.categoryId);
@@ -541,6 +500,25 @@ export const expenseService = {
       categoryDistribution,
       topExpenses,
       alerts,
+    };
+  },
+
+  async getKPIs(academicYearId: string = 'ay-2026'): Promise<ExpenseKPIs> {
+    const stats = await this.getDashboardStats({ academicYearId });
+    const byCategory: Record<string, number> = {};
+    stats.categoryDistribution.forEach((c) => {
+      byCategory[c.name] = c.amount;
+    });
+    return {
+      totalMonth: stats.totalMonth,
+      totalYear: stats.totalYear,
+      annualBudget: stats.annualBudget,
+      remainingBudget: stats.remainingBudget,
+      budgetUsedPct: stats.budgetUsedPct,
+      byCategory,
+      countPending: 0,
+      countValidated: stats.totalExpenseCount,
+      countCancelled: 0,
     };
   },
 };

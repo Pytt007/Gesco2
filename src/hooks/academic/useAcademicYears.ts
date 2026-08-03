@@ -55,6 +55,18 @@ export function useAcademicYears() {
 
   useEffect(() => {
     fetchYearsData();
+
+    const handleYearsUpdated = () => {
+      fetchYearsData();
+    };
+
+    window.addEventListener('gesco_school_years_updated', handleYearsUpdated);
+    window.addEventListener('storage', handleYearsUpdated);
+
+    return () => {
+      window.removeEventListener('gesco_school_years_updated', handleYearsUpdated);
+      window.removeEventListener('storage', handleYearsUpdated);
+    };
   }, [fetchYearsData]);
 
   const create = useCallback(

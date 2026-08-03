@@ -150,4 +150,5 @@ export interface ExpenseFilter {
   status?: ExpenseStatus | 'ALL';
   month?: string;   // Format : "YYYY-MM"
   academicYearId?: string;
+  schoolYearId?: string;
 }

@@ -3,7 +3,7 @@
 // Design System SaaS Premium : Wizard 4 Étapes, Table Unifiée & KPIs
 // ─────────────────────────────────────────────────────────────────────────────
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmContext';
 import { useStaff } from '../hooks/staff';
@@ -62,12 +62,12 @@ export default function StaffPage() {
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
 
-  const detailStaff = useMemo(() => staffMembers.find((s) => s.id === selectedStaffId), [staffMembers, selectedStaffId]);
+  const detailStaff = useMemo(() => staff.find((s) => s.id === selectedStaffId), [staff, selectedStaffId]);
 
   const emptyForm = (): Partial<StaffMember> => ({
     firstName: '',
     lastName: '',
-    role: 'TEACHER',
+    role: 'Enseignant',
     jobTitle: 'Enseignant Titulaire',
     phone: '',
     email: '',
@@ -213,7 +213,7 @@ export default function StaffPage() {
 
             <select
               className="form-select"
-              style={{ width: 150, height: 38, borderRadius: 10, fontSize: '0.875rem' }}
+              style={{ minWidth: 170, height: 38, borderRadius: 10, fontSize: '0.875rem' }}
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
             >

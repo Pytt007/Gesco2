@@ -1,5 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // GESCO — Sidebar Navigation Premium (src/components/layout/Sidebar.tsx)
+// Architecture 5 Domaines Métiers : Scolarité / Finance / Gestion / Analyses / Paramètres
 // Rétractable, Favoris Épinglables, Groupes Repliables & Raccourci Command Palette
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -8,59 +9,73 @@ import { useAuth } from '../../context/AuthContext';
 import { useSchoolYear } from '../../context/SchoolYearContext';
 import {
   LayoutDashboard, Users, UserCheck, GraduationCap, Briefcase, UtensilsCrossed,
-  Bus, Trophy, ClipboardList, TrendingDown, FileBarChart,
-  History, BarChart2, Settings, BookOpen, LogOut, Calendar,
-  ChevronDown, ChevronRight, Star, Command, PanelLeftClose, PanelLeft,
-  ShieldCheck, Search
+  Bus, ClipboardList, TrendingDown, FileBarChart, BarChart2, History,
+  Settings, BookOpen, LogOut, Calendar, ChevronDown, ChevronRight,
+  Star, Command, PanelLeftClose, PanelLeft, DollarSign, Building2,
+  BarChart3, ClipboardCheck, BookMarked, ShieldCheck, Wallet, FileText,
 } from 'lucide-react';
 import { ROLE_LABELS } from '../../constants/permissions';
+import { useSettings } from '../../hooks/useSettings';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface NavItem {
   id: string;
   label: string;
   icon: React.ReactNode;
-  groupKey: 'PEDAGOGY' | 'FINANCE' | 'ANALYSIS' | 'ADMINISTRATION';
+  groupKey: 'SCOLARITY' | 'FINANCE' | 'GESTION' | 'ANALYSIS' | 'ADMIN';
   badge?: string;
 }
 
 interface NavGroup {
-  key: 'PEDAGOGY' | 'FINANCE' | 'ANALYSIS' | 'ADMINISTRATION';
+  key: 'SCOLARITY' | 'FINANCE' | 'GESTION' | 'ANALYSIS' | 'ADMIN';
   title: string;
-  icon: React.ReactNode;
+  emoji: string;
+  color: string;
 }
 
+// ─── Groupes de Navigation ────────────────────────────────────────────────────
+
 const NAV_GROUPS: NavGroup[] = [
-  { key: 'PEDAGOGY', title: 'PÉDAGOGIE', icon: <GraduationCap size={13} /> },
-  { key: 'FINANCE', title: 'FINANCES', icon: <TrendingDown size={13} /> },
-  { key: 'ANALYSIS', title: 'ANALYSES', icon: <FileBarChart size={13} /> },
-  { key: 'ADMINISTRATION', title: 'ADMINISTRATION', icon: <Settings size={13} /> },
+  { key: 'SCOLARITY', title: 'SCOLARITÉ',  emoji: '🎓', color: '#6366f1' },
+  { key: 'FINANCE',   title: 'FINANCE',    emoji: '💰', color: '#16a34a' },
+  { key: 'GESTION',   title: 'GESTION',    emoji: '🏢', color: '#ea580c' },
+  { key: 'ANALYSIS',  title: 'ANALYSES',   emoji: '📊', color: '#0284c7' },
+  { key: 'ADMIN',     title: 'PARAMÈTRES', emoji: '⚙️', color: '#64748b' },
 ];
+
+// ─── Items de Navigation ──────────────────────────────────────────────────────
 
 const ALL_NAV_ITEMS: NavItem[] = [
-  // PÉDAGOGIE
-  { id: 'STUDENTS', label: 'Élèves', icon: <Users size={18} />, groupKey: 'PEDAGOGY' },
-  { id: 'PARENTS', label: 'Parents', icon: <UserCheck size={18} />, groupKey: 'PEDAGOGY' },
-  { id: 'CLASSES', label: 'Classes', icon: <GraduationCap size={18} />, groupKey: 'PEDAGOGY' },
-  { id: 'STAFF', label: 'Personnel', icon: <Briefcase size={18} />, groupKey: 'PEDAGOGY' },
-  { id: 'ATTENDANCE', label: 'Présences', icon: <UserCheck size={18} />, groupKey: 'PEDAGOGY' },
-  { id: 'TIMETABLE', label: 'Emploi du Temps', icon: <Calendar size={18} />, groupKey: 'PEDAGOGY' },
-  { id: 'NOTES', label: 'Notes & Éval.', icon: <BookOpen size={18} />, groupKey: 'PEDAGOGY' },
-  { id: 'REPORT_CARDS', label: 'Bulletins', icon: <FileBarChart size={18} />, groupKey: 'PEDAGOGY' },
+  // 🎓 SCOLARITÉ
+  { id: 'STUDENTS',    label: 'Élèves',            icon: <Users size={17} />,          groupKey: 'SCOLARITY' },
+  { id: 'PARENTS',     label: 'Parents',            icon: <UserCheck size={17} />,      groupKey: 'SCOLARITY' },
+  { id: 'CLASSES',     label: 'Classes',            icon: <GraduationCap size={17} />,  groupKey: 'SCOLARITY' },
+  { id: 'STAFF',       label: 'Personnel',          icon: <Briefcase size={17} />,      groupKey: 'SCOLARITY' },
+  { id: 'ATTENDANCE',  label: 'Présences',          icon: <ClipboardCheck size={17} />, groupKey: 'SCOLARITY' },
+  { id: 'TIMETABLE',   label: 'Emploi du Temps',    icon: <Calendar size={17} />,       groupKey: 'SCOLARITY' },
+  { id: 'NOTES',       label: 'Notes & Éval.',      icon: <BookOpen size={17} />,       groupKey: 'SCOLARITY' },
+  { id: 'BULLETINS',   label: 'Bulletins',          icon: <FileText size={17} />,       groupKey: 'SCOLARITY' },
 
-  // FINANCES
-  { id: 'SCOLARITY', label: 'Scolarité', icon: <ClipboardList size={18} />, groupKey: 'FINANCE' },
-  { id: 'CANTEEN', label: 'Cantine', icon: <UtensilsCrossed size={18} />, groupKey: 'FINANCE' },
-  { id: 'TRANSPORT', label: 'Transport', icon: <Bus size={18} />, groupKey: 'FINANCE' },
-  { id: 'EXPENSES', label: 'Dépenses', icon: <TrendingDown size={18} />, groupKey: 'FINANCE' },
+  // 💰 FINANCE
+  { id: 'FINANCE_PAYMENTS',  label: 'Encaissements',       icon: <Wallet size={17} />,       groupKey: 'FINANCE' },
+  { id: 'FINANCE_TRACKING',  label: 'Dossiers Financiers', icon: <ClipboardList size={17} />, groupKey: 'FINANCE' },
 
-  // ANALYSES
-  { id: 'REPORTS', label: 'Rapports', icon: <FileBarChart size={18} />, groupKey: 'ANALYSIS' },
-  { id: 'STATISTICS', label: 'Statistiques', icon: <BarChart2 size={18} />, groupKey: 'ANALYSIS' },
+  // 🏢 GESTION
+  { id: 'CANTEEN',   label: 'Cantine',   icon: <UtensilsCrossed size={17} />, groupKey: 'GESTION' },
+  { id: 'TRANSPORT', label: 'Transport', icon: <Bus size={17} />,             groupKey: 'GESTION' },
+  { id: 'EXPENSES',  label: 'Dépenses',  icon: <TrendingDown size={17} />,    groupKey: 'GESTION' },
 
-  // ADMINISTRATION
-  { id: 'SETTINGS', label: 'Paramètres', icon: <Settings size={18} />, groupKey: 'ADMINISTRATION' },
-  { id: 'HISTORY', label: 'Journal d\'Audit', icon: <History size={18} />, groupKey: 'ADMINISTRATION' },
+  // 📊 ANALYSES
+  { id: 'REPORTS',    label: 'Rapports',        icon: <FileBarChart size={17} />, groupKey: 'ANALYSIS' },
+  { id: 'STATISTICS', label: 'Statistiques',    icon: <BarChart3 size={17} />,   groupKey: 'ANALYSIS' },
+  { id: 'HISTORY',    label: 'Journal d\'Audit', icon: <History size={17} />,    groupKey: 'ANALYSIS' },
+
+  // ⚙️ PARAMÈTRES
+  { id: 'SETTINGS', label: 'Paramètres', icon: <Settings size={17} />, groupKey: 'ADMIN' },
 ];
+
+// ─── Composant Sidebar ────────────────────────────────────────────────────────
 
 interface SidebarProps {
   currentView: string;
@@ -71,23 +86,26 @@ interface SidebarProps {
 export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette }: SidebarProps) {
   const { currentUser, logout, canAccess } = useAuth();
   const { schoolYear } = useSchoolYear();
+  const { schoolInfo } = useSettings();
 
-  // État de repli de la Sidebar (Compact vs Étendu)
+  // État repli Sidebar
   const [isCollapsed, setIsCollapsed] = useState(() => {
     return localStorage.getItem('gesco_sidebar_collapsed') === 'true';
   });
 
-  // État des groupes repliables
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  // État groupes repliables
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('gesco_sidebar_groups') || '{}');
+    } catch { return {}; }
+  });
 
-  // État des favoris épinglés (stocké en local)
+  // Favoris épinglés
   const [pinnedViews, setPinnedViews] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('gesco_pinned_views');
-      return saved ? JSON.parse(saved) : ['STUDENTS', 'SCOLARITY', 'NOTES'];
-    } catch {
-      return ['STUDENTS', 'SCOLARITY', 'NOTES'];
-    }
+      return saved ? JSON.parse(saved) : ['STUDENTS', 'FINANCE_PAYMENTS', 'NOTES'];
+    } catch { return ['STUDENTS', 'FINANCE_PAYMENTS', 'NOTES']; }
   });
 
   const toggleCollapse = () => {
@@ -97,7 +115,11 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
   };
 
   const toggleGroup = (key: string) => {
-    setCollapsedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+    setCollapsedGroups((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      localStorage.setItem('gesco_sidebar_groups', JSON.stringify(next));
+      return next;
+    });
   };
 
   const togglePin = (e: React.MouseEvent, viewId: string) => {
@@ -117,79 +139,80 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
       className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}
       aria-label="Navigation principale"
       style={{
-        width: isCollapsed ? '72px' : '250px',
+        width: isCollapsed ? '72px' : '256px',
         transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh',
+        overflow: 'hidden',
       }}
     >
-      {/* ── BANDEAU BLEU ROYAL SUPÉRIEUR (LOGO & PROFIL) ───────────────────── */}
+      {/* ── BANDEAU SUPÉRIEUR (LOGO & PROFIL) ─────────────────────────────── */}
       <div style={{
-        background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+        background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)',
         color: '#ffffff',
         padding: isCollapsed ? '1rem 0.5rem' : '1.25rem 1.25rem 1rem',
         display: 'flex',
         flexDirection: 'column',
         gap: '0.875rem',
-        boxShadow: '0 4px 14px rgba(37, 99, 235, 0.25)',
+        boxShadow: '0 4px 14px rgba(29, 78, 216, 0.3)',
+        flexShrink: 0,
       }}>
-        {/* Ligne Logo & Toggle */}
+        {/* Ligne 1: Logo & Toggle */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: isCollapsed ? 'center' : 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{
-              width: 32,
-              height: 32,
-              borderRadius: '10px',
-              background: 'rgba(255,255,255,0.22)',
-              backdropFilter: 'blur(4px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 900,
-              fontSize: '1rem',
-              color: '#ffffff',
-            }}>
-              G
-            </div>
-            {!isCollapsed && (
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: '1.0625rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.01em', lineHeight: 1.1 }}>
-                  GESCO
-                </span>
-                <span style={{ fontSize: '0.625rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                  ERP Scolaire
-                </span>
-              </div>
-            )}
-          </div>
+          <img
+            src={schoolInfo?.logoUrl || '/gesco_logo.png'}
+            alt={schoolInfo?.name || 'GESCO ERP'}
+            style={{ width: 38, height: 38, borderRadius: '10px', objectFit: 'contain', background: '#ffffff', padding: '2px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', flexShrink: 0 }}
+          />
 
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={toggleCollapse}
-            title={isCollapsed ? 'Déplier' : 'Réduire'}
-            style={{ color: '#ffffff', padding: '4px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px' }}
-          >
-            {isCollapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
-          </button>
+          {!isCollapsed && (
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={toggleCollapse}
+              title="Réduire"
+              style={{ color: '#ffffff', padding: '5px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px' }}
+            >
+              <PanelLeftClose size={16} />
+            </button>
+          )}
+          {isCollapsed && (
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={toggleCollapse}
+              title="Déplier"
+              style={{ color: '#ffffff', padding: '5px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px', marginTop: 8 }}
+            >
+              <PanelLeft size={16} />
+            </button>
+          )}
         </div>
 
-        {/* Profil Utilisateur Intégré au Bandeau Violet (Format Dataviz Mockup) */}
+        {/* Nom établissement */}
+        {!isCollapsed && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 2 }}>
+            <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.9375rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.01em', lineHeight: 1.25, wordBreak: 'break-word', whiteSpace: 'normal' }}>
+              {schoolInfo?.name || 'GESCO'}
+            </span>
+            <span style={{ fontSize: '0.625rem', fontWeight: 700, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              ERP Scolaire
+            </span>
+          </div>
+        )}
+
+        {/* Profil utilisateur */}
         {!isCollapsed && currentUser && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-            paddingTop: '0.625rem',
-            borderTop: '1px solid rgba(255,255,255,0.2)',
-          }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '0.625rem', borderTop: '1px solid rgba(255,255,255,0.2)' }}>
             <img
               src={currentUser.avatarUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${currentUser.username}`}
               alt={currentUser.fullName}
-              style={{ width: 38, height: 38, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.6)', objectFit: 'cover' }}
+              style={{ width: 38, height: 38, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.7)', objectFit: 'cover', flexShrink: 0 }}
             />
             <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
-              <span style={{ fontSize: '0.84375rem', fontWeight: 800, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {currentUser.fullName}
+              <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>
+                {currentUser.fullName || currentUser.username || 'Utilisateur'}
               </span>
-              <span style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', marginTop: 3, fontSize: '0.625rem', color: '#ffffff', fontWeight: 700, background: 'rgba(255,255,255,0.18)', borderRadius: 6, padding: '2px 7px', maxWidth: 'fit-content' }}>
                 {ROLE_LABELS[currentUser.role] || currentUser.role}
               </span>
             </div>
@@ -197,43 +220,71 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
         )}
       </div>
 
-      {/* ── LISTE DE NAVIGATION PRINCIPALE ─────────────────────────────────── */}
-      <div className="sidebar-nav" style={{ padding: '0.5rem 0' }}>
-        
+      {/* ── CORPS NAVIGATION (SCROLLABLE) ─────────────────────────────────── */}
+      <div className="sidebar-nav" style={{ flex: 1, overflowY: 'auto', padding: '0.375rem 0' }}>
+
+        {/* 🔍 RACCOURCI COMMAND PALETTE */}
+        {!isCollapsed && onOpenCommandPalette && (
+          <div style={{ padding: '0.5rem 0.75rem 0.25rem' }}>
+            <button
+              onClick={onOpenCommandPalette}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '7px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(255,255,255,0.06)', color: 'var(--text-muted)',
+                cursor: 'pointer', fontSize: '0.78125rem', fontWeight: 600,
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+            >
+              <Command size={13} />
+              <span style={{ flex: 1, textAlign: 'left' }}>Recherche rapide...</span>
+              <span style={{ fontSize: '0.625rem', background: 'rgba(255,255,255,0.12)', padding: '1px 5px', borderRadius: 4, fontWeight: 700 }}>⌘K</span>
+            </button>
+          </div>
+        )}
+
         {/* 🏠 Dashboard */}
         {canAccess('DASHBOARD') && (
           <button
             className={`sidebar-item${currentView === 'DASHBOARD' ? ' active' : ''}`}
             onClick={() => onNavigate('DASHBOARD')}
-            style={{ margin: '0.125rem 0.75rem', borderRadius: '8px' }}
+            style={{ margin: '0.25rem 0.625rem', borderRadius: '8px' }}
+            title={isCollapsed ? 'Tableau de bord' : undefined}
           >
-            <span className="sidebar-item-icon"><LayoutDashboard size={18} /></span>
-            {!isCollapsed && <span>Tableau de bord</span>}
+            <span className="sidebar-item-icon"><LayoutDashboard size={17} /></span>
+            {!isCollapsed && <span style={{ fontWeight: 600 }}>Tableau de bord</span>}
           </button>
         )}
 
         {/* ⭐ FAVORIS ÉPINGLÉS */}
         {!isCollapsed && pinnedItems.length > 0 && (
-          <div style={{ margin: '0.75rem 0 0.25rem' }}>
-            <div className="sidebar-section-label" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f59e0b' }}>
-              <Star size={12} fill="#f59e0b" /> FAVORIS ÉPINGLÉS
+          <div style={{ margin: '0.625rem 0 0.125rem' }}>
+            <div
+              className="sidebar-section-label"
+              style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#f59e0b', fontWeight: 800, letterSpacing: '0.06em', fontSize: '0.6875rem' }}
+            >
+              <Star size={11} fill="#f59e0b" /> MES FAVORIS
             </div>
             {pinnedItems.map((item) => (
               <button
                 key={`pin-${item.id}`}
                 className={`sidebar-item${currentView === item.id ? ' active' : ''}`}
                 onClick={() => onNavigate(item.id)}
-                style={{ margin: '0.0625rem 0.75rem', borderRadius: '8px', justifyContent: 'space-between' }}
+                style={{ margin: '0.0625rem 0.625rem', borderRadius: '8px', justifyContent: 'space-between' }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <span className="sidebar-item-icon">{item.icon}</span>
                   <span>{item.label}</span>
                 </div>
                 <Star
-                  size={15}
+                  size={13}
                   className="sidebar-pin-star pinned"
+                  fill="#f59e0b"
+                  color="#f59e0b"
                   onClick={(e) => togglePin(e, item.id)}
-                  title="Désépingler"
+                  title="Retirer des favoris"
                 />
               </button>
             ))}
@@ -247,77 +298,85 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
           const isGroupCollapsed = collapsedGroups[group.key];
 
           return (
-            <div key={group.key} style={{ margin: '0.5rem 0' }}>
+            <div key={group.key} style={{ margin: '0.375rem 0' }}>
               {!isCollapsed ? (
                 <div
                   className="sidebar-section-label"
                   onClick={() => toggleGroup(group.key)}
                   style={{
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justify: 'space-between',
-                    padding: '0.5rem 1rem',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center',
+                    justifyContent: 'space-between', padding: '0.375rem 1rem',
+                    userSelect: 'none',
                   }}
                 >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>{group.icon} {group.title}</span>
-                  {isGroupCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: group.color, fontWeight: 800, fontSize: '0.6875rem', letterSpacing: '0.06em' }}>
+                    <span style={{ fontSize: '0.75rem' }}>{group.emoji}</span>
+                    {group.title}
+                  </span>
+                  {isGroupCollapsed ? <ChevronRight size={11} style={{ color: 'var(--text-muted)' }} /> : <ChevronDown size={11} style={{ color: 'var(--text-muted)' }} />}
                 </div>
               ) : (
-                <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '8px 12px' }} />
+                <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '8px 10px' }} />
               )}
 
-              {!isGroupCollapsed &&
-                items.map((item) => {
-                  const isPinned = pinnedViews.includes(item.id);
-                  return (
-                    <button
-                      key={item.id}
-                      className={`sidebar-item${currentView === item.id ? ' active' : ''}`}
-                      onClick={() => onNavigate(item.id)}
-                      style={{ margin: '0.0625rem 0.75rem', borderRadius: '8px', justifyContent: 'space-between' }}
-                      title={isCollapsed ? item.label : undefined}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <span className="sidebar-item-icon">{item.icon}</span>
-                        {!isCollapsed && <span>{item.label}</span>}
-                      </div>
+              {!isGroupCollapsed && items.map((item) => {
+                const isPinned = pinnedViews.includes(item.id);
+                return (
+                  <button
+                    key={item.id}
+                    className={`sidebar-item${currentView === item.id ? ' active' : ''}`}
+                    onClick={() => onNavigate(item.id)}
+                    style={{ margin: '0.0625rem 0.625rem', borderRadius: '8px', justifyContent: 'space-between' }}
+                    title={isCollapsed ? item.label : undefined}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <span className="sidebar-item-icon">{item.icon}</span>
+                      {!isCollapsed && <span>{item.label}</span>}
+                    </div>
 
-                      {!isCollapsed && (
-                        <Star
-                          size={15}
-                          className={`sidebar-pin-star${isPinned ? ' pinned' : ''}`}
-                          onClick={(e) => togglePin(e, item.id)}
-                          title={isPinned ? 'Désépingler' : 'Épingler dans les favoris'}
-                        />
-                      )}
-                    </button>
-                  );
-                })}
+                    {!isCollapsed && (
+                      <Star
+                        size={13}
+                        className={`sidebar-pin-star${isPinned ? ' pinned' : ''}`}
+                        fill={isPinned ? '#f59e0b' : 'none'}
+                        color={isPinned ? '#f59e0b' : 'var(--text-muted)'}
+                        onClick={(e) => togglePin(e, item.id)}
+                        title={isPinned ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+                        style={{ opacity: isPinned ? 1 : 0, transition: 'opacity 0.15s' }}
+                        onMouseEnter={(e) => { (e.currentTarget as SVGElement).style.opacity = '1'; }}
+                        onMouseLeave={(e) => { (e.currentTarget as SVGElement).style.opacity = isPinned ? '1' : '0'; }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           );
         })}
+
+        {/* Espace en bas */}
+        <div style={{ height: '1rem' }} />
       </div>
 
-      {/* ── FOOTER UTILISATEUR & DÉCONNEXION ─────────────────────────────────── */}
+      {/* ── FOOTER UTILISATEUR & DÉCONNEXION ─────────────────────────────── */}
       {currentUser && (
-        <div className="sidebar-footer" style={{ padding: '0.75rem 0.5rem', borderTop: '1px solid var(--border)' }}>
+        <div className="sidebar-footer" style={{ padding: '0.75rem 0.5rem', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
           <div
             className="sidebar-user"
             onClick={() => onNavigate('SETTINGS')}
-            title="Paramètres du compte"
-            style={{ padding: '0.5rem', borderRadius: '8px' }}
+            title={isCollapsed ? 'Paramètres' : 'Paramètres du compte'}
+            style={{ padding: '0.5rem', borderRadius: '8px', cursor: 'pointer' }}
           >
             <img
               src={currentUser.avatarUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${currentUser.username}`}
               alt={currentUser.fullName}
               className="sidebar-avatar"
-              style={{ width: 34, height: 34 }}
+              style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0 }}
             />
             {!isCollapsed && (
               <div className="sidebar-user-info">
-                <div className="sidebar-user-name">{currentUser.fullName}</div>
-                <div className="sidebar-user-role">
+                <div className="sidebar-user-name" style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#ffffff' }}>{currentUser.fullName}</div>
+                <div className="sidebar-user-role" style={{ fontSize: '0.6875rem', color: '#93c5fd', fontWeight: 600 }}>
                   {ROLE_LABELS[currentUser.role] || currentUser.role}
                 </div>
               </div>
@@ -327,12 +386,14 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
           <button
             className="sidebar-item"
             onClick={logout}
-            style={{ margin: '0.25rem 0.5rem 0', color: '#fca5a5', borderRadius: '8px' }}
+            style={{ margin: '0.25rem 0.25rem 0', color: '#fca5a5', borderRadius: '8px' }}
             title={isCollapsed ? 'Déconnexion' : undefined}
           >
-            <LogOut size={16} style={{ flexShrink: 0, color: '#fca5a5' }} />
-            {!isCollapsed && <span style={{ color: '#fca5a5' }}>Déconnexion</span>}
+            <LogOut size={15} style={{ flexShrink: 0, color: '#fca5a5' }} />
+            {!isCollapsed && <span style={{ color: '#fca5a5', fontSize: '0.8125rem' }}>Déconnexion</span>}
           </button>
+
+
         </div>
       )}
     </nav>

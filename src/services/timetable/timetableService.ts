@@ -46,6 +46,18 @@ const MOCK_SUBJECTS: SubjectItem[] = [
 
 const scheduleStore: Map<string, ScheduleSlotRecord> = new Map();
 
+export function normalizeDayKey(day: string): DayOfWeek {
+  if (!day) return 'MONDAY';
+  const u = day.toUpperCase();
+  if (u === 'LUNDI' || u === 'MONDAY') return 'MONDAY';
+  if (u === 'MARDI' || u === 'TUESDAY') return 'TUESDAY';
+  if (u === 'MERCREDI' || u === 'WEDNESDAY') return 'WEDNESDAY';
+  if (u === 'JEUDI' || u === 'THURSDAY') return 'THURSDAY';
+  if (u === 'VENDREDI' || u === 'FRIDAY') return 'FRIDAY';
+  if (u === 'SAMEDI' || u === 'SATURDAY') return 'SATURDAY';
+  return 'MONDAY';
+}
+
 function initDemoSchedule() {
   if (scheduleStore.size > 0) return;
 
@@ -58,7 +70,7 @@ function initDemoSchedule() {
       subjectId: 'sbj-fr', subjectName: 'Français', subjectColor: '#dc2626',
       teacherId: 'tch-002', teacherName: 'DOUAMBA Marie-Claire',
       room: 'Salle 101',
-      dayOfWeek: 'LUNDI',
+      dayOfWeek: 'MONDAY',
       startTime: '07:30', endTime: '08:30',
       createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
     },
@@ -69,7 +81,7 @@ function initDemoSchedule() {
       subjectId: 'sbj-math', subjectName: 'Mathématiques', subjectColor: '#2563eb',
       teacherId: 'tch-001', teacherName: 'KOUASSI Philippe',
       room: 'Salle 101',
-      dayOfWeek: 'LUNDI',
+      dayOfWeek: 'MONDAY',
       startTime: '08:30', endTime: '09:30',
       createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
     },
@@ -80,7 +92,7 @@ function initDemoSchedule() {
       subjectId: 'sbj-sn', subjectName: 'Sciences', subjectColor: '#16a34a',
       teacherId: 'tch-003', teacherName: 'YAO Kouamé',
       room: 'Salle 101',
-      dayOfWeek: 'LUNDI',
+      dayOfWeek: 'MONDAY',
       startTime: '10:30', endTime: '11:30',
       createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
     },
@@ -93,7 +105,7 @@ function initDemoSchedule() {
       subjectId: 'sbj-math', subjectName: 'Mathématiques', subjectColor: '#2563eb',
       teacherId: 'tch-001', teacherName: 'KOUASSI Philippe',
       room: 'Salle 101',
-      dayOfWeek: 'MARDI',
+      dayOfWeek: 'TUESDAY',
       startTime: '07:30', endTime: '08:30',
       createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
     },
@@ -104,7 +116,7 @@ function initDemoSchedule() {
       subjectId: 'sbj-ang', subjectName: 'Anglais', subjectColor: '#9333ea',
       teacherId: 'tch-005', teacherName: 'TANO Eugénie',
       room: 'Salle 101',
-      dayOfWeek: 'MARDI',
+      dayOfWeek: 'TUESDAY',
       startTime: '08:30', endTime: '09:30',
       createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
     },
@@ -117,7 +129,7 @@ function initDemoSchedule() {
       subjectId: 'sbj-eps', subjectName: 'Éducation Physique', subjectColor: '#0ea5e9',
       teacherId: 'tch-006', teacherName: 'BEDI Charles',
       room: 'Terrain de sport',
-      dayOfWeek: 'MERCREDI',
+      dayOfWeek: 'WEDNESDAY',
       startTime: '08:30', endTime: '10:30',
       createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
     },
@@ -183,13 +195,15 @@ export const timetableService = {
       return { success: false, error: 'L\'heure de fin doit être postérieure à l\'heure de début.' };
     }
 
-    // 2. Horaires d'ouverture de l'école (07h00 - 18h00)
-    if (startMins < timeToMinutes('07:00') || endMins > timeToMinutes('18:00')) {
-      return { success: false, error: 'Le créneau doit être compris entre 07h00 et 18h00 (heures d\'ouverture).' };
+    const normalizedDay = normalizeDayKey(input.dayOfWeek);
+
+    // 2. Horaires d'ouverture de l'école (06h00 - 22h00)
+    if (startMins < timeToMinutes('06:00') || endMins > timeToMinutes('22:00')) {
+      return { success: false, error: 'Le créneau doit être compris entre 06h00 et 22h00.' };
     }
 
     const allSlots = Array.from(scheduleStore.values()).filter(
-      (s) => s.academicYearId === input.academicYearId && s.dayOfWeek === input.dayOfWeek
+      (s) => s.academicYearId === input.academicYearId && normalizeDayKey(s.dayOfWeek) === normalizedDay
     );
 
     // 3. Conflit de Classe : Deux cours en même temps dans la même classe
@@ -235,7 +249,7 @@ export const timetableService = {
       teacherId: input.teacherId,
       teacherName: tch.name,
       room: input.room?.trim() || undefined,
-      dayOfWeek: input.dayOfWeek,
+      dayOfWeek: normalizedDay,
       startTime: input.startTime,
       endTime: input.endTime,
       createdAt: new Date().toISOString(),

@@ -19,35 +19,47 @@ interface HeaderProps {
 
 // Mappage du Groupe Métier pour le Fil d'Ariane
 const BREADCRUMB_GROUPS: Record<string, string> = {
-  DASHBOARD: 'Tableau de bord',
-  STUDENTS: 'Pédagogie',
-  PARENTS: 'Pédagogie',
-  CLASSES: 'Pédagogie',
-  STAFF: 'Pédagogie',
-  ATTENDANCE: 'Pédagogie',
-  TIMETABLE: 'Pédagogie',
-  NOTES: 'Pédagogie',
-  REPORT_CARDS: 'Pédagogie',
-  SCOLARITY: 'Finances',
-  CANTEEN: 'Finances',
-  TRANSPORT: 'Finances',
-  EXPENSES: 'Finances',
-  REPORTS: 'Analyses',
-  STATISTICS: 'Analyses',
-  SETTINGS: 'Administration',
-  HISTORY: 'Administration',
+  // Standalone
+  DASHBOARD:          'Tableau de bord',
+
+  // 🎓 Scolarité
+  STUDENTS:           'Scolarité',
+  PARENTS:            'Scolarité',
+  CLASSES:            'Scolarité',
+  STAFF:              'Scolarité',
+  ATTENDANCE:         'Scolarité',
+  STAFF_ATTENDANCE:   'Scolarité',
+  TIMETABLE:          'Scolarité',
+  NOTES:              'Scolarité',
+  BULLETINS:          'Scolarité',
+  REPORT_CARDS:       'Scolarité',
+
+  // 💰 Finance
+  FINANCE_PAYMENTS:   'Finance',
+  FINANCE_TRACKING:   'Finance',
+  SCOLARITY:          'Finance',
+
+  // 🏢 Gestion
+  CANTEEN:            'Gestion',
+  TRANSPORT:          'Gestion',
+  EXPENSES:           'Gestion',
+
+  // 📊 Analyses
+  REPORTS:            'Analyses',
+  STATISTICS:         'Analyses',
+  HISTORY:            'Analyses',
+
+  // ⚙️ Paramètres
+  SETTINGS:           'Paramètres',
+
+  // ⚠️ DEV ONLY
+  DEV_PORTAL:         '⚡ Dev',
 };
 
 export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOpenCommandPalette }: HeaderProps) {
-  const { schoolYear, schoolYears, setSchoolYear } = useSchoolYear();
+  const { schoolYear } = useSchoolYear();
   const { currentUser } = useAuth();
   const { schoolInfo } = useSettings();
-  const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
-
-  const handleYearChange = async (year: string) => {
-    await setSchoolYear(year);
-    setYearDropdownOpen(false);
-  };
 
   const groupLabel = BREADCRUMB_GROUPS[currentView] || 'GESCO';
   const pageTitle = VIEW_LABELS[currentView] || currentView;
@@ -105,77 +117,26 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOp
           </span>
         </button>
 
-        {/* Sélecteur d'Année Scolaire Bouton Bleu Royal */}
-        <div style={{ position: 'relative' }}>
-          <button
-            id="btn-year-selector"
-            className="btn"
-            onClick={() => setYearDropdownOpen(!yearDropdownOpen)}
-            aria-expanded={yearDropdownOpen}
-            aria-haspopup="listbox"
-            style={{ borderRadius: '20px', padding: '6px 14px', fontSize: '0.8125rem', background: '#2563eb', color: '#ffffff', border: 'none', boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)' }}
-          >
-            <CalendarRange size={15} style={{ color: '#ffffff' }} />
-            <span style={{ fontWeight: 700 }}>{schoolYear}</span>
-            <ChevronDown
-              size={13}
-              style={{
-                color: '#ffffff',
-                transform: yearDropdownOpen ? 'rotate(180deg)' : 'none',
-                transition: 'transform 0.2s ease',
-              }}
-            />
-          </button>
-
-          {yearDropdownOpen && (
-            <>
-              <div
-                style={{ position: 'fixed', inset: 0, zIndex: 49 }}
-                onClick={() => setYearDropdownOpen(false)}
-              />
-              <div
-                role="listbox"
-                aria-label="Sélectionner l'année scolaire"
-                style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 6px)',
-                  right: 0,
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '12px',
-                  boxShadow: 'var(--shadow-lg)',
-                  zIndex: 50,
-                  minWidth: '160px',
-                  overflow: 'hidden',
-                  animation: 'slideUp 0.15s ease',
-                }}
-              >
-                {schoolYears.map((year) => (
-                  <button
-                    key={year}
-                    role="option"
-                    aria-selected={year === schoolYear}
-                    onClick={() => handleYearChange(year)}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      textAlign: 'left',
-                      padding: '8px 14px',
-                      fontSize: '0.8125rem',
-                      fontWeight: year === schoolYear ? 700 : 500,
-                      color: year === schoolYear ? '#4f46e5' : 'var(--text-primary)',
-                      background: year === schoolYear ? 'var(--color-primary-light)' : 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      transition: 'background 0.15s ease',
-                    }}
-                  >
-                    {year} {year === schoolYear ? '✓' : ''}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+        {/* Badge Année Scolaire Active (Lecture seule) */}
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: '#ecfdf5',
+            border: '1px solid #a7f3d0',
+            borderRadius: '20px',
+            padding: '6px 14px',
+            fontSize: '0.8125rem',
+            fontWeight: 700,
+            color: '#047857',
+            boxShadow: '0 2px 6px rgba(16, 185, 129, 0.1)',
+          }}
+          title="Année scolaire active unique configurée dans Paramètres"
+        >
+          <span style={{ fontSize: '0.75rem' }}>🟢</span>
+          <span>Année scolaire active :</span>
+          <span style={{ fontWeight: 900, color: '#065f46' }}>{schoolYear}</span>
         </div>
 
         {/* Bouton Mode Sombre / Clair */}

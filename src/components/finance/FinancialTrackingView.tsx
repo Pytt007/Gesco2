@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useSchoolYear } from '../../context/SchoolYearContext';
 import { useFinancialTracking } from '../../hooks/finance/useFinancialTracking';
 import { StudentFinancialEnrollment, TuitionLevelCode } from '../../services/finance/types';
 import { FinancialStatementModal } from './FinancialStatementModal';
 import { PaymentRecordingModal } from './PaymentRecordingModal';
 import { ReceiptModal } from './ReceiptModal';
 import { useTuitionPayment } from '../../hooks/finance/useTuitionPayment';
+import { documentEngineEnterprise, pdfRenderer } from '../../services/documents';
 import {
   Search,
   Filter,
@@ -36,6 +38,8 @@ const LEVEL_OPTIONS: { code: TuitionLevelCode | 'ALL'; name: string }[] = [
 ];
 
 export const FinancialTrackingView: React.FC = () => {
+  const { schoolYear } = useSchoolYear();
+
   const {
     filteredEnrollments,
     kpis,
@@ -49,10 +53,10 @@ export const FinancialTrackingView: React.FC = () => {
     printStatement,
     downloadStatementPDF,
     refresh,
-  } = useFinancialTracking('ay-2026');
+  } = useFinancialTracking(schoolYear);
 
   const { recordPayment, printReceipt, downloadReceiptPDF, activeReceipt, setActiveReceipt } =
-    useTuitionPayment('ay-2026');
+    useTuitionPayment(schoolYear);
 
   // Modales
   const [statementEnrollment, setStatementEnrollment] = useState<StudentFinancialEnrollment | null>(null);
@@ -79,6 +83,66 @@ export const FinancialTrackingView: React.FC = () => {
     return false;
   };
 
+  const handlePrintFinancialTracking = async () => {
+    const tableRows = filteredEnrollments.map((rec) => `
+      <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px;">
+        <td style="padding: 6px 8px; font-weight: bold;">${rec.matricule}</td>
+        <td style="padding: 6px 8px; font-weight: bold; color: #0f172a;">${rec.studentName}</td>
+        <td style="padding: 6px 8px;">${rec.className}</td>
+        <td style="padding: 6px 8px; text-align: right;">${rec.netTuitionDue.toLocaleString('fr-FR')} F</td>
+        <td style="padding: 6px 8px; text-align: right; color: #16a34a; font-weight: bold;">${rec.totalPaid.toLocaleString('fr-FR')} F</td>
+        <td style="padding: 6px 8px; text-align: right; color: ${rec.remainingBalance === 0 ? '#16a34a' : '#ef4444'}; font-weight: bold;">
+          ${rec.remainingBalance === 0 ? 'SOLDÉ' : rec.remainingBalance.toLocaleString('fr-FR') + ' F'}
+        </td>
+      </tr>
+    `).join('');
+
+    const sectionsHtml = `
+      <div style="margin-bottom: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+        <h3 style="margin: 0 0 8px; color: #1e3a8a; font-size: 13px; text-transform: uppercase;">SYNTHÈSE DU RECOUVREMENT DE SCOLARITÉ</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+          <tr>
+            <td>Total Dû : <strong>${kpis.totalNetDue.toLocaleString('fr-FR')} FCFA</strong></td>
+            <td>Total Encaissé : <strong style="color: #16a34a;">${kpis.totalCollected.toLocaleString('fr-FR')} FCFA</strong></td>
+            <td>Reste à Recouvrer : <strong style="color: #ef4444;">${kpis.totalRemaining.toLocaleString('fr-FR')} FCFA</strong></td>
+            <td>Taux de Recouvrement : <strong style="color: #2563eb;">${kpis.recoveryRate}%</strong></td>
+          </tr>
+        </table>
+      </div>
+
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+        <thead style="background: #1e3a8a; color: #ffffff; font-size: 11px;">
+          <tr>
+            <th style="padding: 8px; text-align: left;">Matricule</th>
+            <th style="padding: 8px; text-align: left;">Nom & Prénoms</th>
+            <th style="padding: 8px; text-align: left;">Classe</th>
+            <th style="padding: 8px; text-align: right;">Scolarité</th>
+            <th style="padding: 8px; text-align: right;">Montant Payé</th>
+            <th style="padding: 8px; text-align: right;">Solde</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+        </tbody>
+      </table>
+    `;
+
+    const doc = await documentEngineEnterprise.compileDocument({
+      documentType: 'ÉTAT_FINANCIER',
+      title: 'ÉTAT DE SUIVI DE RECOUVREMENT DE SCOLARITÉ',
+      subtitle: `EXPLOITATION FINANCIÈRE SCOLARITÉ — ${filteredEnrollments.length} ÉLÈVES INSCRITS`,
+      meta: {
+        EFFECTIF: `${filteredEnrollments.length} Élèves`,
+        RECOUVREMENT: `${kpis.recoveryRate}%`,
+        DATE: new Date().toLocaleDateString('fr-FR'),
+      },
+      data: filteredEnrollments,
+      sectionsHtml,
+    });
+
+    pdfRenderer.printHtml(doc.fullHtml);
+  };
+
   return (
     <div className="container-fluid p-4">
       {/* En-tête principal */}
@@ -98,7 +162,7 @@ export const FinancialTrackingView: React.FC = () => {
             <FileSpreadsheet size={16} /> Exporter Excel
           </button>
 
-          <button className="btn btn-outline-secondary text-sm fw-semibold" onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button className="btn btn-outline-secondary text-sm fw-semibold" onClick={handlePrintFinancialTracking} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Printer size={16} /> Imprimer la vue
           </button>
         </div>
@@ -224,13 +288,13 @@ export const FinancialTrackingView: React.FC = () => {
       {/* Barre de Recherche et Filtres Multicritères */}
       <div
         className="card shadow-sm mb-4"
-        style={{ borderRadius: '12px', border: '1px solid var(--border-color, #e2e8f0)', backgroundColor: '#ffffff' }}
+        style={{ borderRadius: '14px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}
       >
         <div className="card-body p-3">
-          <div className="row g-3 align-items-center">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', alignItems: 'center' }}>
             {/* Recherche texte */}
-            <div className="col-12 col-md-4">
-              <div className="search-bar-wrapper">
+            <div style={{ gridColumn: 'span 2' }}>
+              <div className="search-bar-wrapper" style={{ position: 'relative' }}>
                 <Search size={16} className="search-bar-icon" />
                 <input
                   type="text"
@@ -238,6 +302,7 @@ export const FinancialTrackingView: React.FC = () => {
                   placeholder="Recherche par Nom, Prénom, Matricule ou Responsable..."
                   value={filters.search}
                   onChange={(e) => updateFilter('search', e.target.value)}
+                  style={{ paddingLeft: '2.75rem' }}
                 />
                 {filters.search && (
                   <button className="search-bar-clear" onClick={() => updateFilter('search', '')}>
@@ -248,9 +313,10 @@ export const FinancialTrackingView: React.FC = () => {
             </div>
 
             {/* Filtre Niveau */}
-            <div className="col-12 col-sm-6 col-md-3">
+            <div>
               <select
                 className="form-select text-sm fw-semibold"
+                style={{ height: '42px', borderRadius: '10px', border: '1px solid #cbd5e1' }}
                 value={filters.levelCode || 'ALL'}
                 onChange={(e) => updateFilter('levelCode', e.target.value)}
               >
@@ -263,9 +329,10 @@ export const FinancialTrackingView: React.FC = () => {
             </div>
 
             {/* Filtre Statut */}
-            <div className="col-12 col-sm-6 col-md-3">
+            <div>
               <select
                 className="form-select text-sm fw-semibold"
+                style={{ height: '42px', borderRadius: '10px', border: '1px solid #cbd5e1' }}
                 value={filters.status || 'ALL'}
                 onChange={(e) => updateFilter('status', e.target.value)}
               >
@@ -277,8 +344,8 @@ export const FinancialTrackingView: React.FC = () => {
             </div>
 
             {/* Reinitialiser */}
-            <div className="col-12 col-md-2 text-end">
-              <button className="btn btn-outline-secondary text-sm w-100" onClick={resetFilters}>
+            <div>
+              <button className="btn btn-outline-secondary text-sm fw-semibold w-100" style={{ height: '42px', borderRadius: '10px' }} onClick={resetFilters}>
                 Réinitialiser
               </button>
             </div>

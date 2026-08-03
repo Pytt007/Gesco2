@@ -1,5 +1,6 @@
 import React, { useState, Suspense, lazy, useEffect, Component, ReactNode } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { PermissionProvider } from './context/PermissionContext';
 import { SchoolYearProvider } from './context/SchoolYearContext';
 import { ToastProvider } from './context/ToastContext';
 import { ConfirmProvider } from './context/ConfirmContext';
@@ -28,7 +29,13 @@ import TimetablePage from './pages/TimetablePage';
 import AttendancePage from './pages/AttendancePage';
 import StaffAttendancePage from './pages/StaffAttendancePage';
 import ReportsPage from './pages/ReportsPage';
+import StatisticsPage from './pages/StatisticsPage';
+import AuditHistoryPage from './pages/AuditHistoryPage';
 import PlaceholderPage from './pages/PlaceholderPage';
+// ⚠️  DEV ONLY — importé uniquement en développement, ne jamais supprimer la guard ci-dessous
+const DevPortalPage = import.meta.env.DEV
+  ? React.lazy(() => import('./pages/DevPortalPage'))
+  : null;
 
 // ─── ERROR BOUNDARY ──────────────────────────────────────────────────────────
 
@@ -41,10 +48,11 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  state: ErrorBoundaryState = { hasError: false, error: null };
+
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false, error: null };
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
@@ -56,12 +64,12 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: null });
+    (this as any).setState({ hasError: false, error: null });
     window.location.reload();
   };
 
   render() {
-    if (this.state.hasError) {
+    if ((this as any).state.hasError) {
       return (
         <div style={{
           width: '100%',
@@ -88,7 +96,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
               Une erreur est survenue lors de l'affichage
             </h2>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-muted, #64748b)', marginBottom: '1.5rem', lineHeight: 1.5 }}>
-              L'application a rencontré un problème inattendu ({this.state.error?.message || 'Erreur inconnue'}).
+              L'application a rencontré un problème inattendu ({(this as any).state.error?.message || 'Erreur inconnue'}).
             </p>
             <button
               onClick={this.handleReset}
@@ -101,7 +109,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         </div>
       );
     }
-    return this.props.children;
+    return (this as any).props.children;
   }
 }
 
@@ -164,15 +172,30 @@ function AppContent() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
     localStorage.setItem('gesco-theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
-  // Écouteur global CTRL + K / CMD + K pour ouvrir la Command Palette
+  // Écouteur global CTRL + K (Palette) & CTRL + ALT + D (Dev Portal en DEV uniquement)
   useEffect(() => {
+    // Si l'URL de départ est /dev en environnement de dev, ouvrir le Dev Portal
+    if (import.meta.env.DEV && window.location.pathname === '/dev') {
+      setCurrentView('DEV_PORTAL');
+    }
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setIsCommandPaletteOpen((prev) => !prev);
+      }
+      // Raccourci développeur secrète CTRL + ALT + D (uniquement en DEV)
+      if (import.meta.env.DEV && (e.ctrlKey || e.metaKey) && e.altKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        setCurrentView((prev) => (prev === 'DEV_PORTAL' ? 'DASHBOARD' : 'DEV_PORTAL'));
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -182,9 +205,13 @@ function AppContent() {
   useEffect(() => {
     if (currentUser && !canAccess(currentView)) {
       const firstAllowed = [
-        'DASHBOARD', 'STUDENTS', 'PARENTS', 'CLASSES', 'STAFF', 'CANTEEN', 'TRANSPORT',
-        'ACTIVITIES', 'SCOLARITY', 'EXPENSES', 'REPORTS', 'NOTES',
-        'STATISTICS', 'HISTORY', 'SETTINGS',
+        'DASHBOARD', 'STUDENTS', 'PARENTS', 'CLASSES', 'STAFF', 'ATTENDANCE', 'TIMETABLE', 'NOTES',
+        'FINANCE_PAYMENTS', 'FINANCE_TRACKING',
+        'CANTEEN', 'TRANSPORT', 'EXPENSES',
+        'REPORTS', 'STATISTICS', 'HISTORY',
+        'SETTINGS',
+        // rétrocompat
+        'SCOLARITY', 'ACTIVITIES',
       ].find((v) => canAccess(v));
       if (firstAllowed) setCurrentView(firstAllowed);
     }
@@ -234,23 +261,40 @@ function AppContent() {
       case 'DASHBOARD':        return <DashboardPage onNavigate={setCurrentView} />;
       case 'STUDENTS':         return <StudentsPage />;
       case 'PARENTS':          return <ParentsPage onNavigate={setCurrentView} />;
-      case 'SCOLARITY':        return <ScolarityPage />;
-      case 'EXPENSES':         return <ExpensesPage />;
-      case 'SETTINGS':         return <SettingsPage />;
       case 'CLASSES':          return <AcademicPage />;
       case 'STAFF':            return <StaffPage />;
       case 'STAFF_ATTENDANCE': return <StaffAttendancePage />;
       case 'TIMETABLE':        return <TimetablePage />;
       case 'ATTENDANCE':       return <AttendancePage />;
-      case 'CANTEEN':          return <CanteenPage />;
-      case 'TRANSPORT':        return <TransportPage />;
-      case 'ACTIVITIES':       return <PlaceholderPage title="Activités" icon="⚽" />;
       case 'NOTES':            return <GradeEntryPage />;
       case 'BULLETINS':        return <ReportCardsPage />;
       case 'REPORT_CARDS':     return <ReportCardsPage />;
+
+      // 💰 FINANCE
+      case 'FINANCE_PAYMENTS': return <ScolarityPage defaultTab="PAYMENT_RECORD" />;
+      case 'FINANCE_TRACKING': return <ScolarityPage defaultTab="PAYMENTS" />;
+      case 'SCOLARITY':        return <ScolarityPage />; // rétrocompat
+
+      // 🏢 GESTION
+      case 'CANTEEN':          return <CanteenPage />;
+      case 'TRANSPORT':        return <TransportPage />;
+      case 'EXPENSES':         return <ExpensesPage />;
+
+      // 📊 ANALYSES
       case 'REPORTS':          return <ReportsPage />;
-      case 'STATISTICS':       return <PlaceholderPage title="Statistiques" icon="📈" />;
-      case 'HISTORY':          return <PlaceholderPage title="Journal d'Audit" icon="📜" />;
+      case 'STATISTICS':       return <StatisticsPage />;
+      case 'HISTORY':          return <AuditHistoryPage />;
+
+      // ⚙️ PARAMÈTRES
+      case 'SETTINGS':         return <SettingsPage />;
+
+      // Autres
+      case 'ACTIVITIES':       return <PlaceholderPage title="Activités" icon="⚽" />;
+      // ⚠️  DEV PORTAL — uniquement en mode développement
+      case 'DEV_PORTAL':
+        if (!import.meta.env.DEV || !DevPortalPage) return <AccessDenied />;
+        return <DevPortalPage />;
+
       default:                 return <DashboardPage onNavigate={setCurrentView} />;
     }
   };
@@ -295,9 +339,11 @@ export default function App() {
       <ToastProvider>
         <ConfirmProvider>
           <AuthProvider>
-            <SchoolYearProvider>
-              <AppContent />
-            </SchoolYearProvider>
+            <PermissionProvider>
+              <SchoolYearProvider>
+                <AppContent />
+              </SchoolYearProvider>
+            </PermissionProvider>
           </AuthProvider>
         </ConfirmProvider>
       </ToastProvider>

@@ -3,6 +3,8 @@ import { useConfirm } from '../context/ConfirmContext';
 import { useTimetable } from '../hooks/timetable/useTimetable';
 import { useAcademicYears } from '../hooks/academic';
 import { useSchoolYear } from '../context/SchoolYearContext';
+import { documentEngineEnterprise } from '../services/documents/DocumentEngine/index';
+import { TimePicker } from '../components/ui/time-picker';
 import {
   DAYS_OF_WEEK,
   STANDARD_TIME_SLOTS,
@@ -13,13 +15,14 @@ import {
 import {
   Calendar, Clock, Plus, Printer, Copy, Users, UserCheck,
   BookOpen, MapPin, X, Trash2, Edit2, CheckCircle2, AlertCircle, FileText,
+  Building, GraduationCap,
 } from 'lucide-react';
 
 export default function TimetablePage() {
   const { schoolYear } = useSchoolYear();
   const confirm = useConfirm();
   const { academicYears } = useAcademicYears();
-  const [selectedYearId, setSelectedYearId] = useState<string>(schoolYear?.id || 'ay-2026');
+  const [selectedYearId, setSelectedYearId] = useState<string>(schoolYear || 'ay-2026');
 
   const {
     displayMode,
@@ -149,80 +152,72 @@ export default function TimetablePage() {
     if (res.success) setShowCopyModal(false);
   };
 
-  // Impression / PDF
-  const handlePrintOrPDF = () => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
+  // Impression / PDF — Génération via DocumentEngine Enterprise
+  const handlePrintOrPDF = async () => {
     const selectedName = displayMode === 'BY_CLASS'
       ? classes.find((c) => c.id === selectedClassId)?.name || 'Classe'
       : teachers.find((t) => t.id === selectedTeacherId)?.name || 'Enseignant';
 
     const title = displayMode === 'BY_CLASS'
-      ? `Emploi du Temps — ${selectedName}`
-      : `Planning Enseignant — ${selectedName}`;
+      ? `EMPLOI DU TEMPS — ${selectedName}`
+      : `PLANNING ENSEIGNANT — ${selectedName}`;
 
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>${title}</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; color: #0f172a; }
-            h1 { font-size: 18px; color: #1e3a5f; margin-bottom: 4px; text-align: center; }
-            p.sub { font-size: 11px; color: #64748b; margin-top: 0; text-align: center; margin-bottom: 16px; }
-            table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-            th, td { border: 1px solid #cbd5e1; padding: 6px; text-align: center; font-size: 11px; vertical-align: top; }
-            th { background-color: #f1f5f9; font-weight: bold; height: 28px; }
-            .time-col { width: 90px; background-color: #f8fafc; font-weight: bold; }
-            .slot-card { background: #eff6ff; border-radius: 4px; padding: 4px; margin-bottom: 4px; border: 1px solid #bfdbfe; }
-            .subject { font-weight: bold; color: #1d4ed8; font-size: 11px; }
-            .info { font-size: 9px; color: #475569; margin-top: 2px; }
-          </style>
-        </head>
-        <body>
-          <h1>${title}</h1>
-          <p class="sub">École Privée GESCO · Année Scolaire ${selectedYearId} · Édité le ${new Date().toLocaleDateString('fr-FR')}</p>
-          <table>
-            <thead>
-              <tr>
-                <th className="time-col">Horaire</th>
-                ${DAYS_OF_WEEK.map((d) => `<th>${d.label}</th>`).join('')}
-              </tr>
-            </thead>
-            <tbody>
-              ${STANDARD_TIME_SLOTS.map((ts) => `
-                <tr>
-                  <td class="time-col">${ts.label}</td>
-                  ${DAYS_OF_WEEK.map((day) => {
-                    const matched = slots.filter(
-                      (s) => s.dayOfWeek === day.key && s.startTime <= ts.startTime && s.endTime >= ts.endTime
-                    );
-                    return `
-                      <td>
-                        ${matched
-                          .map(
-                            (m) => `
-                          <div class="slot-card" style="border-left: 3px solid ${m.subjectColor}">
-                            <div class="subject">${m.subjectName}</div>
-                            <div class="info">${displayMode === 'BY_CLASS' ? m.teacherName : m.className}</div>
-                            ${m.room ? `<div class="info">📌 ${m.room}</div>` : ''}
-                          </div>
-                        `
-                          )
-                          .join('')}
-                      </td>
-                    `;
-                  }).join('')}
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </body>
-      </html>
+    const tableHeaderHtml = `
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 10px;">
+        <thead>
+          <tr style="background-color: #5B4E9E !important; color: #ffffff !important;">
+            <th style="padding: 10px; width: 100px; text-transform: uppercase;">Horaire</th>
+            ${DAYS_OF_WEEK.map((d) => `<th style="padding: 10px; text-transform: uppercase;">${d.label}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${STANDARD_TIME_SLOTS.map((ts, idx) => {
+            const bg = idx % 2 === 1 ? 'background-color: #F5F4FA !important;' : 'background-color: #ffffff !important;';
+            return `
+            <tr>
+              <td style="padding: 8px; font-weight: 800; color: #453D7A !important; border-bottom: 1px solid #D8D5E4; ${bg}">${ts.label}</td>
+              ${DAYS_OF_WEEK.map((day) => {
+                const matched = slots.filter(
+                  (s) => s.dayOfWeek === day.key && s.startTime <= ts.startTime && s.endTime >= ts.endTime
+                );
+                return `
+                  <td style="padding: 6px; border-bottom: 1px solid #D8D5E4; vertical-align: top; ${bg}">
+                    ${matched
+                      .map(
+                        (m) => `
+                      <div style="background: #ffffff; border-radius: 6px; padding: 6px; border: 1px solid #D8D5E4; border-left: 4px solid ${m.subjectColor || '#5B4E9E'}; margin-bottom: 4px; text-align: left;">
+                        <div style="font-weight: 800; color: #5B4E9E !important; font-size: 10.5px;">${m.subjectName}</div>
+                        <div style="font-size: 9.5px; color: #453D7A !important; margin-top: 2px;">${displayMode === 'BY_CLASS' ? m.teacherName : m.className}</div>
+                        ${m.room ? `<div style="font-size: 8.5px; color: #6B6684 !important; margin-top: 1px;">📍 ${m.room}</div>` : ''}
+                      </div>
+                    `
+                      )
+                      .join('')}
+                  </td>
+                `;
+              }).join('')}
+            </tr>
+          `;
+          }).join('')}
+        </tbody>
+      </table>
     `;
 
-    printWindow.document.write(htmlContent);
+    const doc = await documentEngineEnterprise.compileDocument({
+      documentType: 'EMPLOI_DU_TEMPS',
+      title,
+      subtitle: `PLANNING OFFICIEL COURS & SALLES — ANNEÉ ${selectedYearId}`,
+      meta: {
+        CIBLE: selectedName,
+        MODE: displayMode === 'BY_CLASS' ? 'VUE CLASSE' : 'VUE ENSEIGNANT',
+      },
+      data: { selectedClassId, selectedTeacherId, slotsCount: slots.length },
+      sectionsHtml: tableHeaderHtml,
+    });
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    printWindow.document.write(doc.fullHtml);
     printWindow.document.close();
     printWindow.focus();
     setTimeout(() => {
@@ -303,19 +298,11 @@ export default function TimetablePage() {
 
           {/* Sélecteurs */}
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-            {/* Sélecteur Année Scolaire */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Calendar size={15} color="#2563eb" />
-              <select
-                className="form-select form-select-sm fw-semibold"
-                value={selectedYearId}
-                onChange={(e) => setSelectedYearId(e.target.value)}
-                style={{ minWidth: 140 }}
-              >
-                {academicYears.map((ay) => (
-                  <option key={ay.id} value={ay.id}>{ay.name} {ay.isCurrent ? '(Active)' : ''}</option>
-                ))}
-              </select>
+            {/* Badge Année Scolaire Active (Lecture seule) */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '10px', fontSize: '0.8125rem', fontWeight: 700, color: '#047857' }}>
+              <span>🟢</span>
+              <span>Année active :</span>
+              <span style={{ fontWeight: 900, color: '#065f46' }}>{schoolYear}</span>
             </div>
 
             {/* Sélecteur Classe ou Enseignant */}
@@ -384,7 +371,7 @@ export default function TimetablePage() {
               </tr>
             </thead>
             <tbody>
-              {STANDARD_TIME_SLOTS.map((slotTime) => (
+              {STANDARD_TIME_SLOTS.map((slotTime, slotIdx) => (
                 <tr key={slotTime.id}>
                   {/* Colonne Horaire */}
                   <td style={{ background: '#f8fafc', textAlign: 'center', verticalAlign: 'middle', padding: '8px', fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>
@@ -393,66 +380,194 @@ export default function TimetablePage() {
 
                   {/* 5 Colonnes Jours */}
                   {DAYS_OF_WEEK.map((day) => {
-                    // Trouver les cours qui chevauchent ce créneau
-                    const matchedSlots = slots.filter(
-                      (s) => s.dayOfWeek === day.key && s.startTime <= slotTime.startTime && s.endTime >= slotTime.endTime
-                    );
+                    const isSameDay = (d1: string, d2: string) => {
+                      const map: Record<string, string> = {
+                        LUNDI: 'MONDAY', MARDI: 'TUESDAY', MERCREDI: 'WEDNESDAY', JEUDI: 'THURSDAY', VENDREDI: 'FRIDAY', SAMEDI: 'SATURDAY',
+                        MONDAY: 'MONDAY', TUESDAY: 'TUESDAY', WEDNESDAY: 'WEDNESDAY', THURSDAY: 'THURSDAY', FRIDAY: 'FRIDAY', SATURDAY: 'SATURDAY',
+                      };
+                      return (map[d1?.toUpperCase()] || d1) === (map[d2?.toUpperCase()] || d2);
+                    };
+
+                    // 1. Vérifier si cette cellule est déjà couverte par un cours démarré au-dessus (rowSpan)
+                    const isCoveredByPreviousRowSpan = slots.some((s) => {
+                      if (!isSameDay(s.dayOfWeek, day.key)) return false;
+                      return s.startTime < slotTime.startTime && s.endTime > slotTime.startTime;
+                    });
+
+                    // Si couverte par une ligne précédente, ne pas rendre de <td>
+                    if (isCoveredByPreviousRowSpan) {
+                      return null;
+                    }
+
+                    // 2. Trouver les cours qui DÉMARRENT dans ce créneau (ou avant le tout premier créneau)
+                    const startingSlots = slots.filter((s) => {
+                      if (!isSameDay(s.dayOfWeek, day.key)) return false;
+                      if (slotIdx === 0 && s.startTime < slotTime.endTime) return true;
+                      return s.startTime >= slotTime.startTime && s.startTime < slotTime.endTime;
+                    });
+
+                    // 3. Calculer le nombre de lignes (rowSpan) occupées par la durée du cours
+                    let maxRowSpan = 1;
+                    if (startingSlots.length > 0) {
+                      const longestEndTime = startingSlots.reduce(
+                        (max, s) => (s.endTime > max ? s.endTime : max),
+                        startingSlots[0].endTime
+                      );
+                      let spanCount = 0;
+                      for (let i = slotIdx; i < STANDARD_TIME_SLOTS.length; i++) {
+                        if (longestEndTime > STANDARD_TIME_SLOTS[i].startTime) {
+                          spanCount++;
+                        } else {
+                          break;
+                        }
+                      }
+                      maxRowSpan = Math.max(1, spanCount);
+                    }
 
                     return (
                       <td
                         key={day.key}
-                        onClick={() => matchedSlots.length === 0 && handleCellClick(day.key, slotTime.startTime, slotTime.endTime)}
+                        rowSpan={maxRowSpan > 1 ? maxRowSpan : undefined}
+                        onClick={() => startingSlots.length === 0 && handleCellClick(day.key, slotTime.startTime, slotTime.endTime)}
                         style={{
-                          height: 72,
+                          height: maxRowSpan * 96,
                           verticalAlign: 'top',
                           padding: '6px',
-                          background: matchedSlots.length > 0 ? '#ffffff' : 'transparent',
-                          cursor: displayMode === 'BY_CLASS' && matchedSlots.length === 0 ? 'pointer' : 'default',
+                          background: startingSlots.length > 0 ? '#f8fafc' : 'transparent',
+                          cursor: displayMode === 'BY_CLASS' && startingSlots.length === 0 ? 'pointer' : 'default',
                           transition: 'background 0.2s',
                         }}
                       >
-                        {matchedSlots.length > 0 ? (
-                          matchedSlots.map((s) => (
-                            <div
-                              key={s.id}
-                              onClick={(e) => handleEditSlot(s, e)}
-                              style={{
-                                background: `${s.subjectColor}12`,
-                                borderLeft: `4px solid ${s.subjectColor}`,
-                                borderRadius: 8,
-                                padding: '6px 8px',
-                                height: '100%',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'space-between',
-                                cursor: displayMode === 'BY_CLASS' ? 'pointer' : 'default',
-                                position: 'relative',
-                              }}
-                            >
-                              <div>
-                                <div style={{ fontWeight: 700, fontSize: '0.8125rem', color: s.subjectColor, display: 'flex', justifyContent: 'space-between' }}>
-                                  <span>{s.subjectName}</span>
+                        {startingSlots.length > 0 ? (
+                          startingSlots.map((s, idx) => {
+                            // Alternance cartes vibrantes colorées & cartes blanches (comme le mockup fourni)
+                            const isSolidCard = idx % 2 === 0;
+                            const dotColor = idx % 3 === 0 ? '#10b981' : idx % 3 === 1 ? '#fbbf24' : '#ef4444';
+                            const initials = (displayMode === 'BY_CLASS' ? s.teacherName : s.className)
+                              ? (displayMode === 'BY_CLASS' ? s.teacherName : s.className)
+                                  .split(' ')
+                                  .map((n) => n[0])
+                                  .join('')
+                                  .substring(0, 2)
+                                  .toUpperCase()
+                              : 'TR';
+
+                            if (isSolidCard) {
+                              const solidBg = s.subjectColor
+                                ? `linear-gradient(135deg, ${s.subjectColor} 0%, ${s.subjectColor}dd 100%)`
+                                : 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)';
+
+                              return (
+                                <div
+                                  key={s.id}
+                                  onClick={(e) => handleEditSlot(s, e)}
+                                  className="gesco-timetable-card-solid"
+                                  style={{
+                                    background: solidBg,
+                                    color: '#ffffff',
+                                    borderRadius: 14,
+                                    padding: '10px 12px',
+                                    height: '100%',
+                                    minHeight: 84,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'space-between',
+                                    cursor: displayMode === 'BY_CLASS' ? 'pointer' : 'default',
+                                    position: 'relative',
+                                    boxShadow: '0 8px 20px -4px rgba(37, 99, 235, 0.35)',
+                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                  }}
+                                >
+                                  {/* HAUT : MATIÈRE + PASTA DOT D'ÉTAT */}
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
+                                    <div style={{ fontWeight: 800, fontSize: '0.8125rem', color: '#ffffff', letterSpacing: '-0.01em', lineHeight: 1.2 }}>
+                                      {s.subjectName}
+                                    </div>
+                                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor, boxShadow: `0 0 6px ${dotColor}`, flexShrink: 0, marginTop: 2 }} />
+                                  </div>
+
+                                  {/* MILIEU : ENSEIGNANT OU CLASSE */}
+                                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'rgba(255, 255, 255, 0.9)', marginTop: 2 }}>
+                                    {displayMode === 'BY_CLASS' ? s.teacherName : s.className}
+                                  </div>
+
+                                  {/* BAS : AVATAR INITIALES + BADGES PILLULES VERRE */}
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                      <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(255, 255, 255, 0.25)', border: '1px solid rgba(255, 255, 255, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.625rem', fontWeight: 900, color: '#ffffff' }}>
+                                        {initials}
+                                      </div>
+                                      {s.room && (
+                                        <span style={{ background: 'rgba(255, 255, 255, 0.22)', backdropFilter: 'blur(4px)', color: '#ffffff', borderRadius: 12, padding: '2px 8px', fontSize: '0.625rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                          <MapPin size={9} /> {s.room}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <span style={{ background: 'rgba(255, 255, 255, 0.22)', backdropFilter: 'blur(4px)', color: '#ffffff', borderRadius: 12, padding: '2px 8px', fontSize: '0.625rem', fontWeight: 700 }}>
+                                      {s.startTime}-{s.endTime}
+                                    </span>
+                                  </div>
                                 </div>
-                                <div style={{ fontSize: '0.75rem', color: '#475569', fontWeight: 500, marginTop: 2 }}>
+                              );
+                            }
+
+                            // CARTE BLANCHE SURÉLEVÉE AVEC PASTILLE D'ÉTAT & BADGES COLORÉS
+                            return (
+                              <div
+                                key={s.id}
+                                onClick={(e) => handleEditSlot(s, e)}
+                                className="gesco-timetable-card-white"
+                                style={{
+                                  background: '#ffffff',
+                                  border: '1px solid #e2e8f0',
+                                  borderRadius: 14,
+                                  padding: '10px 12px',
+                                  height: '100%',
+                                  minHeight: 84,
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  justifyContent: 'space-between',
+                                  cursor: displayMode === 'BY_CLASS' ? 'pointer' : 'default',
+                                  position: 'relative',
+                                  boxShadow: '0 4px 14px rgba(15, 23, 42, 0.05)',
+                                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                }}
+                              >
+                                {/* HAUT : MATIÈRE + PASTILLE D'ÉTAT */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
+                                  <div style={{ fontWeight: 800, fontSize: '0.8125rem', color: '#1e293b', letterSpacing: '-0.01em', lineHeight: 1.2 }}>
+                                    {s.subjectName}
+                                  </div>
+                                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor, boxShadow: `0 0 6px ${dotColor}`, flexShrink: 0, marginTop: 2 }} />
+                                </div>
+
+                                {/* MILIEU : ENSEIGNANT OU CLASSE */}
+                                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginTop: 2 }}>
                                   {displayMode === 'BY_CLASS' ? s.teacherName : s.className}
                                 </div>
-                              </div>
 
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.6875rem', color: '#64748b', marginTop: 4 }}>
-                                {s.room && (
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                                    <MapPin size={10} /> {s.room}
+                                {/* BAS : AVATAR INITIALES + BADGES PILLULES COLORÉES */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: `${s.subjectColor || '#2563eb'}20`, border: `1px solid ${s.subjectColor || '#2563eb'}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.625rem', fontWeight: 900, color: s.subjectColor || '#2563eb' }}>
+                                      {initials}
+                                    </div>
+                                    {s.room && (
+                                      <span style={{ background: `${s.subjectColor || '#2563eb'}12`, color: s.subjectColor || '#2563eb', borderRadius: 12, padding: '2px 8px', fontSize: '0.625rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                        <MapPin size={9} /> {s.room}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span style={{ background: '#f1f5f9', color: '#475569', borderRadius: 12, padding: '2px 8px', fontSize: '0.625rem', fontWeight: 700 }}>
+                                    {s.startTime}-{s.endTime}
                                   </span>
-                                )}
-                                <span style={{ fontWeight: 600 }}>
-                                  {s.startTime}-{s.endTime}
-                                </span>
+                                </div>
                               </div>
-                            </div>
-                          ))
+                            );
+                          })
                         ) : (
-                          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.2 }}>
-                            {displayMode === 'BY_CLASS' && <Plus size={14} color="#94a3b8" />}
+                          <div style={{ height: '100%', minHeight: 84, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.2 }}>
+                            {displayMode === 'BY_CLASS' && <Plus size={16} color="#94a3b8" />}
                           </div>
                         )}
                       </td>
@@ -486,34 +601,54 @@ export default function TimetablePage() {
                 {/* Jour & Salle */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                   <div>
-                    <label className="form-label fw-semibold text-sm">Jour *</label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 600, color: '#475569', marginBottom: '0.375rem', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, background: '#eff6ff', color: '#2563eb', borderRadius: 6 }}>
+                        <Calendar size={13} />
+                      </span>
+                      Jour <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
                     <select className="form-select" value={form.dayOfWeek} onChange={(e) => setForm({ ...form, dayOfWeek: e.target.value as DayOfWeek })} required>
                       {DAYS_OF_WEEK.map((d) => (
                         <option key={d.key} value={d.key}>{d.label}</option>
                       ))}
                     </select>
                   </div>
+
                   <div>
-                    <label className="form-label fw-semibold text-sm">Salle de classe</label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 600, color: '#475569', marginBottom: '0.375rem', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, background: '#eff6ff', color: '#2563eb', borderRadius: 6 }}>
+                        <Building size={13} />
+                      </span>
+                      Salle de classe
+                    </label>
                     <input type="text" className="form-control" value={form.room} onChange={(e) => setForm({ ...form, room: e.target.value })} placeholder="Ex : Salle 102" />
                   </div>
                 </div>
 
-                {/* Horaire début / fin */}
+                {/* Horaire début / fin via TimePicker */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                  <div>
-                    <label className="form-label fw-semibold text-sm">Heure début *</label>
-                    <input type="time" className="form-control" value={form.startTime} onChange={(e) => setForm({ ...form, startTime: e.target.value })} required />
-                  </div>
-                  <div>
-                    <label className="form-label fw-semibold text-sm">Heure fin *</label>
-                    <input type="time" className="form-control" value={form.endTime} onChange={(e) => setForm({ ...form, endTime: e.target.value })} required />
-                  </div>
+                  <TimePicker
+                    label="Heure Début"
+                    required
+                    value={form.startTime}
+                    onChange={(time) => setForm({ ...form, startTime: time })}
+                  />
+                  <TimePicker
+                    label="Heure Fin"
+                    required
+                    value={form.endTime}
+                    onChange={(time) => setForm({ ...form, endTime: time })}
+                  />
                 </div>
 
                 {/* Matière */}
                 <div>
-                  <label className="form-label fw-semibold text-sm">Matière *</label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 600, color: '#475569', marginBottom: '0.375rem', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, background: '#eff6ff', color: '#2563eb', borderRadius: 6 }}>
+                      <BookOpen size={13} />
+                    </span>
+                    Matière <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
                   <select className="form-select" value={form.subjectId} onChange={(e) => setForm({ ...form, subjectId: e.target.value })} required>
                     {subjects.map((s) => (
                       <option key={s.id} value={s.id}>{s.name}</option>
@@ -523,7 +658,12 @@ export default function TimetablePage() {
 
                 {/* Enseignant */}
                 <div>
-                  <label className="form-label fw-semibold text-sm">Enseignant *</label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 600, color: '#475569', marginBottom: '0.375rem', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, background: '#eff6ff', color: '#2563eb', borderRadius: 6 }}>
+                      <GraduationCap size={13} />
+                    </span>
+                    Enseignant <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
                   <select className="form-select" value={form.teacherId} onChange={(e) => setForm({ ...form, teacherId: e.target.value })} required>
                     {teachers.map((t) => (
                       <option key={t.id} value={t.id}>{t.name} ({t.subjectName || 'Général'})</option>

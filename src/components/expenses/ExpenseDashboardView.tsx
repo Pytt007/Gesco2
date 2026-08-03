@@ -5,6 +5,7 @@ import { ExpenseCategoryItem } from '../../services/expenses/types';
 import { useAcademicYears } from '../../hooks/academic';
 import { useSchoolYear } from '../../context/SchoolYearContext';
 import { downloadExcel } from '../../utils/exportUtils';
+import { documentEngineEnterprise } from '../../services/documents/DocumentEngine/index';
 import {
   PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, Legend, CartesianGrid,
@@ -17,8 +18,6 @@ import {
 
 export const ExpenseDashboardView: React.FC = () => {
   const { schoolYear } = useSchoolYear();
-  const { academicYears } = useAcademicYears();
-  const [selectedYearId, setSelectedYearId] = useState<string>(schoolYear?.id || 'ay-2026');
 
   const {
     stats,
@@ -27,7 +26,8 @@ export const ExpenseDashboardView: React.FC = () => {
     setSelectedCategory,
     selectedMonth,
     setSelectedMonth,
-  } = useExpenseDashboard(selectedYearId);
+    reload,
+  } = useExpenseDashboard(schoolYear);
 
   const [categories, setCategories] = useState<ExpenseCategoryItem[]>([]);
 
@@ -47,84 +47,78 @@ export const ExpenseDashboardView: React.FC = () => {
       'Montant (FCFA)': e.amount,
       'Mode de paiement': e.paymentMode,
     }));
-    downloadExcel(topData, 'Top Dépenses', `dashboard_depenses_gesco_${selectedYearId}`);
+    downloadExcel(topData, 'Top Dépenses', `dashboard_depenses_gesco_${schoolYear}`);
   };
 
-  // Impression / PDF
-  const handlePrintOrPDF = () => {
+  // Impression / PDF via DocumentEngine Enterprise
+  const handlePrintOrPDF = async () => {
+    const valTotal = stats?.totalValidatedAmount ?? stats?.totalMonth ?? 0;
+    const pendingTotal = stats?.totalPendingAmount ?? 0;
+    const monthlyBudgetVal = stats?.monthlyBudget ?? stats?.annualBudget ?? 0;
+    const topList = stats?.topExpenses || [];
+
+    const kpiHtml = `
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px;">
+        <div style="background-color: #F5F4FA !important; border: 1px solid #D8D5E4; border-radius: 8px; padding: 10px; text-align: center;">
+          <div style="font-size: 9px; font-weight: 800; color: #6B6684 !important; text-transform: uppercase;">Total Dépenses Validées</div>
+          <div style="font-size: 16px; font-weight: 900; color: #5B4E9E !important; margin-top: 2px;">${valTotal.toLocaleString('fr-FR')} FCFA</div>
+        </div>
+        <div style="background-color: #F5F4FA !important; border: 1px solid #D8D5E4; border-radius: 8px; padding: 10px; text-align: center;">
+          <div style="font-size: 9px; font-weight: 800; color: #6B6684 !important; text-transform: uppercase;">En Attente de Validation</div>
+          <div style="font-size: 16px; font-weight: 900; color: #F59E0B !important; margin-top: 2px;">${pendingTotal.toLocaleString('fr-FR')} FCFA</div>
+        </div>
+        <div style="background-color: #F5F4FA !important; border: 1px solid #D8D5E4; border-radius: 8px; padding: 10px; text-align: center;">
+          <div style="font-size: 9px; font-weight: 800; color: #6B6684 !important; text-transform: uppercase;">Budget Mensuel</div>
+          <div style="font-size: 16px; font-weight: 900; color: #10B981 !important; margin-top: 2px;">${monthlyBudgetVal ? monthlyBudgetVal.toLocaleString('fr-FR') + ' FCFA' : '—'}</div>
+        </div>
+      </div>
+    `;
+
+    const tableHtml = `
+      <div style="margin-bottom: 12px; font-size: 11px; font-weight: 800; color: #453D7A !important; text-transform: uppercase;">Top Plus Grandes Dépenses :</div>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 10px; background: #ffffff !important;">
+        <thead>
+          <tr style="background-color: #5B4E9E !important; color: #ffffff !important;">
+            <th style="padding: 8px 10px; font-size: 9.5px; font-weight: 800; text-transform: uppercase;">Date</th>
+            <th style="padding: 8px 10px; font-size: 9.5px; font-weight: 800; text-transform: uppercase;">Catégorie</th>
+            <th style="padding: 8px 10px; font-size: 9.5px; font-weight: 800; text-transform: uppercase;">Description</th>
+            <th style="padding: 8px 10px; font-size: 9.5px; font-weight: 800; text-transform: uppercase;">Fournisseur</th>
+            <th style="padding: 8px 10px; font-size: 9.5px; font-weight: 800; text-transform: uppercase; text-align: right;">Montant (FCFA)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${topList.map((e, idx) => {
+            const bg = idx % 2 === 1 ? 'background-color: #F5F4FA !important;' : 'background-color: #ffffff !important;';
+            const amtText = (e.amount || 0).toLocaleString('fr-FR');
+            return `
+            <tr>
+              <td style="padding: 8px 10px; border-bottom: 1px solid #D8D5E4; ${bg}">${e.date || '—'}</td>
+              <td style="padding: 8px 10px; border-bottom: 1px solid #D8D5E4; ${bg}">${e.categoryName || '—'}</td>
+              <td style="padding: 8px 10px; border-bottom: 1px solid #D8D5E4; ${bg}">${e.description || '—'}</td>
+              <td style="padding: 8px 10px; border-bottom: 1px solid #D8D5E4; ${bg}">${e.supplier || '—'}</td>
+              <td style="padding: 8px 10px; border-bottom: 1px solid #D8D5E4; font-weight: 800; text-align: right; ${bg}">${amtText} FCFA</td>
+            </tr>
+          `;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+
+    const doc = await documentEngineEnterprise.compileDocument({
+      documentType: 'ÉTAT_FINANCIER',
+      title: 'SYNTHÈSE DES DÉPENSES',
+      subtitle: `DASHBOARD FINANCIER DÉPENSES — ANNEÉ ${schoolYear}`,
+      meta: {
+        BUDGET: monthlyBudgetVal ? `${monthlyBudgetVal.toLocaleString('fr-FR')} FCFA` : 'Non défini',
+      },
+      data: stats || {},
+      sectionsHtml: kpiHtml + tableHtml,
+    });
+
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Tableau de Bord des Dépenses — GESCO</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 30px; color: #1e293b; }
-            h1 { font-size: 20px; color: #1e3a5f; margin-bottom: 4px; }
-            p.sub { font-size: 11px; color: #64748b; margin-top: 0; margin-bottom: 20px; }
-            .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
-            .kpi-card { border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; background: #f8fafc; }
-            .kpi-label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: bold; }
-            .kpi-val { font-size: 16px; font-weight: bold; margin-top: 4px; color: #1e293b; }
-            .alert-box { background: #fef2f2; border: 1px solid #fca5a5; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 12px; color: #991b1b; }
-            table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px; }
-            th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
-            th { background-color: #f1f5f9; font-weight: bold; }
-            .amount { text-align: right; font-weight: bold; color: #dc2626; }
-          </style>
-        </head>
-        <body>
-          <h1>Tableau de Bord des Dépenses</h1>
-          <p class="sub">École Privée GESCO · Année Scolaire ${selectedYearId} · Imprimé le ${new Date().toLocaleDateString('fr-FR')}</p>
-
-          <div class="kpi-grid">
-            <div class="kpi-card"><div class="kpi-label">Dépenses du mois</div><div class="kpi-val">${formatFCFA(stats.totalMonth)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">Dépenses annuelles</div><div class="kpi-val">${formatFCFA(stats.totalYear)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">Budget annuel</div><div class="kpi-val">${formatFCFA(stats.annualBudget)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">Budget restant</div><div class="kpi-val">${formatFCFA(stats.remainingBudget)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">Nombre total de dépenses</div><div class="kpi-val">${stats.totalExpenseCount}</div></div>
-            <div class="kpi-card"><div class="kpi-label">Dépense moyenne / mois</div><div class="kpi-val">${formatFCFA(stats.averagePerMonth)}</div></div>
-          </div>
-
-          ${stats.alerts.length > 0 ? `
-            <div class="alert-box">
-              <strong>Alertes financières actives (${stats.alerts.length}) :</strong>
-              <ul>
-                ${stats.alerts.map((a) => `<li><strong>${a.title}</strong> : ${a.message}</li>`).join('')}
-              </ul>
-            </div>
-          ` : ''}
-
-          <h3>Top 10 Dépenses</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Catégorie</th>
-                <th>Description</th>
-                <th>Fournisseur</th>
-                <th class="amount">Montant (FCFA)</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${stats.topExpenses.map((e) => `
-                <tr>
-                  <td>${e.date}</td>
-                  <td>${e.categoryName}</td>
-                  <td>${e.description}</td>
-                  <td>${e.supplier || '—'}</td>
-                  <td class="amount">${e.amount.toLocaleString('fr-FR')}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `;
-
-    printWindow.document.write(htmlContent);
+    printWindow.document.write(doc.fullHtml);
     printWindow.document.close();
     printWindow.focus();
     setTimeout(() => {
@@ -165,59 +159,85 @@ export const ExpenseDashboardView: React.FC = () => {
         </div>
       </div>
 
-      {/* FILTRES D'ANALYSE */}
-      <div className="card" style={{ borderRadius: 12, border: '1px solid #e2e8f0' }}>
-        <div className="card-body p-3" style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-          <Filter size={16} color="#64748b" />
+      {/* BARRE DE FILTRES AÉRÉE SAAS */}
+      <div className="card shadow-sm mb-4" style={{ borderRadius: 16, border: 'none', background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', overflow: 'hidden' }}>
+        <div style={{ padding: '20px 24px' }}>
+          
+          {/* Header des filtres */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(239,68,68,0.25)', border: '1px solid rgba(239,68,68,0.35)', color: '#fca5a5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Filter size={18} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 800, color: '#ffffff' }}>Filtres d'analyse des dépenses</h3>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: '#94a3b8' }}>Filtrez le tableau de bord par Année, Mois ou Catégorie de charge</p>
+              </div>
+            </div>
 
-          {/* Filtre Année */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Calendar size={15} color="#2563eb" />
-            <select
-              className="form-select form-select-sm fw-semibold"
-              value={selectedYearId}
-              onChange={(e) => setSelectedYearId(e.target.value)}
-              style={{ width: 150 }}
-            >
-              {academicYears.map((ay) => (
-                <option key={ay.id} value={ay.id}>{ay.name} {ay.isCurrent ? '(Active)' : ''}</option>
-              ))}
-            </select>
+            {(selectedCategory !== 'ALL' || selectedMonth) && (
+              <button
+                className="btn btn-sm fw-semibold"
+                onClick={() => { setSelectedCategory('ALL'); setSelectedMonth(''); }}
+                style={{ borderRadius: 10, padding: '6px 14px', background: 'rgba(255,255,255,0.1)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.2)' }}
+              >
+                Réinitialiser
+              </button>
+            )}
           </div>
 
-          {/* Filtre Mois */}
-          <input
-            type="month"
-            className="form-control form-control-sm"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            style={{ width: 160 }}
-          />
+          {/* Grille responsive aérée pour les filtres */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+            
+            {/* 1. ANNÉE SCOLAIRE */}
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.7rem', fontWeight: 800, color: '#7dd3fc', marginBottom: 7, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                <Calendar size={12} />
+                Année Scolaire Active
+              </label>
+              <div style={{ height: '42px', borderRadius: '10px', fontWeight: 800, border: '1px solid rgba(255,255,255,0.2)', fontSize: '0.875rem', width: '100%', background: 'rgba(255,255,255,0.12)', color: '#ffffff', display: 'flex', alignItems: 'center', padding: '0 14px', gap: 6 }}>
+                <span>🟢</span> {schoolYear}
+              </div>
+            </div>
 
-          {/* Filtre Catégorie */}
-          <select
-            className="form-select form-select-sm"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            style={{ width: 180 }}
-          >
-            <option value="ALL">Toutes les catégories</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+            {/* 2. MOIS D'IMPUTATION */}
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.7rem', fontWeight: 800, color: '#fde68a', marginBottom: 7, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                <Clock size={12} />
+                Mois d'imputation
+              </label>
+              <input
+                type="month"
+                className="form-control"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                style={{ height: '42px', borderRadius: '10px', fontWeight: 700, border: '1px solid rgba(255,255,255,0.15)', fontSize: '0.875rem', width: '100%', background: 'rgba(255,255,255,0.08)', color: '#ffffff' }}
+              />
+            </div>
 
-          {(selectedCategory !== 'ALL' || selectedMonth) && (
-            <button
-              className="btn btn-sm btn-outline-secondary"
-              onClick={() => { setSelectedCategory('ALL'); setSelectedMonth(''); }}
-              style={{ borderRadius: 8 }}
-            >
-              Réinitialiser
-            </button>
-          )}
+            {/* 3. CATÉGORIE DE DÉPENSE */}
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.7rem', fontWeight: 800, color: '#d8b4fe', marginBottom: 7, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                <Tag size={12} />
+                Catégorie de Dépense
+              </label>
+              <select
+                className="form-select"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                style={{ height: '42px', borderRadius: '10px', fontWeight: 700, border: '1px solid rgba(255,255,255,0.15)', fontSize: '0.875rem', width: '100%', background: 'rgba(255,255,255,0.08)', color: '#ffffff' }}
+              >
+                <option value="ALL" style={{ background: '#1e293b', color: '#ffffff' }}>Toutes les catégories</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id} style={{ background: '#1e293b', color: '#ffffff' }}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
+          </div>
         </div>
       </div>
+
 
       {/* INDICATEURS (6 KPIs - STYLE DASHBOARD DYNAMIQUE) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>

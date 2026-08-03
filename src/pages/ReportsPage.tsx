@@ -7,6 +7,7 @@ import {
   Search, Star, FileText, Download, Printer, Filter, X,
   Calendar, Users, BookOpen, Clock, CheckCircle2, ChevronRight,
   TrendingUp, RefreshCw, Award, Sparkles, SlidersHorizontal,
+  FileBarChart, LayoutGrid,
 } from 'lucide-react';
 
 const MOCK_CLASSES = [
@@ -24,7 +25,7 @@ const MOCK_EVAL_TYPES = ['Composition Mensuelle', 'Devoir Surveillé', 'Examen B
 export default function ReportsPage() {
   const { schoolYear } = useSchoolYear();
   const { academicYears } = useAcademicYears();
-  const [selectedYearId, setSelectedYearId] = useState<string>(schoolYear?.id || 'ay-2026');
+  const [selectedYearId, setSelectedYearId] = useState<string>(schoolYear || 'ay-2026');
 
   const {
     filteredReports,
@@ -48,115 +49,172 @@ export default function ReportsPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
-      {/* En-tête de page */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 700, color: 'var(--text-main, #0f172a)' }}>
-            Centre des Rapports
-          </h1>
-          <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: 'var(--text-muted, #64748b)' }}>
-            Tous les rapports administratifs, pédagogiques et financiers générés automatiquement.
-          </p>
-        </div>
+      {/* ── BANNIÈRE HERO SAAS ─────────────────────────────────────────────── */}
+      <div
+        className="card shadow-lg"
+        style={{
+          borderRadius: '16px',
+          background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #2563eb 100%)',
+          color: '#ffffff',
+          padding: '24px 28px',
+          border: 'none',
+          boxShadow: '0 12px 32px rgba(15, 23, 42, 0.25)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <FileBarChart size={26} color="#ffffff" />
+            </div>
+            <div>
+              <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em' }}>
+                Centre des Rapports
+              </h1>
+              <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: '#93c5fd', fontWeight: 500 }}>
+                Rapports administratifs, pédagogiques et financiers générés automatiquement
+              </p>
+            </div>
+          </div>
 
-        {/* Barre de recherche rapide */}
-        <div className="search-bar-wrapper" style={{ width: 320 }}>
-          <Search size={15} className="search-bar-icon" />
-          <input
-            type="text"
-            className="search-bar-input"
-            placeholder="Rechercher un rapport..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <button className="search-bar-clear" onClick={() => setSearchQuery('')}>
-              <X size={14} />
-            </button>
-          )}
+          {/* Barre de recherche intégrée dans la bannière */}
+          <div style={{ position: 'relative', width: 300 }}>
+            <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+            <input
+              type="text"
+              placeholder="Rechercher un rapport..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%', paddingLeft: 36, paddingRight: searchQuery ? 36 : 14,
+                height: 40, borderRadius: 10, border: '1px solid rgba(255,255,255,0.2)',
+                background: 'rgba(255,255,255,0.12)', color: '#ffffff',
+                fontSize: '0.875rem', fontFamily: 'inherit', fontWeight: 500,
+                outline: 'none', backdropFilter: 'blur(4px)',
+              }}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', padding: 0 }}
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* BARRE DE FILTRES GLOBAUX */}
-      <div className="card" style={{ borderRadius: 12, border: '1px solid #e2e8f0' }}>
-        <div className="card-body p-3" style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#475569', fontWeight: 600, fontSize: '0.8125rem' }}>
-            <SlidersHorizontal size={16} color="#2563eb" /> Filtres de génération :
+      {/* BARRE DE FILTRES GLOBAUX AÉRÉE SAAS */}
+      <div className="card shadow-sm" style={{ borderRadius: 16, border: '1px solid #e2e8f0', background: '#ffffff', overflow: 'hidden' }}>
+        <div style={{ padding: '20px 24px' }}>
+          
+          {/* Header des filtres */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <SlidersHorizontal size={18} />
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 800, color: '#0f172a' }}>Filtres de génération de rapport</h3>
+              <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>Sélectionnez l'Année, la Classe, le Niveau, la Période ou le Type pour affiner les données</p>
+            </div>
           </div>
 
-          {/* Année */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Calendar size={14} color="#2563eb" />
-            <select
-              className="form-select form-select-sm fw-semibold"
-              value={filters.academicYearId}
-              onChange={(e) => setFilters({ ...filters, academicYearId: e.target.value })}
-              style={{ width: 140 }}
-            >
-              {academicYears.map((ay) => (
-                <option key={ay.id} value={ay.id}>{ay.name} {ay.isCurrent ? '(Active)' : ''}</option>
-              ))}
-            </select>
-          </div>
+          {/* Grille responsive aérée pour les filtres */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+            
+            {/* 1. ANNÉE SCOLAIRE ACTIVE */}
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, background: '#eff6ff', color: '#2563eb', borderRadius: 6 }}>
+                  <Calendar size={13} />
+                </span>
+                Année Scolaire Active
+              </label>
+              <div style={{ height: '42px', borderRadius: '10px', fontWeight: 700, border: '1px solid #a7f3d0', fontSize: '0.875rem', width: '100%', background: '#ecfdf5', color: '#047857', display: 'flex', alignItems: 'center', padding: '0 12px', gap: 6 }}>
+                <span>🟢</span> {schoolYear}
+              </div>
+            </div>
 
-          {/* Classe */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Users size={14} color="#2563eb" />
-            <select
-              className="form-select form-select-sm"
-              value={filters.classId}
-              onChange={(e) => setFilters({ ...filters, classId: e.target.value })}
-              style={{ width: 130 }}
-            >
-              {MOCK_CLASSES.map((c) => (
-                <option key={c.id} value={c.id}>Classe {c.name}</option>
-              ))}
-            </select>
-          </div>
+            {/* 2. CLASSE */}
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, background: '#e0e7ff', color: '#4f46e5', borderRadius: 6 }}>
+                  <Users size={13} />
+                </span>
+                Classe
+              </label>
+              <select
+                className="form-select"
+                value={filters.classId}
+                onChange={(e) => setFilters({ ...filters, classId: e.target.value })}
+                style={{ height: '42px', borderRadius: '10px', fontWeight: 600, border: '1px solid #cbd5e1', fontSize: '0.875rem', width: '100%' }}
+              >
+                {MOCK_CLASSES.map((c) => (
+                  <option key={c.id} value={c.id}>Classe {c.name}</option>
+                ))}
+              </select>
+            </div>
 
-          {/* Niveau */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <BookOpen size={14} color="#2563eb" />
-            <select
-              className="form-select form-select-sm"
-              value={filters.levelCode}
-              onChange={(e) => setFilters({ ...filters, levelCode: e.target.value })}
-              style={{ width: 130 }}
-            >
-              {MOCK_LEVELS.map((lvl) => (
-                <option key={lvl} value={lvl}>{lvl}</option>
-              ))}
-            </select>
-          </div>
+            {/* 3. NIVEAU */}
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, background: '#f3e8ff', color: '#9333ea', borderRadius: 6 }}>
+                  <BookOpen size={13} />
+                </span>
+                Niveau Éducatif
+              </label>
+              <select
+                className="form-select"
+                value={filters.levelCode}
+                onChange={(e) => setFilters({ ...filters, levelCode: e.target.value })}
+                style={{ height: '42px', borderRadius: '10px', fontWeight: 600, border: '1px solid #cbd5e1', fontSize: '0.875rem', width: '100%' }}
+              >
+                {MOCK_LEVELS.map((lvl) => (
+                  <option key={lvl} value={lvl}>{lvl}</option>
+                ))}
+              </select>
+            </div>
 
-          {/* Période */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Clock size={14} color="#2563eb" />
-            <select
-              className="form-select form-select-sm"
-              value={filters.period}
-              onChange={(e) => setFilters({ ...filters, period: e.target.value })}
-              style={{ width: 140 }}
-            >
-              {MOCK_PERIODS.map((p) => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
-          </div>
+            {/* 4. PÉRIODE */}
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, background: '#fef3c7', color: '#d97706', borderRadius: 6 }}>
+                  <Clock size={13} />
+                </span>
+                Période
+              </label>
+              <select
+                className="form-select"
+                value={filters.period}
+                onChange={(e) => setFilters({ ...filters, period: e.target.value })}
+                style={{ height: '42px', borderRadius: '10px', fontWeight: 600, border: '1px solid #cbd5e1', fontSize: '0.875rem', width: '100%' }}
+              >
+                {MOCK_PERIODS.map((p) => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </div>
 
-          {/* Type d'évaluation */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Award size={14} color="#2563eb" />
-            <select
-              className="form-select form-select-sm"
-              value={filters.assessmentType}
-              onChange={(e) => setFilters({ ...filters, assessmentType: e.target.value })}
-              style={{ width: 170 }}
-            >
-              {MOCK_EVAL_TYPES.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
+            {/* 5. TYPE D'ÉVALUATION */}
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, background: '#d1fae5', color: '#059669', borderRadius: 6 }}>
+                  <Award size={13} />
+                </span>
+                Type d'Évaluation
+              </label>
+              <select
+                className="form-select"
+                value={filters.assessmentType}
+                onChange={(e) => setFilters({ ...filters, assessmentType: e.target.value })}
+                style={{ height: '42px', borderRadius: '10px', fontWeight: 600, border: '1px solid #cbd5e1', fontSize: '0.875rem', width: '100%' }}
+              >
+                {MOCK_EVAL_TYPES.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+
           </div>
         </div>
       </div>
@@ -208,22 +266,38 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* SECTION 2 : ONGLETS PAR CATÉGORIE */}
-      <div style={{ display: 'flex', gap: 8, borderBottom: '2px solid #e2e8f0', paddingBottom: 8, flexWrap: 'wrap' }}>
+      {/* SECTION 2 : ONGLETS CATÉGORIES — PILLS MODERNES */}
+      <div style={{ display: 'flex', gap: 6, padding: '6px', background: '#f1f5f9', borderRadius: 14, flexWrap: 'wrap' }}>
         <button
-          className={`btn btn-sm ${activeCategory === 'ALL' ? 'btn-primary' : 'btn-outline-secondary'}`}
           onClick={() => setActiveCategory('ALL')}
-          style={{ fontWeight: 600, borderRadius: 8 }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '8px 16px',
+            background: activeCategory === 'ALL' ? '#2563eb' : 'transparent',
+            color: activeCategory === 'ALL' ? '#ffffff' : '#475569',
+            border: 'none', borderRadius: 10, fontFamily: 'inherit',
+            fontSize: '0.8125rem', fontWeight: 700, cursor: 'pointer',
+            boxShadow: activeCategory === 'ALL' ? '0 4px 12px rgba(37,99,235,0.3)' : 'none',
+            transition: 'all 0.18s ease', whiteSpace: 'nowrap',
+          }}
         >
-          Tous les rapports ({filteredReports.length})
+          <LayoutGrid size={14} /> Tous ({filteredReports.length})
         </button>
 
         {REPORT_CATEGORIES.map((cat) => (
           <button
             key={cat.key}
-            className={`btn btn-sm ${activeCategory === cat.key ? 'btn-primary' : 'btn-outline-secondary'}`}
             onClick={() => setActiveCategory(cat.key)}
-            style={{ fontWeight: 600, borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6 }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '8px 16px',
+              background: activeCategory === cat.key ? cat.color || '#2563eb' : 'transparent',
+              color: activeCategory === cat.key ? '#ffffff' : '#475569',
+              border: 'none', borderRadius: 10, fontFamily: 'inherit',
+              fontSize: '0.8125rem', fontWeight: 700, cursor: 'pointer',
+              boxShadow: activeCategory === cat.key ? `0 4px 12px ${cat.color || '#2563eb'}55` : 'none',
+              transition: 'all 0.18s ease', whiteSpace: 'nowrap',
+            }}
           >
             {cat.label}
           </button>
@@ -252,7 +326,7 @@ export default function ReportsPage() {
                   overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column',
-                  justify: 'space-between',
+                  justifyContent: 'space-between',
                 }}
               >
                 <div style={{ height: 4, background: catDef?.color || '#2563eb' }} />

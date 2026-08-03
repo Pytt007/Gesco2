@@ -10,7 +10,7 @@ import { useAcademicYears } from '../../hooks/academic';
 import { useSchoolYear } from '../../context/SchoolYearContext';
 import {
   Bus, Plus, Edit2, Archive, RefreshCw, AlertCircle, CheckCircle2,
-  Users, MapPin, Phone, Car, Shield, Calendar, TrendingUp, X,
+  Users, MapPin, Phone, Car, Shield, Calendar, TrendingUp, X, BarChart3,
 } from 'lucide-react';
 
 // ─── Statut Badge ─────────────────────────────────────────────────────────────
@@ -172,7 +172,7 @@ const LineModal: React.FC<LineModalProps> = ({
 
             {fee > 0 && (
               <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 10, padding: '12px 16px' }}>
-                <p className="text-xs fw-semibold text-primary mb-2">📊 Calcul automatique</p>
+                <p className="text-xs fw-semibold text-primary mb-2 d-flex align-items-center gap-1"><BarChart3 size={14} /> Calcul automatique</p>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
                   <span>Tarif annuel :</span><strong>{fee.toLocaleString('fr-FR')} FCFA</strong>
                 </div>
@@ -357,15 +357,13 @@ type SubView = 'LINES' | 'VEHICLES' | 'DRIVERS';
 export const TransportLinesView: React.FC = () => {
   const { schoolYear } = useSchoolYear();
   const confirm = useConfirm();
-  const { academicYears } = useAcademicYears();
-  const [yearId, setYearId] = useState(schoolYear?.id || 'ay-2026');
 
   const {
     lines, vehicles, drivers, loading, error, fetchAll,
     createLine, updateLine, setLineStatus,
     createVehicle, updateVehicle, deleteVehicle,
     createDriver, updateDriver, deleteDriver,
-  } = useTransportLines(yearId);
+  } = useTransportLines(schoolYear);
 
   const [subView, setSubView] = useState<SubView>('LINES');
   const [lineModal, setLineModal] = useState(false);
@@ -458,42 +456,57 @@ export const TransportLinesView: React.FC = () => {
         </div>
       </div>
 
-      {/* Sélecteur année + KPIs globaux */}
-      <div style={{ display: 'grid', gridTemplateColumns: '240px repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
+      {/* Sélecteur année + KPIs globaux Colorés */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 24 }}>
         {/* Sélecteur année */}
-        <div className="card" style={{ borderRadius: 12, border: '1px solid #e2e8f0' }}>
-          <div className="card-body p-3" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Calendar size={16} color="#2563eb" />
-            <select
-              className="form-select form-select-sm fw-semibold"
-              style={{ border: 'none', background: 'transparent', outline: 'none' }}
-              value={yearId}
-              onChange={(e) => setYearId(e.target.value)}
-            >
-              {academicYears.map((ay) => (
-                <option key={ay.id} value={ay.id}>{ay.name} {ay.isCurrent ? '(Active)' : ''}</option>
-              ))}
-            </select>
+        <div
+          className="card shadow-sm"
+          style={{
+            borderRadius: 14,
+            background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+            color: '#ffffff',
+            border: 'none',
+            boxShadow: '0 8px 20px -4px rgba(30, 41, 59, 0.35)',
+          }}
+        >
+          <div className="card-body p-3" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255, 255, 255, 0.18)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Calendar size={18} color="#ffffff" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ margin: 0, fontSize: '0.6875rem', color: 'rgba(255, 255, 255, 0.75)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>🟢 Année Scolaire Active</p>
+              <div style={{ fontWeight: 900, color: '#ffffff', fontSize: '0.9375rem' }}>{schoolYear}</div>
+            </div>
           </div>
         </div>
 
-        {/* KPIs */}
+        {/* KPIs Colorés SaaS */}
         {[
-          { label: 'Lignes actives', value: lines.filter((l) => l.status === 'ACTIVE').length, icon: <Bus size={18} />, color: '#2563eb', bg: '#eff6ff' },
-          { label: 'Capacité totale', value: `${totalCapacity}`, icon: <Car size={18} />, color: '#0ea5e9', bg: '#f0f9ff', suffix: ' places' },
-          { label: 'Élèves inscrits', value: `${totalEnrolled}`, icon: <Users size={18} />, color: '#16a34a', bg: '#f0fdf4', suffix: ' élèves' },
-          { label: "Taux d'occupation", value: `${avgOccupancy}%`, icon: <TrendingUp size={18} />, color: avgOccupancy >= 90 ? '#dc2626' : avgOccupancy >= 70 ? '#d97706' : '#16a34a', bg: '#f8fafc' },
+          { label: 'Lignes actives', value: lines.filter((l) => l.status === 'ACTIVE').length, icon: <Bus size={18} color="#ffffff" />, gradient: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', shadow: 'rgba(37, 99, 235, 0.35)' },
+          { label: 'Capacité totale', value: `${totalCapacity}`, icon: <Car size={18} color="#ffffff" />, gradient: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', shadow: 'rgba(2, 132, 199, 0.35)', suffix: ' places' },
+          { label: 'Élèves inscrits', value: `${totalEnrolled}`, icon: <Users size={18} color="#ffffff" />, gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', shadow: 'rgba(16, 185, 129, 0.35)', suffix: ' élèves' },
+          { label: "Taux d'occupation", value: `${avgOccupancy}%`, icon: <TrendingUp size={18} color="#ffffff" />, gradient: avgOccupancy >= 90 ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : avgOccupancy >= 70 ? 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' : 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', shadow: 'rgba(139, 92, 246, 0.35)' },
         ].map((kpi) => (
-          <div key={kpi.label} className="card" style={{ borderRadius: 12, border: '1px solid #e2e8f0' }}>
+          <div
+            key={kpi.label}
+            className="card shadow-sm card-hover"
+            style={{
+              borderRadius: 14,
+              background: kpi.gradient,
+              color: '#ffffff',
+              border: 'none',
+              boxShadow: `0 8px 20px -4px ${kpi.shadow}`,
+            }}
+          >
             <div className="card-body p-3" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: kpi.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: kpi.color }}>
+              <div style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255, 255, 255, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {kpi.icon}
               </div>
               <div>
-                <p style={{ margin: 0, fontWeight: 800, fontSize: '1.25rem', color: kpi.color, lineHeight: 1 }}>
-                  {kpi.value}{kpi.suffix ? <span style={{ fontSize: '0.75rem', fontWeight: 400, marginLeft: 2 }}>{kpi.suffix}</span> : ''}
+                <p style={{ margin: 0, fontWeight: 900, fontSize: '1.35rem', color: '#ffffff', lineHeight: 1 }}>
+                  {kpi.value}{kpi.suffix ? <span style={{ fontSize: '0.75rem', fontWeight: 500, opacity: 0.9, marginLeft: 3 }}>{kpi.suffix}</span> : ''}
                 </p>
-                <p style={{ margin: '2px 0 0', fontSize: '0.7rem', color: '#64748b' }}>{kpi.label}</p>
+                <p style={{ margin: '3px 0 0', fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.9)', fontWeight: 600 }}>{kpi.label}</p>
               </div>
             </div>
           </div>
@@ -800,7 +813,7 @@ export const TransportLinesView: React.FC = () => {
         initialData={editingLine}
         vehicles={vehicles}
         drivers={drivers}
-        academicYearId={yearId}
+        academicYearId={schoolYear}
         existingNames={existingLineNames}
       />
       <VehicleModal

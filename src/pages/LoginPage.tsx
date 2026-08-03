@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Eye, EyeOff, ShieldCheck, Sparkles, User, KeyRound, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, ShieldCheck, Sparkles, User, KeyRound, ArrowRight, GraduationCap } from 'lucide-react';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -52,7 +52,7 @@ export default function LoginPage() {
       background: 'radial-gradient(ellipse at top left, #1e1b4b 0%, #0f172a 50%, #020617 100%)',
       display: 'flex',
       alignItems: 'center',
-      justify: 'center',
+      justifyContent: 'center',
       padding: '1.5rem',
       position: 'relative',
       overflow: 'hidden',
@@ -89,18 +89,21 @@ export default function LoginPage() {
           <div style={{
             width: '76px',
             height: '76px',
-            background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+            background: '#ffffff',
             borderRadius: '22px',
             display: 'flex',
             alignItems: 'center',
-            justify: 'center',
+            justifyContent: 'center',
             margin: '0 auto 1.25rem',
             boxShadow: '0 12px 30px rgba(79,70,229,0.4)',
-            border: '1px solid rgba(255,255,255,0.2)',
+            border: '2px solid rgba(255,255,255,0.8)',
+            padding: '6px',
           }}>
-            <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: '2rem', fontWeight: 900, color: '#ffffff' }}>
-              G
-            </span>
+            <img
+              src="/gesco_logo.png"
+              alt="GESCO Logo Officiel"
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
           </div>
           <h1 style={{
             fontFamily: "'Outfit', sans-serif",
@@ -291,7 +294,9 @@ export default function LoginPage() {
                   textAlign: 'center',
                 }}
               >
-                👨‍🏫 Enseignant
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+                  <GraduationCap size={14} /> Enseignant
+                </span>
               </button>
             </div>
           </div>

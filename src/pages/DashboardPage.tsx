@@ -80,7 +80,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
   const { currentUser, canAccess } = useAuth();
   const { schoolInfo } = useSettings();
   
-  const currentAcademicYearId = schoolYear?.id || 'ay-2026';
+  const currentAcademicYearId = schoolYear || 'ay-2026';
   
   const {
     kpis,
@@ -320,7 +320,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
               </div>
               <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--text-muted, #64748b)' }}>
                 <Calendar size={13} style={{ display: 'inline', marginRight: 4, marginBottom: 2 }} />
-                {dateStr} · Année scolaire active : <strong style={{ color: '#4f46e5' }}>2026-2027</strong>
+                {dateStr} · Année scolaire active : <strong style={{ color: '#4f46e5' }}>{schoolYear}</strong>
               </p>
             </div>
           </div>

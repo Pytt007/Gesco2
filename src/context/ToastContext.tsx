@@ -21,7 +21,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     // Diffusion immédiate via Sonner Toast UI Primitive
     if (type === 'success') {
       toast.success(message);
-    } else if (type === 'error' || type === 'danger') {
+    } else if (type === 'error') {
       toast.error(message);
     } else if (type === 'warning') {
       toast.warning(message);

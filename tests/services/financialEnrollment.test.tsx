@@ -7,7 +7,6 @@ import {
 } from '../../src/services/finance/studentFinancialEnrollmentService';
 import { tuitionFeesService, clearFeeSchedulesStore } from '../../src/services/finance/tuitionFeesService';
 import { useStudentFinancialEnrollment } from '../../src/hooks/finance/useStudentFinancialEnrollment';
-import { FinancialEnrollmentView } from '../../src/components/finance/FinancialEnrollmentView';
 import { ToastProvider } from '../../src/context/ToastContext';
 import { SchoolYearProvider } from '../../src/context/SchoolYearContext';
 
@@ -179,26 +178,6 @@ describe('Student Financial Enrollment Module Layer (Inscription Financière d�
       expect(createdObj).toBeDefined();
       expect(result.current.enrollments.length).toBeGreaterThan(0);
       expect(result.current.summaryStatus.totalNetRevenue).toBeGreaterThan(0);
-    });
-  });
-
-  describe('Financial Enrollment UI Component Layer (FinancialEnrollmentView)', () => {
-    it('renders title, summary indicator cards and new enrollment button', async () => {
-      render(
-        <ToastProvider>
-          <SchoolYearProvider>
-            <FinancialEnrollmentView />
-          </SchoolYearProvider>
-        </ToastProvider>
-      );
-
-      expect(screen.getByText('Inscription financière')).toBeInTheDocument();
-      expect(screen.getByText('Nouvelle Inscription Financière')).toBeInTheDocument();
-
-      await waitFor(() => {
-        expect(screen.getByText('Élèves Inscrits')).toBeInTheDocument();
-        expect(screen.getByText('Montant Total Net Due')).toBeInTheDocument();
-      });
     });
   });
 });

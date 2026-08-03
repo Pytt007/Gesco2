@@ -4,12 +4,11 @@ import { useTuitionFees } from '../../hooks/finance/useTuitionFees';
 import { TuitionFeeSchedule, TuitionLevelCode } from '../../services/finance/types';
 import { TuitionFeeModal } from './TuitionFeeModal';
 import { Plus, Copy, Edit2, Archive, Calendar, DollarSign, CheckCircle2, ShieldCheck, AlertCircle } from 'lucide-react';
-import { useAcademicYears } from '../../hooks/academic';
+import { useSchoolYear } from '../../context/SchoolYearContext';
 
 export const TuitionFeesConfigView: React.FC = () => {
-  const { academicYears } = useAcademicYears();
+  const { schoolYear } = useSchoolYear();
   const confirm = useConfirm();
-  const [selectedYearId, setSelectedYearId] = useState<string>('ay-2026');
 
   const {
     schedules,
@@ -21,7 +20,7 @@ export const TuitionFeesConfigView: React.FC = () => {
     updateFeeSchedule,
     archiveFeeSchedule,
     duplicatePreviousYear,
-  } = useTuitionFees(selectedYearId);
+  } = useTuitionFees(schoolYear);
 
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [editingSchedule, setEditingSchedule] = useState<TuitionFeeSchedule | null>(null);
@@ -82,7 +81,7 @@ export const TuitionFeesConfigView: React.FC = () => {
   };
 
   const handleDuplicatePrevious = async () => {
-    const prevYearId = selectedYearId === 'ay-2026' ? 'ay-2025' : 'ay-2026';
+    const prevYearId = schoolYear === '2024-2025' ? '2023-2024' : '2024-2025';
     const isConfirmed = await confirm({
       title: 'Dupliquer la grille tarifaire',
       message: `Dupliquer tous les tarifs de l'année précédente vers l'année sélectionnée ?`,
@@ -139,21 +138,10 @@ export const TuitionFeesConfigView: React.FC = () => {
         style={{ borderRadius: '12px', border: '1px solid var(--border-color, #e2e8f0)', backgroundColor: '#ffffff' }}
       >
         <div className="card-body p-3" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Calendar size={18} color="#2563eb" />
-            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>Année Scolaire active :</span>
-            <select
-              className="form-select text-sm fw-semibold"
-              style={{ width: '200px' }}
-              value={selectedYearId}
-              onChange={(e) => setSelectedYearId(e.target.value)}
-            >
-              {academicYears.map((ay) => (
-                <option key={ay.id} value={ay.id}>
-                  {ay.yearCode || ay.name} {ay.isCurrent ? '(Active)' : ''}
-                </option>
-              ))}
-            </select>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 14px', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '12px', fontSize: '0.8125rem', fontWeight: 700, color: '#047857' }}>
+            <span>🟢</span>
+            <span>Année scolaire active :</span>
+            <span style={{ fontWeight: 900, color: '#065f46' }}>{schoolYear}</span>
           </div>
 
           <div style={{ fontSize: '0.8125rem', color: '#64748b' }}>

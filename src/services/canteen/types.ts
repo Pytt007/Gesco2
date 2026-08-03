@@ -69,6 +69,7 @@ export interface CanteenEnrollment {
   remainingBalance: number;   // netAmountDue - totalPaid
   periods: CanteenPeriod[];
   subscriptionStatus: CanteenSubscriptionStatus;
+  status?: CanteenSubscriptionStatus;
   createdAt: string;
   updatedAt: string;
 }

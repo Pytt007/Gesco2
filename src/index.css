@@ -72,24 +72,135 @@
   --radius-full: 9999px;
 }
 
-/* ─── Mode Sombre ─────────────────────────────────────────────────────────── */
+/* ─── Mode Sombre Somptueux (Midnight Onyx SaaS Palette) ──────────────────── */
+html.dark,
 [data-theme="dark"] {
-  --bg-app: #0a0f1e;
-  --bg-surface: #111827;
-  --bg-surface-hover: #1a2234;
-  --bg-sidebar: #070d1a;
-  --bg-sidebar-hover: rgba(255,255,255,0.06);
-  --bg-sidebar-active: rgba(37, 99, 235, 0.75);
-  --text-primary: #f1f5f9;
+  --bg-app: #080c16;
+  --bg-surface: #101726;
+  --bg-surface-hover: #1b2438;
+  --bg-sidebar: #050912;
+  --bg-sidebar-hover: rgba(255, 255, 255, 0.08);
+  --bg-sidebar-active: #2563eb;
+  --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
   --border: #1e293b;
-  --border-light: rgba(30, 41, 59, 0.8);
-  --color-primary-light: rgba(37, 99, 235, 0.15);
-  --color-success-light: rgba(16, 185, 129, 0.15);
-  --color-warning-light: rgba(245, 158, 11, 0.15);
-  --color-danger-light: rgba(239, 68, 68, 0.15);
-  --color-info-light: rgba(6, 182, 212, 0.15);
+  --border-color: #1e293b;
+  --border-light: rgba(255, 255, 255, 0.08);
+  --color-primary-light: rgba(37, 99, 235, 0.2);
+  --color-success-light: rgba(16, 185, 129, 0.2);
+  --color-warning-light: rgba(245, 158, 11, 0.2);
+  --color-danger-light: rgba(239, 68, 68, 0.2);
+  --color-info-light: rgba(6, 182, 212, 0.2);
+  color-scheme: dark;
+}
+
+/* ─── Surcharges Globales Automatiques pour le Mode Sombre ─────────────────── */
+html.dark body,
+[data-theme="dark"] body {
+  background-color: var(--bg-app) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Cartes, conteneurs et panneaux */
+html.dark .card,
+[data-theme="dark"] .card,
+html.dark .card-hover,
+[data-theme="dark"] .card-hover,
+html.dark .glass-card,
+[data-theme="dark"] .glass-card {
+  background-color: var(--bg-surface) !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Surcharge spécifique des arrière-plans blancs codés en dur */
+html.dark [style*="background: #ffffff"],
+[data-theme="dark"] [style*="background: #ffffff"],
+html.dark [style*="background:#ffffff"],
+[data-theme="dark"] [style*="background:#ffffff"],
+html.dark [style*="background: white"],
+[data-theme="dark"] [style*="background: white"],
+html.dark [style*="background-color: #ffffff"],
+[data-theme="dark"] [style*="background-color: #ffffff"] {
+  background-color: var(--bg-surface) !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Titres & Textes en Mode Sombre */
+html.dark h1, html.dark h2, html.dark h3, html.dark h4, html.dark h5, html.dark h6,
+[data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3, [data-theme="dark"] h4, [data-theme="dark"] h5, [data-theme="dark"] h6 {
+  color: #f8fafc !important;
+}
+
+html.dark p, html.dark label,
+[data-theme="dark"] p, [data-theme="dark"] label {
+  color: var(--text-secondary);
+}
+
+/* Champs de formulaires, selects & inputs */
+html.dark input,
+[data-theme="dark"] input,
+html.dark select,
+[data-theme="dark"] select,
+html.dark textarea,
+[data-theme="dark"] textarea,
+html.dark .form-control,
+[data-theme="dark"] .form-control,
+html.dark .form-select,
+[data-theme="dark"] .form-select {
+  background-color: #1b2438 !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html.dark select option,
+[data-theme="dark"] select option {
+  background-color: #1b2438 !important;
+  color: #f8fafc !important;
+}
+
+/* Tableaux en Mode Sombre */
+html.dark table,
+[data-theme="dark"] table {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+}
+
+html.dark thead, html.dark thead tr, html.dark thead th,
+[data-theme="dark"] thead, [data-theme="dark"] thead tr, [data-theme="dark"] thead th {
+  background-color: #1b2438 !important;
+  color: #f1f5f9 !important;
+  border-color: #334155 !important;
+}
+
+html.dark tbody tr, html.dark tbody td,
+[data-theme="dark"] tbody tr, [data-theme="dark"] tbody td {
+  border-color: #1e293b !important;
+  color: var(--text-primary) !important;
+}
+
+html.dark tbody tr:hover,
+[data-theme="dark"] tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Modales & Dialogues */
+html.dark .modal-content,
+[data-theme="dark"] .modal-content,
+html.dark .modal-dialog,
+[data-theme="dark"] .modal-dialog {
+  background-color: #101726 !important;
+  border: 1px solid #334155 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+}
+
+html.dark .modal-header, html.dark .modal-footer,
+[data-theme="dark"] .modal-header, [data-theme="dark"] .modal-footer {
+  border-color: #1e293b !important;
 }
 
 /* ─── Reset & Base ────────────────────────────────────────────────────────── */
@@ -343,7 +454,7 @@ p { color: var(--text-secondary); line-height: 1.7; }
 .sidebar-user-name {
   font-size: 0.8125rem;
   font-weight: 700;
-  color: #0f172a;
+  color: #ffffff !important;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -351,8 +462,8 @@ p { color: var(--text-secondary); line-height: 1.7; }
 
 .sidebar-user-role {
   font-size: 0.6875rem;
-  color: #64748b;
-  font-weight: 500;
+  color: #93c5fd !important;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   white-space: nowrap;
@@ -790,30 +901,85 @@ p { color: var(--text-secondary); line-height: 1.7; }
   color: var(--text-muted);
 }
 
-.form-input,
-.form-select,
-.form-textarea {
+.form-input:not(.grade-cell-input),
+.form-control:not(.grade-cell-input),
+.form-select:not(.grade-cell-input),
+.form-textarea,
+input[type="text"]:not(.grade-cell-input),
+input[type="time"]:not(.grade-cell-input),
+input[type="number"]:not(.grade-cell-input),
+input[type="date"]:not(.grade-cell-input),
+input[type="search"]:not(.grade-cell-input),
+input[type="email"]:not(.grade-cell-input),
+input[type="password"]:not(.grade-cell-input),
+select:not(.grade-cell-input) {
   background: var(--bg-surface);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 0.75rem 1.125rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.5rem 0.875rem;
   font-size: 0.875rem;
   font-family: inherit;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary);
   width: 100%;
-  min-height: 44px;
+  min-height: 42px;
+  height: 42px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+/* Inputs de la grille de saisie des notes : hauteur compacte */
+.grade-cell-input {
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0.125rem 0.375rem !important;
+  border-radius: 6px !important;
+  font-size: 0.8125rem !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  width: 100% !important;
+}
+
+.form-input:hover,
+.form-control:hover,
+.form-select:hover,
+input:hover,
+select:hover {
+  border-color: #94a3b8;
 }
 
 .form-input:focus,
+.form-control:focus,
 .form-select:focus,
-.form-textarea:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3.5px var(--color-primary-glass);
+.form-textarea:focus,
+input:focus,
+select:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3.5px var(--color-primary-glass) !important;
   background: var(--bg-surface);
+}
+
+/* Chrome/Safari Custom Time Indicator Indicator */
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(0.35);
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* ─── Cartes d'Emploi du Temps Ultra-Modernes ───────────────────────────── */
+.gesco-timetable-card-solid:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 28px -4px rgba(37, 99, 235, 0.45) !important;
+}
+.gesco-timetable-card-white:hover {
+  transform: translateY(-3px) scale(1.02);
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.12) !important;
 }
 
 /* ─── Barres de Recherche Ultra-Modernes ─────────────────────────────────── */
@@ -860,7 +1026,7 @@ p { color: var(--text-secondary); line-height: 1.7; }
 .search-bar-input {
   width: 100%;
   height: 44px;
-  padding: 0.625rem 2.5rem 0.625rem 2.75rem;
+  padding: 0.625rem 2.5rem 0.625rem 2.75rem !important;
   background: #ffffff;
   border: 1.5px solid #e2e8f0;
   border-radius: 12px;
@@ -1227,4 +1393,80 @@ tbody tr:hover td {
 
 @media (max-width: 480px) {
   .stat-grid { grid-template-columns: 1fr; }
+}
+
+/* ─── SYSTEME D'IMPRESSION PROPRE POUR BILANS & RAPPORTS EXÉCUTIFS ─────────── */
+@media print {
+  /* Masquer tous les composants de navigation, menus, sidebars, headers et boutons */
+  nav,
+  header,
+  aside,
+  .sidebar,
+  .app-header,
+  .header,
+  .no-print,
+  .btn,
+  button,
+  .theme-toggle,
+  .search-container,
+  .command-palette,
+  .toast-container,
+  .modal-overlay,
+  [role="dialog"] {
+    display: none !important;
+  }
+
+  /* Adapter le layout principal pour l'impression pleine page sans superposition */
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 11pt !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .gesco-layout {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .gesco-main,
+  .gesco-content,
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
+    position: static !important;
+  }
+
+  .card {
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    page-break-inside: avoid;
+  }
+
+  h1, h2, h3, h4, h5, h6, p, td, th, span {
+    color: #0f172a !important;
+  }
+
+  /* Document imprimable structuré */
+  .printable-report {
+    display: block !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+  }
+
+  .page-break {
+    page-break-after: always;
+  }
 }

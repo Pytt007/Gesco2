@@ -46,7 +46,10 @@ export interface StaffMember {
   departmentName?: string;
   positionId?: string;
   positionTitle?: string;
+  positionName?: string;
+  jobTitle?: string;
   email?: string;
+  phone?: string;
   phonePrimary: string;
   phoneSecondary?: string;
   address?: string;
@@ -83,6 +86,7 @@ export interface StaffFilters {
 
 export interface StaffListResult {
   staffMembers: StaffMember[];
+  staff?: StaffMember[];
   totalCount: number;
   page: number;
   totalPages: number;
@@ -205,8 +209,12 @@ export async function getStaffById(id: string): Promise<ServiceResponse<StaffMem
 
 export async function listStaff(filters: StaffFilters = {}): Promise<ServiceResponse<StaffListResult>> {
   try {
-    const { page = 1, pageSize = 50, searchQuery, status = 'all', sortBy = 'lastName', sortOrder = 'asc' } = filters;
+    const { page = 1, pageSize = 50, searchQuery, role = 'all', status = 'all', sortBy = 'lastName', sortOrder = 'asc' } = filters;
     let rawList = Array.from(localStaffCache.values());
+
+    if (role && role !== 'all') {
+      rawList = rawList.filter((s) => s.role === role || s.role?.toLowerCase().includes(role.toLowerCase()));
+    }
 
     if (status !== 'all') {
       rawList = rawList.filter((s) => s.status === status);
@@ -251,3 +259,15 @@ export async function listStaff(filters: StaffFilters = {}): Promise<ServiceResp
 }
 
 export const getStaffMembers = listStaff;
+
+export async function getStaffByEmployeeNumber(empNum: string): Promise<ServiceResponse<StaffMember>> {
+  if (!empNum) return { success: false, error: 'Matricule d\'employé obligatoire' };
+  const res = await listStaff({});
+  const found = (res.data?.staffMembers || []).find((s) => s.employeeNumber === empNum);
+  if (!found) return { success: false, error: 'Employé non trouvé' };
+  return createSuccess(found);
+}
+
+export async function searchStaff(filters: StaffFilters = {}): Promise<ServiceResponse<StaffListResult>> {
+  return listStaff(filters);
+}

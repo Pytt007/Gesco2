@@ -84,7 +84,7 @@ export default function AcademicPage({ onNavigate }: AcademicPageProps) {
     setEditingClass(null);
     setClassForm({
       name: '',
-      academicYearId: yearsHook.years[0]?.id || '',
+      academicYearId: yearsHook.academicYears[0]?.id || '',
       levelId: levelsHook.levels[0]?.id || '',
       roomName: '',
       mainTeacherId: '',
@@ -110,13 +110,13 @@ export default function AcademicPage({ onNavigate }: AcademicPageProps) {
     }
 
     if (editingClass) {
-      const ok = await classroomsHook.update(editingClass.id, classForm);
+      const ok = await classroomsHook.updateClassroom(editingClass.id, classForm);
       if (ok) {
         addNotification('success', 'Classe mise à jour avec succès.');
         setShowClassModal(false);
       }
     } else {
-      const created = await classroomsHook.create(classForm);
+      const created = await classroomsHook.createClassroom(classForm);
       if (created) {
         addNotification('success', 'Nouvelle classe créée avec succès.');
         setWizardStep(4);
@@ -250,8 +250,8 @@ export default function AcademicPage({ onNavigate }: AcademicPageProps) {
                     </td>
 
                     <td style={{ padding: '12px 16px' }}>
-                      <div style={{ fontWeight: 600, color: '#334155' }}>
-                        👨‍🏫 {c.mainTeacherName || 'Non attribué'}
+                      <div style={{ fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <GraduationCap size={15} color="#2563eb" /> {c.mainTeacherName || 'Non attribué'}
                       </div>
                     </td>
 

@@ -12,6 +12,7 @@ import {
 import { attendanceService } from '../../services/attendance/attendanceService';
 import { downloadExcel } from '../../utils/exportUtils';
 import { useToast } from '../../context/ToastContext';
+import { generateAttendanceDocument } from '../../services/documents/DocumentEngine/index';
 
 export function useAttendance(academicYearId: string = 'ay-2026') {
   const [selectedClassId, setSelectedClassId] = useState<string>('cls-1');
@@ -125,75 +126,20 @@ export function useAttendance(academicYearId: string = 'ay-2026') {
     showToast('Feuille de présence exportée en Excel.', 'success');
   }, [items, selectedClassId, selectedDate, showToast]);
 
-  // Impression / PDF
-  const printSheet = useCallback(() => {
+  // Impression / PDF — Génération via le DocumentEngine Enterprise (Design ReportLab)
+  const printSheet = useCallback(async () => {
+    const doc = await generateAttendanceDocument({
+      title: 'FEUILLE DE PRÉSENCE',
+      classId: selectedClassId,
+      date: selectedDate,
+      stats,
+      items,
+    });
+
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Feuille de Présence — ${selectedDate}</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 30px; color: #1e293b; }
-            h1 { font-size: 18px; color: #1e3a5f; margin-bottom: 4px; }
-            p.sub { font-size: 11px; color: #64748b; margin-top: 0; margin-bottom: 16px; }
-            .kpis { display: flex; gap: 15px; margin-bottom: 20px; }
-            .kpi-card { border: 1px solid #cbd5e1; padding: 8px 12px; border-radius: 6px; flex: 1; text-align: center; }
-            .kpi-title { font-size: 10px; color: #64748b; text-transform: uppercase; }
-            .kpi-val { font-size: 14px; font-weight: bold; margin-top: 2px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px; }
-            th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
-            th { background-color: #f1f5f9; font-weight: bold; }
-            .status-present { color: #16a34a; font-weight: bold; }
-            .status-justified { color: #d97706; font-weight: bold; }
-            .status-absent { color: #dc2626; font-weight: bold; }
-          </style>
-        </head>
-        <body>
-          <h1>Feuille de Présence Quotidienne</h1>
-          <p class="sub">Classe : ${selectedClassId} · Date : ${selectedDate} · Édité le ${new Date().toLocaleDateString('fr-FR')}</p>
-
-          <div class="kpis">
-            <div class="kpi-card"><div class="kpi-title">Total Élèves</div><div class="kpi-val">${stats.totalStudents}</div></div>
-            <div class="kpi-card"><div class="kpi-title">Présents</div><div class="kpi-val" style="color:#16a34a">${stats.presentCount}</div></div>
-            <div class="kpi-card"><div class="kpi-title">Absents Justifiés</div><div class="kpi-val" style="color:#d97706">${stats.justifiedCount}</div></div>
-            <div class="kpi-card"><div class="kpi-title">Absents</div><div class="kpi-val" style="color:#dc2626">${stats.absentCount}</div></div>
-            <div class="kpi-card"><div class="kpi-title">Taux de présence</div><div class="kpi-val" style="color:#2563eb">${stats.presenceRate}%</div></div>
-          </div>
-
-          <table>
-            <thead>
-              <tr>
-                <th>Matricule</th>
-                <th>Nom & Prénom</th>
-                <th>Statut</th>
-                <th>Observation</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${items
-                .map(
-                  (i) => `
-                <tr>
-                  <td>${i.matricule}</td>
-                  <td><strong>${i.lastName}</strong> ${i.firstName}</td>
-                  <td class="${i.status === 'PRESENT' ? 'status-present' : i.status === 'ABSENT_JUSTIFIED' ? 'status-justified' : 'status-absent'}">
-                    ${i.status === 'PRESENT' ? '🟢 Présent' : i.status === 'ABSENT_JUSTIFIED' ? '🟡 Absent justifié' : '🔴 Absent'}
-                  </td>
-                  <td>${i.observation || '—'}</td>
-                </tr>
-              `
-                )
-                .join('')}
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `;
-
-    printWindow.document.write(htmlContent);
+    printWindow.document.write(doc.fullHtml);
     printWindow.document.close();
     printWindow.focus();
     setTimeout(() => {

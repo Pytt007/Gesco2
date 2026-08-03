@@ -226,7 +226,7 @@ export const tuitionPaymentService = {
 
         <table class="info-table">
           <tr><td><strong>Élève :</strong> ${enrollment.studentName}</td><td><strong>Matricule :</strong> ${enrollment.matricule}</td></tr>
-          <tr><td><strong>Classe :</strong> ${enrollment.className}</td><td><strong>Année Scolaire :</strong> 2026-2027</td></tr>
+          <tr><td><strong>Classe :</strong> ${enrollment.className}</td><td><strong>Année Scolaire :</strong> ${enrollment.academicYearId || ''}</td></tr>
           <tr><td><strong>Responsable Payeur :</strong> ${enrollment.parentSponsor || 'Parent d’Élève'}</td><td><strong>Date du Versement :</strong> ${payment.paymentDate}</td></tr>
           <tr><td><strong>Mode de Règlement :</strong> ${modeLabel}</td><td><strong>Référence :</strong> ${payment.referenceNumber || 'N/A'}</td></tr>
         </table>

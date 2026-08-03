@@ -11,11 +11,14 @@ import {
   saveSchoolYearsList,
   setActiveSchoolYear,
   closeSchoolYear,
+  archiveSchoolYear,
+  updateSchoolYear,
   fetchAcademicTermsList,
   saveAcademicTermsList,
   fetchGeneralConfig,
   updateGeneralConfig,
 } from '../services/settings/settingsService';
+import { checkSchoolYearLinkedData, SchoolYearDataSummary } from '../services/settings/schoolYearCheckService';
 import { SchoolInfo, SchoolYearItem, AcademicTerm, GeneralConfig } from '../types';
 
 export function useSettings() {
@@ -52,6 +55,23 @@ export function useSettings() {
 
   useEffect(() => {
     loadAllSettings();
+
+    const handleSchoolInfoUpdated = (evt: Event) => {
+      const customEvt = evt as CustomEvent<SchoolInfo>;
+      if (customEvt.detail) {
+        setSchoolInfo(customEvt.detail);
+      } else {
+        fetchSchoolInfo().then(setSchoolInfo);
+      }
+    };
+
+    window.addEventListener('gesco_school_info_updated', handleSchoolInfoUpdated);
+    window.addEventListener('storage', handleSchoolInfoUpdated);
+
+    return () => {
+      window.removeEventListener('gesco_school_info_updated', handleSchoolInfoUpdated);
+      window.removeEventListener('storage', handleSchoolInfoUpdated);
+    };
   }, [loadAllSettings]);
 
   // Sauvegarder les infos établissement
@@ -61,7 +81,10 @@ export function useSettings() {
 
     setSaving(true);
     const res = await updateSchoolInfo(info);
-    if (!res.error) setSchoolInfo(info);
+    if (!res.error) {
+      setSchoolInfo(info);
+      window.dispatchEvent(new CustomEvent('gesco_school_info_updated', { detail: info }));
+    }
     setSaving(false);
     return res;
   };
@@ -103,8 +126,51 @@ export function useSettings() {
     setSaving(true);
     const res = await closeSchoolYear(yearId);
     if (!res.error) {
-      setSchoolYears((prev) => prev.map((y) => (y.id === yearId ? { ...y, isClosed: true, isActive: false } : y)));
+      setSchoolYears((prev) => prev.map((y) => (y.id === yearId ? { ...y, isClosed: true, isActive: false, status: 'Clôturée' } : y)));
     }
+    setSaving(false);
+    return res;
+  };
+
+  // Archiver une année scolaire
+  const handleArchiveSchoolYear = async (yearId: string): Promise<{ error?: string }> => {
+    setSaving(true);
+    const res = await archiveSchoolYear(yearId);
+    if (!res.error) {
+      setSchoolYears((prev) => prev.map((y) => (y.id === yearId ? { ...y, isArchived: true, isClosed: true, isActive: false, status: 'Archivée' } : y)));
+    }
+    setSaving(false);
+    return res;
+  };
+
+  // Modifier une année scolaire
+  const handleUpdateSchoolYear = async (yearId: string, data: Partial<SchoolYearItem>): Promise<{ error?: string }> => {
+    setSaving(true);
+    const res = await updateSchoolYear(yearId, data);
+    if (!res.error) {
+      setSchoolYears((prev) => prev.map((y) => (y.id === yearId ? { ...y, ...data } : y)));
+    }
+    setSaving(false);
+    return res;
+  };
+
+  // Supprimer une année scolaire (contrôle strict d'intégrité)
+  const handleDeleteSchoolYear = async (yearId: string): Promise<{ error?: string; summary?: SchoolYearDataSummary }> => {
+    const year = schoolYears.find((y) => y.id === yearId);
+    if (year?.isActive) return { error: 'Impossible de supprimer l\'année scolaire actuellement active.' };
+
+    const summary = await checkSchoolYearLinkedData(year?.label || '', yearId);
+    if (summary.hasData) {
+      return {
+        error: 'Impossible de supprimer cette année scolaire. Cette année contient des données historiques. Veuillez utiliser l\'action « Clôturer » ou « Archiver ».',
+        summary,
+      };
+    }
+
+    setSaving(true);
+    const updated = schoolYears.filter((y) => y.id !== yearId);
+    const res = await saveSchoolYearsList(updated);
+    if (!res.error) setSchoolYears(updated);
     setSaving(false);
     return res;
   };
@@ -140,6 +206,9 @@ export function useSettings() {
     addSchoolYear: handleAddSchoolYear,
     activateSchoolYear: handleActivateSchoolYear,
     closeSchoolYear: handleCloseSchoolYear,
+    archiveSchoolYear: handleArchiveSchoolYear,
+    updateSchoolYear: handleUpdateSchoolYear,
+    deleteSchoolYear: handleDeleteSchoolYear,
     saveTerms: handleSaveTerms,
     saveGeneralConfig: handleSaveGeneralConfig,
   };

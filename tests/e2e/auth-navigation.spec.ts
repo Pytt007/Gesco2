@@ -124,8 +124,8 @@ test.describe('GESCO Authentication & Navigation Flow', () => {
     await expect(welcomeHeader).toContainText('Directeur Général');
 
     // Vérifier la présence des cartes métriques sur le Dashboard
-    await expect(page.locator('p:has-text("Total Élèves")')).toBeVisible();
-    await expect(page.locator('p:has-text("Revenus (Mois)")')).toBeVisible();
+    await expect(page.locator('text="Élèves actifs"')).toBeVisible();
+    await expect(page.locator('text="Taux de Recouvrement"')).toBeVisible();
 
     // Helper pour naviguer gérant le menu mobile
     const navigateTo = async (menuLabel: string) => {

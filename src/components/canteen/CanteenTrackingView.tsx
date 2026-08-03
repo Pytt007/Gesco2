@@ -25,7 +25,7 @@ function computeKPIs(enrollments: CanteenEnrollment[]): CanteenKPIs {
 
 export const CanteenTrackingView: React.FC = () => {
   const { schoolYear } = useSchoolYear();
-  const academicYearId = schoolYear?.id || 'ay-2026';
+  const academicYearId = schoolYear || 'ay-2026';
 
   const [enrollments, setEnrollments] = useState<CanteenEnrollment[]>([]);
   const [loading, setLoading] = useState(false);
@@ -136,11 +136,11 @@ export const CanteenTrackingView: React.FC = () => {
               style={{ paddingLeft: 30, borderRadius: 8 }}
             />
           </div>
-          <select className="form-select form-select-sm" value={filterLevel} onChange={(e) => setFilterLevel(e.target.value as any)} style={{ width: 110 }}>
+          <select className="form-select form-select-sm" value={filterLevel} onChange={(e) => setFilterLevel(e.target.value as any)} style={{ minWidth: 140, height: 38, borderRadius: 10 }}>
             <option value="ALL">Tous niveaux</option>
             {LEVEL_ORDER.map((l) => <option key={l} value={l}>{l}</option>)}
           </select>
-          <select className="form-select form-select-sm" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as any)} style={{ width: 160 }}>
+          <select className="form-select form-select-sm" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as any)} style={{ minWidth: 160, height: 38, borderRadius: 10 }}>
             <option value="ALL">Tous statuts</option>
             <option value="PAID">🟢 À jour</option>
             <option value="PARTIAL">🟡 Partiel</option>

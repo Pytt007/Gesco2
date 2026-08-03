@@ -15,7 +15,8 @@ export type CorrectionStatus =
 export type AbsenceStatus =
   | 'PRESENT'        // Présent
   | 'ABSENT'         // Absent non justifié
-  | 'EXCUSED_ABSENT';// Absent justifié
+  | 'EXCUSED_ABSENT' // Absent justifié
+  | 'DISPENSED';      // Dispensé (ex: EPS)
 
 /** Note individuelle par matière pour un élève */
 export interface AssessmentScore {

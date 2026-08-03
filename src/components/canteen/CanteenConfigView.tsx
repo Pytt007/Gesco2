@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useConfirm } from '../../context/ConfirmContext';
 import { useCanteenFees } from '../../hooks/canteen/useCanteenFees';
 import { CanteenFeeSchedule, CanteenLevelCode } from '../../services/canteen/types';
-import { Plus, Copy, Edit2, Archive, Calendar, AlertCircle, CheckCircle2, UtensilsCrossed } from 'lucide-react';
+import { Plus, Copy, Edit2, Archive, Calendar, AlertCircle, CheckCircle2, UtensilsCrossed, BarChart3 } from 'lucide-react';
 import { useAcademicYears } from '../../hooks/academic';
 
 const LEVEL_ORDER: CanteenLevelCode[] = ['PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
@@ -125,7 +125,7 @@ const CanteenFeeModal: React.FC<CanteenFeeModalProps> = ({ isOpen, onClose, onSa
 
             {annualRateNum > 0 && (
               <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 10, padding: '14px 16px' }}>
-                <p className="text-xs fw-semibold text-success mb-2">📊 Calcul automatique</p>
+                <p className="text-xs fw-semibold text-success mb-2 d-flex align-items-center gap-1"><BarChart3 size={14} /> Calcul automatique</p>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
                   <span>Tarif annuel :</span>
                   <strong>{annualRateNum.toLocaleString('fr-FR')} FCFA</strong>
@@ -156,10 +156,11 @@ const CanteenFeeModal: React.FC<CanteenFeeModalProps> = ({ isOpen, onClose, onSa
 // Vue principale : Configuration des tarifs cantine
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { useSchoolYear } from '../../context/SchoolYearContext';
+
 export const CanteenConfigView: React.FC = () => {
-  const { academicYears } = useAcademicYears();
+  const { schoolYear } = useSchoolYear();
   const confirm = useConfirm();
-  const [selectedYearId, setSelectedYearId] = useState<string>('ay-2026');
 
   const {
     schedules,
@@ -169,7 +170,7 @@ export const CanteenConfigView: React.FC = () => {
     updateSchedule,
     archiveSchedule,
     duplicatePreviousYear,
-  } = useCanteenFees(selectedYearId);
+  } = useCanteenFees(schoolYear);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<CanteenFeeSchedule | null>(null);
@@ -185,7 +186,7 @@ export const CanteenConfigView: React.FC = () => {
     if (editingSchedule) {
       result = await updateSchedule(editingSchedule.id, data);
     } else {
-      result = await createSchedule({ ...data, academicYearId: selectedYearId });
+      result = await createSchedule({ ...data, academicYearId: schoolYear });
     }
     if (result.success) {
       setSuccessMsg(result.message || 'Opération réussie.');
@@ -213,7 +214,7 @@ export const CanteenConfigView: React.FC = () => {
   };
 
   const handleDuplicate = async () => {
-    const prevYearId = selectedYearId === 'ay-2026' ? 'ay-2025' : 'ay-2026';
+    const prevYearId = schoolYear === '2024-2025' ? '2023-2024' : '2024-2025';
     const isConfirmed = await confirm({
       title: 'Dupliquer la grille tarifaire',
       message: "Dupliquer tous les tarifs cantine de l'année précédente ?",
@@ -222,7 +223,7 @@ export const CanteenConfigView: React.FC = () => {
       variant: 'info',
     });
     if (isConfirmed) {
-      const result = await duplicatePreviousYear(prevYearId, selectedYearId);
+      const result = await duplicatePreviousYear(prevYearId, schoolYear);
       if (result.success) {
         setSuccessMsg('Tarifs cantine dupliqués avec succès.');
         setTimeout(() => setSuccessMsg(null), 4000);
@@ -265,21 +266,10 @@ export const CanteenConfigView: React.FC = () => {
       {/* Sélecteur d'année */}
       <div className="card mb-4" style={{ borderRadius: 12, border: '1px solid #e2e8f0' }}>
         <div className="card-body p-3" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Calendar size={18} color="#0ea5e9" />
-            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>Année scolaire :</span>
-            <select
-              className="form-select text-sm"
-              style={{ width: 200, fontWeight: 600 }}
-              value={selectedYearId}
-              onChange={(e) => setSelectedYearId(e.target.value)}
-            >
-              {academicYears.map((ay) => (
-                <option key={ay.id} value={ay.id}>
-                  {ay.yearCode || ay.name} {ay.isCurrent ? '(Active)' : ''}
-                </option>
-              ))}
-            </select>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 14px', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '12px', fontSize: '0.8125rem', fontWeight: 700, color: '#047857' }}>
+            <span>🟢</span>
+            <span>Année scolaire active :</span>
+            <span style={{ fontWeight: 900, color: '#065f46' }}>{schoolYear}</span>
           </div>
           <span style={{ fontSize: '0.8125rem', color: '#64748b' }}>
             <strong>{schedules.length}</strong> niveau{schedules.length > 1 ? 'x' : ''} configuré{schedules.length > 1 ? 's' : ''}

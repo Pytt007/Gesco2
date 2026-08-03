@@ -244,22 +244,155 @@ export const templateEngine = {
   <meta charset="UTF-8">
   <title>${this.getDocumentTitle(options.documentType)}</title>
   <style>
-    body { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 24px; color: #1e293b; line-height: 1.5; font-size: 14px; }
-    .document-header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 20px; }
-    .document-title { font-size: 20px; font-weight: bold; color: #1e3a8a; text-transform: uppercase; margin: 0; }
-    .school-name { font-size: 16px; font-weight: 600; color: #3b82f6; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; }
-    .info-item { display: flex; font-size: 13px; }
-    .info-label { font-weight: bold; width: 140px; color: #475569; }
-    .info-value { color: #0f172a; flex: 1; }
-    table.data-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    table.data-table th { background: #1e293b; color: #ffffff; padding: 8px 10px; font-size: 12px; text-align: left; font-weight: 600; border: 1px solid #334155; }
-    table.data-table td { padding: 8px 10px; border: 1px solid #e2e8f0; font-size: 13px; }
-    table.data-table tr:nth-child(even) { background-color: #f8fafc; }
-    .signatures-block { display: flex; justify-content: space-between; margin-top: 40px; margin-bottom: 20px; }
-    .signature-box { width: 45%; text-align: center; border-top: 1px dashed #94a3b8; padding-top: 8px; font-size: 13px; font-weight: bold; }
-    .qr-container { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 12px; }
-    .document-footer { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 30px; border-top: 1px solid #cbd5e1; padding-top: 8px; }
+    @page {
+      margin: 0;
+      size: A4 portrait;
+    }
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      color: #4A4A4A !important;
+      background-color: #EDEBF3 !important;
+      margin: 0;
+      padding: 0;
+      font-size: 11px;
+      line-height: 1.4;
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    /* GESCO REPORTLAB HEADER BANNER */
+    .header-banner {
+      background: #EDEBF3 !important;
+      color: #4A4A4A !important;
+      padding: 24px 32px 16px 32px;
+      border-bottom: 1px solid #D8D5E4;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .brand-logo-crest {
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .school-name {
+      font-size: 18px;
+      font-weight: 900;
+      color: #453D7A !important;
+      letter-spacing: 0.5px;
+      font-family: 'Outfit', sans-serif;
+    }
+    .school-sub {
+      font-size: 9px;
+      color: #4A4A4A !important;
+      margin-top: 2px;
+    }
+    .document-title {
+      font-size: 24px;
+      font-weight: 900;
+      color: #5B4E9E !important;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-align: right;
+    }
+    .doc-meta {
+      font-size: 10px;
+      color: #4A4A4A !important;
+      text-align: right;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    /* CONTENT BODY */
+    .content-body {
+      padding: 24px 32px;
+      background-color: #EDEBF3 !important;
+    }
+
+    /* INFO GRID */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+      background: #ffffff !important;
+      padding: 14px 18px;
+      border-radius: 8px;
+      border: 1px solid #D8D5E4;
+    }
+    .info-item { display: flex; font-size: 11px; }
+    .info-label { font-weight: 800; width: 140px; color: #453D7A !important; }
+    .info-value { color: #4A4A4A !important; flex: 1; }
+
+    /* DATA TABLE GESCO REPORTLAB */
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      background: #ffffff !important;
+    }
+    table.data-table th {
+      background: #5B4E9E !important;
+      color: #ffffff !important;
+      padding: 8px 12px;
+      font-size: 9.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      text-align: left;
+      letter-spacing: 0.5px;
+      border: none;
+    }
+    table.data-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #D8D5E4;
+      font-size: 10px;
+      color: #4A4A4A !important;
+    }
+    table.data-table tr:nth-child(even) td {
+      background-color: #F5F4FA !important;
+    }
+
+    /* SIGNATURES */
+    .signatures-block {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      margin-bottom: 20px;
+      padding-top: 14px;
+      border-top: 1.5px solid #5B4E9E;
+    }
+    .signature-box {
+      width: 200px;
+      text-align: center;
+      padding-top: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #453D7A !important;
+    }
+
+    .qr-container { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 20px; border-top: 1px solid #D8D5E4; padding-top: 12px; }
+    
+    /* FOOTER BAR */
+    .footer-bar {
+      margin-top: 30px;
+      padding: 16px 32px;
+      border-top: 2px solid #5B4E9E;
+      background: #ffffff !important;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #4A4A4A !important;
+      font-weight: 700;
+    }
   </style>
 </head>
 <body>
@@ -292,11 +425,25 @@ export const templateEngine = {
 
     switch (section.sectionType) {
       case 'HEADER':
-        return `<div class="document-header">
-          <div class="school-name">${data.schoolName || 'ÉTABLISSEMENT EXEMPLE GESCO'}</div>
-          <h1 class="document-title">${title}</h1>
-          ${data.academicYear ? `<div style="font-size: 12px; color: #64748b;">Année Scolaire : ${data.academicYear}</div>` : ''}
-        </div>`;
+        return `<div class="header-banner">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div class="brand-logo">G</div>
+            <div>
+              <div class="school-name">${data.schoolName || 'ÉTABLISSEMENT EXCELLENCE GESCO'}</div>
+              <div class="school-sub">Système d'Information & Management Éducatif</div>
+            </div>
+          </div>
+          <div>
+            <div class="document-title">${title}</div>
+            ${data.academicYear ? `<div class="doc-meta">ANNÉE SCOLAIRE : <strong>${data.academicYear}</strong></div>` : ''}
+            <div class="doc-meta">ÉDITÉ LE : <strong>${new Date().toLocaleDateString('fr-FR')}</strong></div>
+          </div>
+        </div>
+        <div class="accent-strip">
+          <span>📍 DOCUMENT OFFICIEL GESCO SÉCURISÉ PAR QR CODE</span>
+          <span>SYSTÈME CERTIFIÉ v1.0</span>
+        </div>
+        <div class="content-body">`;
 
       case 'SCHOOL_INFO':
         return `<div class="info-grid">
@@ -419,8 +566,11 @@ export const templateEngine = {
         </div>`;
 
       case 'FOOTER':
-        return `<div class="document-footer">
-          GESCO Management System - Page 1 / 1 - Document édité le ${new Date().toLocaleDateString('fr-FR')} - ${section.configuration?.note || 'Authenticité vérifiable par QR Code.'}
+        return `</div>
+        <div class="footer-bar">
+          <span>📞 Support GESCO : +225 07 00 00 00 00</span>
+          <span>🌐 Website : www.gesco.ci</span>
+          <span>📍 Adresse : Abidjan, Côte d'Ivoire</span>
         </div>`;
 
       default:

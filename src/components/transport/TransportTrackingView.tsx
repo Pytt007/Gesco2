@@ -31,7 +31,7 @@ function computeKPIs(lines: TransportLine[], enrollments: TransportEnrollment[])
 
 export const TransportTrackingView: React.FC = () => {
   const { schoolYear } = useSchoolYear();
-  const academicYearId = schoolYear?.id || 'ay-2026';
+  const academicYearId = schoolYear || 'ay-2026';
 
   const [enrollments, setEnrollments] = useState<TransportEnrollment[]>([]);
   const [lines, setLines] = useState<TransportLine[]>([]);
@@ -138,11 +138,11 @@ export const TransportTrackingView: React.FC = () => {
             <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
             <input type="text" className="form-control form-control-sm" placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} style={{ paddingLeft: 30, borderRadius: 8 }} />
           </div>
-          <select className="form-select form-select-sm" value={filterLineId} onChange={(e) => setFilterLineId(e.target.value)} style={{ width: 160 }}>
+          <select className="form-select form-select-sm" value={filterLineId} onChange={(e) => setFilterLineId(e.target.value)} style={{ minWidth: 180, height: 38, borderRadius: 10 }}>
             <option value="ALL">Toutes les lignes</option>
             {lines.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
           </select>
-          <select className="form-select form-select-sm" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as any)} style={{ width: 160 }}>
+          <select className="form-select form-select-sm" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as any)} style={{ minWidth: 160, height: 38, borderRadius: 10 }}>
             <option value="ALL">Tous statuts</option>
             <option value="PAID">🟢 Soldé</option>
             <option value="PARTIAL">🟡 Partiel</option>

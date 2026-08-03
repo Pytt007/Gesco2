@@ -10,10 +10,11 @@ import {
 } from '../services/expenses/types';
 import { EXPENSE_PAYMENT_MODE_LABELS } from '../services/expenses/expenseService';
 import { downloadExcel } from '../utils/exportUtils';
+import { documentEngineEnterprise } from '../services/documents/DocumentEngine/index';
 import {
   Plus, Search, Download, X, Save, TrendingDown, DollarSign,
   Printer, FileText, Edit2, Ban, Tag, Shield, Building,
-  BarChart2, ListFilter, Filter,
+  BarChart2, ListFilter, Filter, Calendar, Clock, SlidersHorizontal,
 } from 'lucide-react';
 
 const STATUS_BADGES: Record<ExpenseStatus, { label: string; bg: string; color: string; border: string }> = {
@@ -31,7 +32,7 @@ type MainTab = 'DASHBOARD' | 'LIST';
 export default function ExpensesPage() {
   const { schoolYear } = useSchoolYear();
   const { academicYears } = useAcademicYears();
-  const [selectedYearId, setSelectedYearId] = useState<string>(schoolYear?.id || 'ay-2026');
+  const [selectedYearId, setSelectedYearId] = useState<string>(schoolYear || 'ay-2026');
   const [activeTab, setActiveTab] = useState<MainTab>('DASHBOARD');
 
   const {
@@ -195,59 +196,60 @@ export default function ExpensesPage() {
     downloadExcel(data, 'Dépenses', `depenses_gesco_${selectedYearId}`);
   };
 
-  const handlePrintOrPDF = () => {
+  const handlePrintOrPDF = async () => {
+    const safeExpenses = expenses || [];
+    const tableHtml = `
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 10px; background: #ffffff !important;">
+        <thead>
+          <tr style="background-color: #5B4E9E !important; color: #ffffff !important;">
+            <th style="padding: 8px 10px; font-size: 9.5px; font-weight: 800; text-transform: uppercase;">Date</th>
+            <th style="padding: 8px 10px; font-size: 9.5px; font-weight: 800; text-transform: uppercase;">Catégorie</th>
+            <th style="padding: 8px 10px; font-size: 9.5px; font-weight: 800; text-transform: uppercase;">Description</th>
+            <th style="padding: 8px 10px; font-size: 9.5px; font-weight: 800; text-transform: uppercase;">Fournisseur</th>
+            <th style="padding: 8px 10px; font-size: 9.5px; font-weight: 800; text-transform: uppercase;">Mode</th>
+            <th style="padding: 8px 10px; font-size: 9.5px; font-weight: 800; text-transform: uppercase;">Statut</th>
+            <th style="padding: 8px 10px; font-size: 9.5px; font-weight: 800; text-transform: uppercase; text-align: right;">Montant (FCFA)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${safeExpenses.map((e, idx) => {
+            const bg = idx % 2 === 1 ? 'background-color: #F5F4FA !important;' : 'background-color: #ffffff !important;';
+            const modeText = EXPENSE_PAYMENT_MODE_LABELS[e.paymentMode] || e.paymentMode || '—';
+            const amountText = (e.amount || 0).toLocaleString('fr-FR');
+            return `
+            <tr>
+              <td style="padding: 8px 10px; border-bottom: 1px solid #D8D5E4; ${bg}">${e.date || '—'}</td>
+              <td style="padding: 8px 10px; border-bottom: 1px solid #D8D5E4; ${bg}">${e.categoryName || '—'}</td>
+              <td style="padding: 8px 10px; border-bottom: 1px solid #D8D5E4; ${bg}">${e.description || '—'}</td>
+              <td style="padding: 8px 10px; border-bottom: 1px solid #D8D5E4; ${bg}">${e.supplier || '—'}</td>
+              <td style="padding: 8px 10px; border-bottom: 1px solid #D8D5E4; ${bg}">${modeText}</td>
+              <td style="padding: 8px 10px; border-bottom: 1px solid #D8D5E4; ${bg}">${e.status === 'VALIDATED' ? 'Validée' : e.status === 'PENDING' ? 'En attente' : 'Annulée'}</td>
+              <td style="padding: 8px 10px; border-bottom: 1px solid #D8D5E4; font-weight: 800; text-align: right; ${bg}">${amountText} FCFA</td>
+            </tr>
+          `;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+
+    const totalVal = safeExpenses.reduce((acc, curr) => acc + (curr.status === 'VALIDATED' ? (curr.amount || 0) : 0), 0);
+
+    const doc = await documentEngineEnterprise.compileDocument({
+      documentType: 'ÉTAT_FINANCIER',
+      title: 'JOURNAL DES DÉPENSES',
+      subtitle: `RAPPORT FINANCIER DES DÉPENSES — ANNEÉ ${selectedYearId}`,
+      meta: {
+        NOMBRE: `${safeExpenses.length} opération(s)`,
+        TOTAL: `${totalVal.toLocaleString('fr-FR')} FCFA`,
+      },
+      data: { count: safeExpenses.length },
+      sectionsHtml: tableHtml,
+    });
+
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Dépenses de l'Établissement — GESCO</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 30px; color: #1e293b; }
-            h1 { font-size: 20px; color: #1e3a5f; margin-bottom: 5px; }
-            p.sub { font-size: 12px; color: #64748b; margin-top: 0; margin-bottom: 20px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
-            th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; }
-            th { background-color: #f1f5f9; font-weight: bold; }
-            .amount { text-align: right; font-weight: bold; }
-          </style>
-        </head>
-        <body>
-          <h1>Dépenses de l'Établissement</h1>
-          <p class="sub">Imprimé le ${new Date().toLocaleDateString('fr-FR')} · Année scolaire ${selectedYearId}</p>
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Catégorie</th>
-                <th>Description</th>
-                <th>Fournisseur</th>
-                <th>Mode</th>
-                <th>Statut</th>
-                <th class="amount">Montant (FCFA)</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${expenses.map((e) => `
-                <tr>
-                  <td>${e.date}</td>
-                  <td>${e.categoryName}</td>
-                  <td>${e.description}</td>
-                  <td>${e.supplier || '—'}</td>
-                  <td>${EXPENSE_PAYMENT_MODE_LABELS[e.paymentMode]}</td>
-                  <td>${e.status === 'VALIDATED' ? 'Validée' : e.status === 'PENDING' ? 'En attente' : 'Annulée'}</td>
-                  <td class="amount">${e.amount.toLocaleString('fr-FR')}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `;
-
-    printWindow.document.write(htmlContent);
+    printWindow.document.write(doc.fullHtml);
     printWindow.document.close();
     printWindow.focus();
     setTimeout(() => {
@@ -307,129 +309,187 @@ export default function ExpensesPage() {
         <>
           {/* INDICATEURS RAPIDES */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
-            <div className="card" style={{ borderRadius: 14, border: '1px solid #e2e8f0' }}>
-              <div className="card-body p-3" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 42, height: 42, borderRadius: 12, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#dc2626' }}>
-                  <TrendingDown size={20} />
-                </div>
-                <div>
-                  <p style={{ margin: 0, fontWeight: 800, fontSize: '1.125rem', color: '#dc2626', lineHeight: 1 }}>{formatFCFA(kpis.totalMonth)}</p>
-                  <p style={{ margin: '3px 0 0', fontSize: '0.725rem', color: '#64748b', fontWeight: 600 }}>Dépenses du mois</p>
-                </div>
+            {/* Dépenses du mois */}
+            <div style={{ borderRadius: 18, background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', padding: '18px 20px', color: '#ffffff', boxShadow: '0 4px 20px rgba(220,38,38,0.30)', display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,0.20)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <TrendingDown size={22} color="#ffffff" />
+              </div>
+              <div>
+                <p style={{ margin: 0, fontWeight: 900, fontSize: '1.125rem', color: '#ffffff', lineHeight: 1.1 }}>{formatFCFA(kpis.totalMonth)}</p>
+                <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>Dépenses du mois</p>
               </div>
             </div>
 
-            <div className="card" style={{ borderRadius: 14, border: '1px solid #e2e8f0' }}>
-              <div className="card-body p-3" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 42, height: 42, borderRadius: 12, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}>
-                  <DollarSign size={20} />
-                </div>
-                <div>
-                  <p style={{ margin: 0, fontWeight: 800, fontSize: '1.125rem', color: '#2563eb', lineHeight: 1 }}>{formatFCFA(kpis.totalYear)}</p>
-                  <p style={{ margin: '3px 0 0', fontSize: '0.725rem', color: '#64748b', fontWeight: 600 }}>Dépenses annuelles</p>
-                </div>
+            {/* Dépenses annuelles */}
+            <div style={{ borderRadius: 18, background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', padding: '18px 20px', color: '#ffffff', boxShadow: '0 4px 20px rgba(37,99,235,0.30)', display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,0.20)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <DollarSign size={22} color="#ffffff" />
+              </div>
+              <div>
+                <p style={{ margin: 0, fontWeight: 900, fontSize: '1.125rem', color: '#ffffff', lineHeight: 1.1 }}>{formatFCFA(kpis.totalYear)}</p>
+                <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>Dépenses annuelles</p>
               </div>
             </div>
 
-            <div className="card" style={{ borderRadius: 14, border: '1px solid #e2e8f0', cursor: 'pointer' }} onClick={() => { setNewBudgetVal(String(kpis.annualBudget)); setShowBudgetModal(true); }}>
-              <div className="card-body p-3" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 42, height: 42, borderRadius: 12, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16a34a' }}>
-                  <Building size={20} />
-                </div>
-                <div>
-                  <p style={{ margin: 0, fontWeight: 800, fontSize: '1.125rem', color: '#16a34a', lineHeight: 1 }}>{formatFCFA(kpis.annualBudget)}</p>
-                  <p style={{ margin: '3px 0 0', fontSize: '0.725rem', color: '#64748b', fontWeight: 600 }}>Budget (Cliquer p. modifier)</p>
-                </div>
+            {/* Budget (cliquable) */}
+            <div
+              style={{ borderRadius: 18, background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', padding: '18px 20px', color: '#ffffff', boxShadow: '0 4px 20px rgba(16,185,129,0.30)', display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer', transition: 'transform 0.15s ease, box-shadow 0.15s ease' }}
+              onClick={() => { setNewBudgetVal(String(kpis.annualBudget)); setShowBudgetModal(true); }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 8px 28px rgba(16,185,129,0.40)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.transform = ''; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 20px rgba(16,185,129,0.30)'; }}
+            >
+              <div style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,0.20)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Building size={22} color="#ffffff" />
+              </div>
+              <div>
+                <p style={{ margin: 0, fontWeight: 900, fontSize: '1.125rem', color: '#ffffff', lineHeight: 1.1 }}>{formatFCFA(kpis.annualBudget)}</p>
+                <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>Budget (Cliquer p. modifier)</p>
               </div>
             </div>
 
-            <div className="card" style={{ borderRadius: 14, border: '1px solid #e2e8f0' }}>
-              <div className="card-body p-3" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 42, height: 42, borderRadius: 12, background: '#f0f9ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0369a1' }}>
-                  <Shield size={20} />
-                </div>
-                <div>
-                  <p style={{ margin: 0, fontWeight: 800, fontSize: '1.125rem', color: '#0369a1', lineHeight: 1 }}>{formatFCFA(kpis.remainingBudget)}</p>
-                  <p style={{ margin: '3px 0 0', fontSize: '0.725rem', color: '#64748b', fontWeight: 600 }}>Budget restant</p>
-                </div>
+            {/* Budget restant */}
+            <div style={{ borderRadius: 18, background: kpis.remainingBudget >= 0 ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' : 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', padding: '18px 20px', color: '#ffffff', boxShadow: kpis.remainingBudget >= 0 ? '0 4px 20px rgba(124,58,237,0.30)' : '0 4px 20px rgba(249,115,22,0.30)', display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,0.20)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Shield size={22} color="#ffffff" />
+              </div>
+              <div>
+                <p style={{ margin: 0, fontWeight: 900, fontSize: '1.125rem', color: '#ffffff', lineHeight: 1.1 }}>{formatFCFA(kpis.remainingBudget)}</p>
+                <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>Budget restant</p>
               </div>
             </div>
           </div>
 
-          {/* FILTRES DE RECHERCHE */}
-          <div className="card" style={{ borderRadius: 12, border: '1px solid #e2e8f0' }}>
-            <div className="card-body p-3" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-              <Filter size={16} color="#64748b" />
+
+          {/* BARRE DE FILTRES AÉRÉE SAAS */}
+          <div className="card shadow-sm" style={{ borderRadius: 16, border: '1px solid #e2e8f0', background: '#ffffff', overflow: 'hidden' }}>
+            <div style={{ padding: '20px 24px' }}>
               
-              <div style={{ position: 'relative', flex: '1 1 220px' }}>
-                <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  placeholder="Recherche par catégorie, description, fournisseur..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{ paddingLeft: 30, borderRadius: 8 }}
-                />
+              {/* Header des filtres */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <SlidersHorizontal size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 800, color: '#0f172a' }}>Filtres des dépenses</h3>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>Recherchez et filtrez l'historique complet des décaissements</p>
+                  </div>
+                </div>
+
+                {(selectedCategory !== 'ALL' || selectedStatus !== 'ALL' || selectedMonth || searchQuery) && (
+                  <button
+                    className="btn btn-sm btn-outline-secondary fw-semibold"
+                    onClick={() => {
+                      setSelectedCategory('ALL');
+                      setSelectedStatus('ALL');
+                      setSelectedMonth('');
+                      setSearchQuery('');
+                    }}
+                    style={{ borderRadius: 10, padding: '6px 14px' }}
+                  >
+                    Réinitialiser les filtres
+                  </button>
+                )}
               </div>
 
-              <select
-                className="form-select form-select-sm"
-                value={selectedYearId}
-                onChange={(e) => setSelectedYearId(e.target.value)}
-                style={{ width: 140 }}
-              >
-                {academicYears.map((ay) => (
-                  <option key={ay.id} value={ay.id}>{ay.name} {ay.isCurrent ? '(Active)' : ''}</option>
-                ))}
-              </select>
+              {/* Grille responsive aérée pour les filtres */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+                
+                {/* 1. RECHERCHE TEXTE */}
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, background: '#eff6ff', color: '#2563eb', borderRadius: 6 }}>
+                      <Search size={13} />
+                    </span>
+                    Recherche par Mot-clé
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Catégorie, description, fournisseur..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      style={{ height: '42px', paddingLeft: 36, borderRadius: '10px', fontWeight: 500, border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
+                    />
+                  </div>
+                </div>
 
-              <select
-                className="form-select form-select-sm"
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                style={{ width: 180 }}
-              >
-                <option value="ALL">Toutes les catégories</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+                {/* 2. ANNÉE SCOLAIRE */}
+                {/* 2. ANNÉE SCOLAIRE ACTIVE */}
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, background: '#eff6ff', color: '#2563eb', borderRadius: 6 }}>
+                      <Calendar size={13} />
+                    </span>
+                    Année Scolaire Active
+                  </label>
+                  <div style={{ height: '42px', borderRadius: '10px', fontWeight: 700, border: '1px solid #a7f3d0', fontSize: '0.875rem', width: '100%', background: '#ecfdf5', color: '#047857', display: 'flex', alignItems: 'center', padding: '0 12px', gap: 6 }}>
+                    <span>🟢</span> {schoolYear}
+                  </div>
+                </div>
 
-              <select
-                className="form-select form-select-sm"
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value as any)}
-                style={{ width: 150 }}
-              >
-                <option value="ALL">Tous les statuts</option>
-                <option value="VALIDATED">🟢 Validée</option>
-                <option value="PENDING">🟡 En attente</option>
-                <option value="CANCELLED">🔴 Annulée</option>
-              </select>
+                {/* 3. CATÉGORIE */}
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, background: '#f3e8ff', color: '#9333ea', borderRadius: 6 }}>
+                      <Tag size={13} />
+                    </span>
+                    Catégorie
+                  </label>
+                  <select
+                    className="form-select"
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    style={{ height: '42px', borderRadius: '10px', fontWeight: 600, border: '1px solid #cbd5e1', fontSize: '0.875rem', width: '100%' }}
+                  >
+                    <option value="ALL">Toutes les catégories</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
 
-              <input
-                type="month"
-                className="form-control form-control-sm"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                style={{ width: 150 }}
-              />
+                {/* 4. STATUT */}
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, background: '#d1fae5', color: '#059669', borderRadius: 6 }}>
+                      <Shield size={13} />
+                    </span>
+                    Statut Validation
+                  </label>
+                  <select
+                    className="form-select"
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value as any)}
+                    style={{ height: '42px', borderRadius: '10px', fontWeight: 600, border: '1px solid #cbd5e1', fontSize: '0.875rem', width: '100%' }}
+                  >
+                    <option value="ALL">Tous les statuts</option>
+                    <option value="VALIDATED">🟢 Validée</option>
+                    <option value="PENDING">🟡 En attente</option>
+                    <option value="CANCELLED">🔴 Annulée</option>
+                  </select>
+                </div>
 
-              {(selectedCategory !== 'ALL' || selectedStatus !== 'ALL' || selectedMonth || searchQuery) && (
-                <button
-                  className="btn btn-sm btn-outline-secondary"
-                  onClick={() => {
-                    setSelectedCategory('ALL');
-                    setSelectedStatus('ALL');
-                    setSelectedMonth('');
-                    setSearchQuery('');
-                  }}
-                  style={{ borderRadius: 8 }}
-                >
-                  Réinitialiser
-                </button>
-              )}
+                {/* 5. MOIS */}
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, background: '#fef3c7', color: '#d97706', borderRadius: 6 }}>
+                      <Clock size={13} />
+                    </span>
+                    Mois d'imputation
+                  </label>
+                  <input
+                    type="month"
+                    className="form-control"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    style={{ height: '42px', borderRadius: '10px', fontWeight: 600, border: '1px solid #cbd5e1', fontSize: '0.875rem', width: '100%' }}
+                  />
+                </div>
+
+              </div>
             </div>
           </div>
 
@@ -648,8 +708,25 @@ export default function ExpensesPage() {
                   <input type="text" className="form-control" value={catName} onChange={(e) => setCatName(e.target.value)} placeholder="Ex : Fêtes & Événements" required />
                 </div>
                 <div>
-                  <label className="form-label fw-semibold text-sm">Couleur d'identification</label>
-                  <input type="color" className="form-control form-control-color w-100" value={catColor} onChange={(e) => setCatColor(e.target.value)} style={{ height: 40, cursor: 'pointer' }} />
+                  <label className="form-label fw-semibold text-sm" style={{ display: 'block', marginBottom: 6 }}>Couleur d'identification</label>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'].map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setCatColor(c)}
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 8,
+                          background: c,
+                          border: catColor === c ? '3px solid #0f172a' : '2px solid #ffffff',
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        }}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
               <div style={{ padding: '14px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: 10, justifyContent: 'flex-end', background: '#f8fafc' }}>

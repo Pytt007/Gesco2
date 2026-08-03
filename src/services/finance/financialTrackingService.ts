@@ -237,7 +237,7 @@ export const financialTrackingService = {
         <div class="header">
           <h2 style="margin:0;">ÉTABLISSEMENT GESCO</h2>
           <div class="title">RELEVÉ HISTORIQUE DES RÈGLEMENTS DE SCOLARITÉ</div>
-          <span style="font-size:0.875rem; color:#64748b;">Année Scolaire 2026-2027</span>
+          <span style="font-size:0.875rem; color:#64748b;">Année Scolaire ${enrollment.academicYearId || ''}</span>
         </div>
 
         <div style="margin-bottom:16px;">

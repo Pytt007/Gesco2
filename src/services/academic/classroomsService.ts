@@ -26,6 +26,7 @@ export interface Classroom {
 
 export interface ClassroomFilters {
   academicYearId?: string;
+  schoolYearId?: string;
   levelId?: string;
   searchQuery?: string;
   isActive?: boolean | 'all';

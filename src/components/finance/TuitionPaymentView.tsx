@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useSchoolYear } from '../../context/SchoolYearContext';
 import { useTuitionPayment } from '../../hooks/finance/useTuitionPayment';
 import { EnrollmentInstallmentItem, TuitionPaymentRecord, PaymentMode } from '../../services/finance/types';
 import { PAYMENT_MODE_LABELS } from '../../services/finance/tuitionPaymentService';
@@ -18,11 +19,9 @@ import {
   ShieldAlert,
   X,
 } from 'lucide-react';
-import { useAcademicYears } from '../../hooks/academic';
 
 export const TuitionPaymentView: React.FC = () => {
-  const { academicYears } = useAcademicYears();
-  const [selectedYearId, setSelectedYearId] = useState<string>('ay-2026');
+  const { schoolYear } = useSchoolYear();
 
   const {
     enrollments,
@@ -38,7 +37,7 @@ export const TuitionPaymentView: React.FC = () => {
     cancelPayment,
     printReceipt,
     downloadReceiptPDF,
-  } = useTuitionPayment(selectedYearId);
+  } = useTuitionPayment(schoolYear);
 
   const [search, setSearch] = useState<string>('');
   const [paymentModalOpen, setPaymentModalOpen] = useState<boolean>(false);
@@ -165,15 +164,19 @@ export const TuitionPaymentView: React.FC = () => {
             <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#475569' }}>Élève sélectionné :</span>
             <select
               className="form-select text-sm fw-bold"
-              style={{ width: '280px' }}
+              style={{ width: '280px', height: '40px', borderRadius: '10px', border: '1px solid #cbd5e1' }}
               value={selectedEnrollment ? selectedEnrollment.id : ''}
               onChange={(e) => setSelectedEnrollmentId(e.target.value)}
             >
-              {filteredEnrollments.map((enr) => (
-                <option key={enr.id} value={enr.id}>
-                  {enr.studentName} ({enr.matricule}) - {enr.className}
-                </option>
-              ))}
+              {filteredEnrollments.length === 0 ? (
+                <option value="">-- Aucun élève trouvé --</option>
+              ) : (
+                filteredEnrollments.map((enr) => (
+                  <option key={enr.id} value={enr.id}>
+                    {enr.studentName} ({enr.matricule}) - {enr.className}
+                  </option>
+                ))
+              )}
             </select>
           </div>
         </div>

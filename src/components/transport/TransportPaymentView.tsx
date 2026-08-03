@@ -5,6 +5,7 @@ import {
 } from '../../services/transport/types';
 import { TRANSPORT_PAYMENT_MODE_LABELS } from '../../services/transport/transportPaymentService';
 import { useSchoolYear } from '../../context/SchoolYearContext';
+import { documentEngineEnterprise, pdfRenderer } from '../../services/documents';
 import {
   Search, Bus, CheckCircle2, DollarSign, CreditCard, Printer, Download,
   RotateCcw, Clock, X, TrendingUp, MapPin, AlertCircle,
@@ -19,6 +20,90 @@ const TransportReceiptModal: React.FC<{
   onNewPayment: () => void;
 }> = ({ isOpen, receipt, onClose, onNewPayment }) => {
   if (!isOpen || !receipt) return null;
+
+  const handlePrint = async () => {
+    const sectionsHtml = `
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+        <h3 style="margin: 0 0 10px 0; color: #4f46e5; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">INFORMATIONS PASSAGER / ÉLÈVE</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <tr>
+            <td style="padding: 4px 0; color: #64748b;">Nom & Prénoms :</td>
+            <td style="padding: 4px 0; font-weight: bold; color: #0f172a;">${receipt.studentName}</td>
+            <td style="padding: 4px 0; color: #64748b;">Matricule :</td>
+            <td style="padding: 4px 0; font-weight: bold; color: #0f172a;">${receipt.matricule}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 0; color: #64748b;">Classe :</td>
+            <td style="padding: 4px 0; font-weight: bold; color: #0f172a;">${receipt.className}</td>
+            <td style="padding: 4px 0; color: #64748b;">Ligne de Navette :</td>
+            <td style="padding: 4px 0; font-weight: bold; color: #4f46e5;">${receipt.lineName}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+        <h3 style="margin: 0 0 10px 0; color: #166534; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">DÉTAILS DU RÈGLEMENT TRANSPORT</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <tr style="border-bottom: 1px solid #dcfce7;">
+            <td style="padding: 8px 0; color: #374151;">Date du règlement :</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right;">${new Date(receipt.paymentDate).toLocaleDateString('fr-FR')}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #dcfce7;">
+            <td style="padding: 8px 0; color: #374151;">Mode de paiement :</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right;">${receipt.paymentModeLabel}</td>
+          </tr>
+          ${receipt.periodLabel ? `
+          <tr style="border-bottom: 1px solid #dcfce7;">
+            <td style="padding: 8px 0; color: #374151;">Période couverte :</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right;">${receipt.periodLabel}</td>
+          </tr>` : ''}
+          <tr>
+            <td style="padding: 10px 0 0 0; font-size: 15px; font-weight: bold; color: #16a34a;">MONTANT ENCAISSÉ :</td>
+            <td style="padding: 10px 0 0 0; font-size: 18px; font-weight: 900; color: #16a34a; text-align: right;">${receipt.amountPaid.toLocaleString('fr-FR')} FCFA</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 30px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+          <tr>
+            <td style="color: #64748b;">Tarif Annuel Navette : ${receipt.annualRate.toLocaleString('fr-FR')} FCFA</td>
+            <td style="color: #16a34a; font-weight: bold; text-align: center;">Total Payé : ${receipt.totalPaidAfter.toLocaleString('fr-FR')} FCFA</td>
+            <td style="color: ${receipt.remainingBalance === 0 ? '#16a34a' : '#ef4444'}; font-weight: bold; text-align: right;">
+              Solde : ${receipt.remainingBalance === 0 ? 'SOLDÉ' : receipt.remainingBalance.toLocaleString('fr-FR') + ' FCFA'}
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 40px; font-size: 11px;">
+        <div style="text-align: center; width: 200px;">
+          <p style="margin: 0; font-weight: bold; color: #475569;">Signature du Parent / Payeur</p>
+          <div style="height: 50px;"></div>
+        </div>
+        <div style="text-align: center; width: 200px;">
+          <p style="margin: 0; font-weight: bold; color: #4f46e5;">La Caisse GESCO</p>
+          <div style="height: 50px;"></div>
+          <p style="margin: 0; color: #94a3b8;">Cachet Officiel</p>
+        </div>
+      </div>
+    `;
+
+    const doc = await documentEngineEnterprise.compileDocument({
+      documentType: 'REÇU',
+      title: `REÇU NAVETTE N° ${receipt.receiptNumber}`,
+      subtitle: `ATTESTATION DE PAIEMENT TRANSPORT — ${receipt.lineName}`,
+      meta: {
+        MATRICULE: receipt.matricule,
+        DATE: new Date(receipt.paymentDate).toLocaleDateString('fr-FR'),
+        LIGNE: receipt.lineName,
+      },
+      data: receipt,
+      sectionsHtml,
+    });
+
+    pdfRenderer.printHtml(doc.fullHtml);
+  };
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15,23,42,0.7)', padding: 16 }}>
       <div className="card shadow-lg" style={{ width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto', borderRadius: 16 }}>
@@ -74,7 +159,7 @@ const TransportReceiptModal: React.FC<{
           </div>
         </div>
         <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: 10, flexWrap: 'wrap', background: '#f8fafc', borderRadius: '0 0 16px 16px' }}>
-          <button className="btn btn-outline-secondary text-sm fw-semibold" onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Printer size={15} /> Imprimer</button>
+          <button className="btn btn-outline-secondary text-sm fw-semibold" onClick={handlePrint} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Printer size={15} /> Imprimer</button>
           <button className="btn btn-outline-primary text-sm fw-semibold" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Download size={15} /> PDF</button>
           <button className="btn btn-success fw-semibold ms-auto text-sm" onClick={onNewPayment} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><RotateCcw size={15} /> Nouveau paiement</button>
           <button className="btn btn-outline-secondary text-sm" onClick={onClose}><X size={15} /></button>
@@ -200,7 +285,7 @@ const TransportPaymentModal: React.FC<{
 
 export const TransportPaymentView: React.FC = () => {
   const { schoolYear } = useSchoolYear();
-  const academicYearId = schoolYear?.id || 'ay-2026';
+  const academicYearId = schoolYear || 'ay-2026';
   const {
     searchQuery, searchResults, selectedEnrollment, paymentHistory,
     receipt, isReceiptOpen, isPaymentModalOpen, isSearching, isSubmitting,

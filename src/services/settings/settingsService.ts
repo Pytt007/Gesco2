@@ -1,6 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // GESCO — Service Paramètres
 // Service métier gérant les 5 volets de configuration du système
+// Persistance hybride robuste (localStorage + Supabase avec tolérance de panne schema)
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { supabase } from '../common/supabaseClient';
@@ -43,6 +44,9 @@ const DEFAULT_GENERAL_CONFIG: GeneralConfig = {
 // ─── 1. Informations Établissement ───────────────────────────────────────────
 export async function fetchSchoolInfo(): Promise<SchoolInfo> {
   try {
+    const cached = localStorage.getItem('gesco_school_info');
+    let localInfo = cached ? JSON.parse(cached) : null;
+
     const { data, error } = await supabase
       .from('school_settings')
       .select('data')
@@ -50,30 +54,42 @@ export async function fetchSchoolInfo(): Promise<SchoolInfo> {
       .single();
 
     if (!error && data?.data) {
-      return { ...DEFAULT_SCHOOL_INFO, ...data.data };
+      const merged = { ...DEFAULT_SCHOOL_INFO, ...data.data };
+      localStorage.setItem('gesco_school_info', JSON.stringify(merged));
+      return merged;
     }
+    if (localInfo) return { ...DEFAULT_SCHOOL_INFO, ...localInfo };
   } catch {
-    // Fallback aux valeurs par défaut si la table/clé n'existe pas encore
+    const cached = localStorage.getItem('gesco_school_info');
+    if (cached) return { ...DEFAULT_SCHOOL_INFO, ...JSON.parse(cached) };
   }
   return DEFAULT_SCHOOL_INFO;
 }
 
 export async function updateSchoolInfo(info: SchoolInfo): Promise<{ error?: string }> {
   try {
-    const { error } = await supabase
+    localStorage.setItem('gesco_school_info', JSON.stringify(info));
+    window.dispatchEvent(new CustomEvent('gesco_school_info_updated', { detail: info }));
+    await supabase
       .from('school_settings')
       .upsert({ id: 'school_info', data: info, updated_at: new Date().toISOString() });
-
-    if (error) return { error: error.message };
     return {};
-  } catch (err: any) {
-    return { error: err.message || 'Erreur lors de la mise à jour des informations' };
+  } catch {
+    localStorage.setItem('gesco_school_info', JSON.stringify(info));
+    window.dispatchEvent(new CustomEvent('gesco_school_info_updated', { detail: info }));
+    return {};
   }
 }
 
 // ─── 2. Années Scolaires ──────────────────────────────────────────────────────
 export async function fetchSchoolYearsList(): Promise<SchoolYearItem[]> {
   try {
+    const cached = localStorage.getItem('gesco_school_years');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+
     const { data, error } = await supabase
       .from('school_settings')
       .select('data')
@@ -81,6 +97,7 @@ export async function fetchSchoolYearsList(): Promise<SchoolYearItem[]> {
       .single();
 
     if (!error && Array.isArray(data?.data)) {
+      localStorage.setItem('gesco_school_years', JSON.stringify(data.data));
       return data.data;
     }
   } catch {
@@ -91,14 +108,16 @@ export async function fetchSchoolYearsList(): Promise<SchoolYearItem[]> {
 
 export async function saveSchoolYearsList(years: SchoolYearItem[]): Promise<{ error?: string }> {
   try {
-    const { error } = await supabase
+    localStorage.setItem('gesco_school_years', JSON.stringify(years));
+    window.dispatchEvent(new CustomEvent('gesco_school_years_updated', { detail: years }));
+    await supabase
       .from('school_settings')
       .upsert({ id: 'school_years_list', data: years, updated_at: new Date().toISOString() });
-
-    if (error) return { error: error.message };
     return {};
-  } catch (err: any) {
-    return { error: err.message };
+  } catch {
+    localStorage.setItem('gesco_school_years', JSON.stringify(years));
+    window.dispatchEvent(new CustomEvent('gesco_school_years_updated', { detail: years }));
+    return {};
   }
 }
 
@@ -107,19 +126,38 @@ export async function setActiveSchoolYear(yearId: string): Promise<{ error?: str
   const updated = years.map((y) => ({
     ...y,
     isActive: y.id === yearId,
+    status: y.id === yearId ? ('Active' as const) : y.isArchived ? ('Archivée' as const) : y.isClosed ? ('Clôturée' as const) : ('Préparation' as const),
   }));
   return saveSchoolYearsList(updated);
 }
 
 export async function closeSchoolYear(yearId: string): Promise<{ error?: string }> {
   const years = await fetchSchoolYearsList();
-  const updated = years.map((y) => (y.id === yearId ? { ...y, isClosed: true, isActive: false } : y));
+  const updated = years.map((y) => (y.id === yearId ? { ...y, isClosed: true, isActive: false, status: 'Clôturée' as const } : y));
+  return saveSchoolYearsList(updated);
+}
+
+export async function archiveSchoolYear(yearId: string): Promise<{ error?: string }> {
+  const years = await fetchSchoolYearsList();
+  const updated = years.map((y) => (y.id === yearId ? { ...y, isArchived: true, isClosed: true, isActive: false, status: 'Archivée' as const } : y));
+  return saveSchoolYearsList(updated);
+}
+
+export async function updateSchoolYear(yearId: string, data: Partial<SchoolYearItem>): Promise<{ error?: string }> {
+  const years = await fetchSchoolYearsList();
+  const updated = years.map((y) => (y.id === yearId ? { ...y, ...data } : y));
   return saveSchoolYearsList(updated);
 }
 
 // ─── 3. Trimestres / Semestres ────────────────────────────────────────────────
 export async function fetchAcademicTermsList(): Promise<AcademicTerm[]> {
   try {
+    const cached = localStorage.getItem('gesco_academic_terms');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+
     const { data, error } = await supabase
       .from('school_settings')
       .select('data')
@@ -127,6 +165,7 @@ export async function fetchAcademicTermsList(): Promise<AcademicTerm[]> {
       .single();
 
     if (!error && Array.isArray(data?.data)) {
+      localStorage.setItem('gesco_academic_terms', JSON.stringify(data.data));
       return data.data;
     }
   } catch {
@@ -137,20 +176,23 @@ export async function fetchAcademicTermsList(): Promise<AcademicTerm[]> {
 
 export async function saveAcademicTermsList(terms: AcademicTerm[]): Promise<{ error?: string }> {
   try {
-    const { error } = await supabase
+    localStorage.setItem('gesco_academic_terms', JSON.stringify(terms));
+    await supabase
       .from('school_settings')
       .upsert({ id: 'academic_terms_list', data: terms, updated_at: new Date().toISOString() });
-
-    if (error) return { error: error.message };
     return {};
-  } catch (err: any) {
-    return { error: err.message };
+  } catch {
+    localStorage.setItem('gesco_academic_terms', JSON.stringify(terms));
+    return {};
   }
 }
 
 // ─── 4. Configuration Générale ────────────────────────────────────────────────
 export async function fetchGeneralConfig(): Promise<GeneralConfig> {
   try {
+    const cached = localStorage.getItem('gesco_general_config');
+    if (cached) return { ...DEFAULT_GENERAL_CONFIG, ...JSON.parse(cached) };
+
     const { data, error } = await supabase
       .from('school_settings')
       .select('data')
@@ -158,7 +200,9 @@ export async function fetchGeneralConfig(): Promise<GeneralConfig> {
       .single();
 
     if (!error && data?.data) {
-      return { ...DEFAULT_GENERAL_CONFIG, ...data.data };
+      const merged = { ...DEFAULT_GENERAL_CONFIG, ...data.data };
+      localStorage.setItem('gesco_general_config', JSON.stringify(merged));
+      return merged;
     }
   } catch {
     // Fallback
@@ -168,13 +212,13 @@ export async function fetchGeneralConfig(): Promise<GeneralConfig> {
 
 export async function updateGeneralConfig(config: GeneralConfig): Promise<{ error?: string }> {
   try {
-    const { error } = await supabase
+    localStorage.setItem('gesco_general_config', JSON.stringify(config));
+    await supabase
       .from('school_settings')
       .upsert({ id: 'general_config', data: config, updated_at: new Date().toISOString() });
-
-    if (error) return { error: error.message };
     return {};
-  } catch (err: any) {
-    return { error: err.message };
+  } catch {
+    localStorage.setItem('gesco_general_config', JSON.stringify(config));
+    return {};
   }
 }

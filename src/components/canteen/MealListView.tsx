@@ -17,7 +17,7 @@ function getMealStatus(enrollment: CanteenEnrollment): 'AUTHORIZED' | 'SUSPENDED
 
 export const MealListView: React.FC = () => {
   const { schoolYear } = useSchoolYear();
-  const academicYearId = schoolYear?.id || 'ay-2026';
+  const academicYearId = schoolYear || 'ay-2026';
 
   const [entries, setEntries] = useState<CanteenEnrollment[]>([]);
   const [loading, setLoading] = useState(false);
@@ -97,22 +97,32 @@ export const MealListView: React.FC = () => {
         </div>
       </div>
 
-      {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 16, marginBottom: 24 }}>
+      {/* KPIs Colorés SaaS */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
         {[
-          { label: 'Élèves inscrits', value: total, icon: <Users size={20} />, color: '#0ea5e9', bg: '#f0f9ff' },
-          { label: 'Autorisés', value: authorized, icon: <CheckCircle2 size={20} />, color: '#16a34a', bg: '#f0fdf4' },
-          { label: 'Suspendus', value: suspended, icon: <AlertCircle size={20} />, color: '#d97706', bg: '#fffbeb' },
-          { label: 'Non inscrits', value: 0, icon: <XCircle size={20} />, color: '#dc2626', bg: '#fef2f2' },
+          { label: 'Élèves inscrits', value: total, icon: <Users size={20} color="#ffffff" />, gradient: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', shadow: 'rgba(2, 132, 199, 0.3)' },
+          { label: 'Autorisés', value: authorized, icon: <CheckCircle2 size={20} color="#ffffff" />, gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', shadow: 'rgba(16, 185, 129, 0.3)' },
+          { label: 'Suspendus', value: suspended, icon: <AlertCircle size={20} color="#ffffff" />, gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', shadow: 'rgba(249, 115, 22, 0.3)' },
+          { label: 'Non inscrits', value: 0, icon: <XCircle size={20} color="#ffffff" />, gradient: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', shadow: 'rgba(239, 68, 68, 0.3)' },
         ].map((kpi) => (
-          <div key={kpi.label} className="card" style={{ borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-            <div className="card-body p-4" style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-              <div style={{ width: 44, height: 44, borderRadius: 10, background: kpi.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: kpi.color, flexShrink: 0 }}>
+          <div
+            key={kpi.label}
+            className="card shadow-sm card-hover"
+            style={{
+              borderRadius: 14,
+              background: kpi.gradient,
+              color: '#ffffff',
+              border: 'none',
+              boxShadow: `0 8px 20px -4px ${kpi.shadow}`,
+            }}
+          >
+            <div className="card-body p-3" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255, 255, 255, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {kpi.icon}
               </div>
               <div>
-                <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: kpi.color, lineHeight: 1 }}>{kpi.value}</p>
-                <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: '#64748b' }}>{kpi.label}</p>
+                <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>{kpi.value}</p>
+                <p style={{ margin: '3px 0 0', fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.9)', fontWeight: 600 }}>{kpi.label}</p>
               </div>
             </div>
           </div>

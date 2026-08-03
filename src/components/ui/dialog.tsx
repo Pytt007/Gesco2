@@ -102,6 +102,8 @@ const DialogDescription = React.forwardRef<
 ));
 DialogDescription.displayName = DialogPrimitive.Description.displayName;
 
+export type { DialogProps } from '@radix-ui/react-dialog';
+
 export {
   Dialog,
   DialogPortal,

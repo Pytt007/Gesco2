@@ -114,7 +114,7 @@ export const reportService = {
 
       case 'rpt-fin-01': { // Situation des paiements
         const enrollments = await studentFinancialEnrollmentService.getEnrollmentsByYear(yearId);
-        const totalNet = enrollments.reduce((s, e) => s + e.netAmountDue, 0);
+        const totalNet = enrollments.reduce((s, e) => s + e.netTotalDue, 0);
         const totalPaid = enrollments.reduce((s, e) => s + e.totalPaid, 0);
         const totalRem = enrollments.reduce((s, e) => s + e.remainingBalance, 0);
         const rate = totalNet > 0 ? Math.round((totalPaid / totalNet) * 100) : 0;
@@ -136,8 +136,8 @@ export const reportService = {
             e.matricule,
             e.studentName,
             e.className,
-            e.parentSponsorName || '—',
-            `${e.netAmountDue.toLocaleString('fr-FR')} F`,
+            e.parentSponsor || e.parentSponsorName || '—',
+            `${e.netTotalDue.toLocaleString('fr-FR')} F`,
             `${e.totalPaid.toLocaleString('fr-FR')} F`,
             `${e.remainingBalance.toLocaleString('fr-FR')} F`,
             e.remainingBalance === 0 ? 'Soldé' : e.totalPaid > 0 ? 'Partiel' : 'Impayé',
@@ -165,7 +165,7 @@ export const reportService = {
             e.matricule,
             e.studentName,
             e.className,
-            e.parentSponsorName || '—',
+            e.parentSponsor || e.parentSponsorName || '—',
             e.parentPhone || '—',
             `${e.remainingBalance.toLocaleString('fr-FR')} FCFA`,
           ]),

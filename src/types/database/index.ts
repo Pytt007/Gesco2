@@ -29,6 +29,8 @@ export interface SchoolInfo {
   language: string;
 }
 
+export type SchoolYearStatus = 'Active' | 'Clôturée' | 'Archivée' | 'Préparation';
+
 export interface SchoolYearItem {
   id: string;
   label: string;
@@ -36,6 +38,8 @@ export interface SchoolYearItem {
   endDate: string;
   isActive: boolean;
   isClosed: boolean;
+  isArchived?: boolean;
+  status?: SchoolYearStatus;
 }
 
 export interface AcademicTerm {
@@ -62,6 +66,7 @@ export interface Student {
   firstName: string;
   lastName: string;
   grade: string;
+  className?: string;
   status: StudentStatus;
   feesStatus: FeeStatus;
   attendance: number;

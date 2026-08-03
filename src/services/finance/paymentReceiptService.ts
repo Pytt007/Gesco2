@@ -68,7 +68,7 @@ export const paymentReceiptService = {
           <div>
             <div class="school-name">ÉTABLISSEMENT GESCO</div>
             <div style="color: #64748b; font-size: 11px;">Excellence & Discipline | Abidjan, Côte d'Ivoire</div>
-            <div style="color: #64748b; font-size: 11px;">Tél: +225 07 00 00 00 00 | Année Scolaire 2026-2027</div>
+            <div style="color: #64748b; font-size: 11px;">Tél: +225 07 00 00 00 00 | Année Scolaire ${enrollment.academicYearId || ''}</div>
           </div>
           <div style="text-align: right;">
             <div class="receipt-title">REÇU DE PAIEMENT</div>

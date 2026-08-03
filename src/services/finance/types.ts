@@ -76,6 +76,8 @@ export interface StudentFinancialEnrollment {
   discountValue: number;
   discountAmount: number;
   netTotalDue: number; // Total annuel - discountAmount
+  netAmountDue?: number;
+  parentSponsorName?: string;
   totalPaid: number;
   remainingBalance: number; // netTotalDue - totalPaid
   installmentsCount: number;
@@ -141,30 +143,31 @@ export interface ReceiptData {
   paymentId?: string;
   receiptNumber: string; // e.g. REC-2026-000001
   schoolLogoUrl?: string;
-  schoolName: string;
-  schoolAddress: string;
-  schoolPhone: string;
+  schoolName?: string;
+  schoolAddress?: string;
+  schoolPhone?: string;
   academicYear: string;
   studentPhotoUrl?: string;
   studentName: string;
   matricule: string;
   className: string;
-  parentSponsorName: string;
+  parentSponsorName?: string;
+  parentSponsor?: string;
   parentSponsorPhone?: string;
   paymentDate: string;
   amountPaid: number;
   paymentModeLabel: string;
   referenceNumber?: string;
   remarks?: string;
-  totalAnnualFee: number;
-  totalPaidBefore: number;
-  remainingBalance: number;
-  statusLabel: string;
-  recordedBy: string;
-  checksum: string;
-  qrCodeUrl: string;
-  htmlContent: string;
-  status: TuitionPaymentStatus;
+  totalAnnualFee?: number;
+  totalPaidBefore?: number;
+  remainingBalance?: number;
+  statusLabel?: string;
+  recordedBy?: string;
+  checksum?: string;
+  qrCodeUrl?: string;
+  htmlContent?: string;
+  status?: TuitionPaymentStatus;
   cancellationReason?: string;
   cancelledBy?: string;
 }

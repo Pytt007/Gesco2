@@ -69,29 +69,33 @@ svg.lucide[width="96"], svg[width="96"].lucide { width: 6.857rem !important; hei
   font-size: 1.107rem !important;
 }
 
-/* Light font weights overrides for a sleeker SaaS UI */
-.font-black, .font-extrabold {
-  font-weight: 600 !important; /* Semi-bold maximum for titles */
+/* Ultra-light font weights overrides (-400 points total from original for sleek minimalist typography) */
+[style*="font-weight: 900"], [style*="font-weight:900"], .font-black {
+  font-weight: 500 !important;
 }
 
-.font-bold {
-  font-weight: 500 !important; /* Bold shifts to Medium */
+[style*="font-weight: 800"], [style*="font-weight:800"], .font-extrabold {
+  font-weight: 400 !important;
 }
 
-.font-semibold {
-  font-weight: 500 !important; /* Semibold shifts to Medium */
+[style*="font-weight: 700"], [style*="font-weight:700"], .font-bold, .fw-bold, b, strong, th {
+  font-weight: 400 !important;
 }
 
-.font-medium {
-  font-weight: 400 !important; /* Medium shifts to Regular */
+[style*="font-weight: 600"], [style*="font-weight:600"], .font-semibold, .fw-semibold {
+  font-weight: 300 !important;
+}
+
+[style*="font-weight: 500"], [style*="font-weight:500"], .font-medium {
+  font-weight: 300 !important;
 }
 
 .font-normal {
-  font-weight: 300 !important; /* Normal shifts to Light */
+  font-weight: 300 !important;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 600 !important;
+  font-weight: 500 !important;
 }
 
 /* Global modern scrollbar styling for all scrollable containers */

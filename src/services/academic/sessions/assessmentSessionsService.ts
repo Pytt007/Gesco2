@@ -70,17 +70,19 @@ export async function searchSessions(
 
     const { data: rows, count, error } = await query.limit(500);
 
-    let rawList: AssessmentSession[] = [];
+    const dbList = (!error && rows && rows.length > 0) ? rows.map(mapRowToSession) : [];
 
-    if (!error && rows && rows.length > 0) {
-      rawList = rows.map(mapRowToSession);
-    } else {
-      rawList = Array.from(localSessionsCache.values());
-      if (rawList.length === 0) {
-        rawList = getDefaultSessions();
-        rawList.forEach((s) => localSessionsCache.set(s.id, s));
-      }
+    // Fusionner les données de la BD avec le cache local (priorité au cache local)
+    const sessionMap = new Map<string, AssessmentSession>();
+    dbList.forEach((s) => sessionMap.set(s.id, s));
+    localSessionsCache.forEach((s, id) => sessionMap.set(id, s));
+
+    if (sessionMap.size === 0) {
+      const defaults = getDefaultSessions();
+      defaults.forEach((s) => sessionMap.set(s.id, s));
     }
+
+    let rawList: AssessmentSession[] = Array.from(sessionMap.values());
 
     // Filtrage complémentaire en mémoire (au cas où fallback local)
     if (academicYearId) rawList = rawList.filter((s) => s.academicYearId === academicYearId);
@@ -193,12 +195,14 @@ export async function createSession(
     if (!sessionData.title?.trim()) {
       return createError(null, 'Le titre de la session est obligatoire.');
     }
-    if (!sessionData.startDate || !sessionData.endDate) {
-      return createError(null, 'Les dates de début et de fin sont obligatoires.');
-    }
+    const nowIso = new Date().toISOString().split('T')[0];
+    const defaultEndIso = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+
+    const startDate = sessionData.startDate || nowIso;
+    const endDate = sessionData.endDate || defaultEndIso;
 
     // 2. Validation de cohérence des dates (startDate <= endDate)
-    if (new Date(sessionData.startDate) > new Date(sessionData.endDate)) {
+    if (new Date(startDate) > new Date(endDate)) {
       return createError(null, 'La date de début ne peut pas être postérieure à la date de fin.');
     }
 
@@ -231,8 +235,8 @@ export async function createSession(
       classroomName: sessionData.classroomName || '',
       title: sessionData.title.trim(),
       description: sessionData.description?.trim() || null,
-      startDate: sessionData.startDate,
-      endDate: sessionData.endDate,
+      startDate,
+      endDate,
       status: sessionData.status || 'DRAFT',
       locked: sessionData.locked ?? false,
       published: sessionData.published ?? false,

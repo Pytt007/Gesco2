@@ -19,7 +19,7 @@ export type ViewId =
   | 'NOTES';
 
 export type FeeStatus = 'Payé' | 'En retard' | 'Partiel' | 'En attente';
-export type StudentStatus = 'Actif' | 'Inactif';
+export type StudentStatus = 'Actif' | 'Inactif' | 'Archivé';
 export type Gender = 'Masculin' | 'Féminin';
 
 export type StaffRole = 'Direction' | 'Enseignant' | 'Administratif' | 'Support';

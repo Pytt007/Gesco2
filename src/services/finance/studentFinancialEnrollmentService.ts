@@ -7,6 +7,7 @@ import {
 } from './types';
 import { tuitionFeesService } from './tuitionFeesService';
 import { ServiceResponse } from '../academic/academicYearsService';
+import { getStudentById } from '../students/studentsService';
 import { supabase } from '../common/supabaseClient';
 
 const localFinancialEnrollmentsStore: Map<string, StudentFinancialEnrollment> = new Map();
@@ -205,18 +206,27 @@ export const studentFinancialEnrollmentService = {
     const installments = generateDefaultInstallments(netTotalDue, registrationFee, input.customInstallments);
 
     // 7. Assemblage du dossier financier
-    const studentInfo = mockStudentsCatalog[input.studentId] || {
-      name: `ÉLÈVE ${input.studentId}`,
-      matricule: `MAT-2026-${Math.floor(100 + Math.random() * 900)}`,
-    };
+    let studentName = `ÉLÈVE ${input.studentId}`;
+    let matricule = `MAT-2026-${Math.floor(100 + Math.random() * 900)}`;
+
+    if (mockStudentsCatalog[input.studentId]) {
+      studentName = mockStudentsCatalog[input.studentId].name;
+      matricule = mockStudentsCatalog[input.studentId].matricule;
+    } else {
+      const studentRes = await getStudentById(input.studentId);
+      if (studentRes.success && studentRes.data) {
+        studentName = `${studentRes.data.lastName} ${studentRes.data.firstName}`;
+        matricule = studentRes.data.matricule;
+      }
+    }
 
     const id = `fin-${input.studentId}-${input.academicYearId}`;
 
     const record: StudentFinancialEnrollment = {
       id,
       studentId: input.studentId,
-      studentName: studentInfo.name,
-      matricule: studentInfo.matricule,
+      studentName,
+      matricule,
       academicYearId: input.academicYearId,
       classroomId: input.classroomId,
       className: classInfo.name,

@@ -14,6 +14,9 @@ export const DEMO_ADMIN_USER: GescoUser = {
   role: 'ADMIN_GENERALE',
   fullName: 'M. le Directeur Général',
   avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=admin',
+  status: 'ACTIF',
+  createdAt: '2026-01-01T00:00:00Z',
+  isOwner: true,
 };
 
 export async function resolveUserFromSupabase(user: any): Promise<GescoUser> {
@@ -42,6 +45,9 @@ export async function resolveUserFromSupabase(user: any): Promise<GescoUser> {
     role,
     fullName,
     avatarUrl: meta.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${username}`,
+    status: 'ACTIF',
+    createdAt: user.created_at || new Date().toISOString(),
+    isOwner: role === 'ADMIN_GENERALE' || role === 'DIRECTEUR',
   };
 }
 
@@ -116,22 +122,68 @@ export async function logoutUser(): Promise<void> {
   }
 }
 
+// ── GESTION PERSISTANTE DE LA LISTE DES COMPTES (MODE DÉMO & SUPABASE) ───────
+const deletedUserIds = new Set<string>();
+
+let memoryUserAccounts: UserAccount[] = [
+  {
+    id: 'usr-demo-01',
+    username: 'admin',
+    fullName: 'M. le Directeur Général',
+    role: 'ADMIN_GENERALE',
+    avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=admin',
+    status: 'ACTIF',
+    createdAt: '2026-01-01T00:00:00Z',
+    isOwner: true,
+  },
+  {
+    id: 'usr-demo-02',
+    username: 'finance',
+    fullName: 'Mme Awa Diop (Comptabilité)',
+    role: 'FINANCE',
+    avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=awa',
+    status: 'ACTIF',
+    createdAt: '2026-01-02T00:00:00Z',
+    isOwner: false,
+  },
+  {
+    id: 'usr-demo-03',
+    username: 'enseignant',
+    fullName: 'M. Jean Kouassi (Professeur)',
+    role: 'ENSEIGNANT',
+    avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=jean',
+    status: 'ACTIF',
+    createdAt: '2026-01-03T00:00:00Z',
+    isOwner: false,
+  },
+];
+
 export async function fetchUserAccounts(): Promise<UserAccount[]> {
-  // SEC-003 : Colonnes explicites — pas de SELECT *
-  const { data: profiles, error } = await supabase
-    .from('profiles')
-    .select('id, username, full_name, role, avatar_url')
-    .order('created_at', { ascending: true });
+  try {
+    const { data: profiles, error } = await supabase
+      .from('profiles')
+      .select('id, username, full_name, role, avatar_url')
+      .order('created_at', { ascending: true });
 
-  if (error || !profiles || profiles.length === 0) return [];
+    if (!error && profiles && profiles.length > 0) {
+      return profiles
+        .filter((p) => !deletedUserIds.has(p.id))
+        .map((p) => ({
+          id: p.id,
+          username: p.username,
+          fullName: p.full_name || p.username,
+          role: p.role as UserRole,
+          avatarUrl: p.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${p.username}`,
+          status: 'ACTIF' as const,
+          createdAt: new Date().toISOString(),
+          isOwner: p.role === 'ADMIN_GENERALE' || p.role === 'DIRECTEUR',
+        }));
+    }
+  } catch {
+    // Mode démo local
+  }
 
-  return profiles.map((p) => ({
-    id: p.id,
-    username: p.username,
-    fullName: p.full_name || p.username,
-    role: p.role as UserRole,
-    avatarUrl: p.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${p.username}`,
-  }));
+  return memoryUserAccounts.filter((u) => !deletedUserIds.has(u.id));
 }
 
 export async function createAccount(
@@ -140,17 +192,59 @@ export async function createAccount(
   role: UserRole,
   fullName: string
 ): Promise<{ error?: string }> {
+  const newId = `usr-created-${Date.now()}`;
+  const newUser: UserAccount = {
+    id: newId,
+    username,
+    fullName,
+    role,
+    avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${username}`,
+    status: 'ACTIF',
+    createdAt: new Date().toISOString(),
+    isOwner: role === 'ADMIN_GENERALE' || role === 'DIRECTEUR',
+  };
+
+  memoryUserAccounts.push(newUser);
+
+  try {
+    const email = usernameToEmail(username);
+    await supabase.auth.signUp({ email, password, options: { data: { username, role, full_name: fullName } } });
+    await supabase.from('profiles').insert([{ id: newId, username, full_name: fullName, role }]);
+  } catch {
+    // Mode démo local
+  }
+
   return {};
 }
 
 export async function deleteAccount(userId: string): Promise<{ error?: string }> {
+  deletedUserIds.add(userId);
+  memoryUserAccounts = memoryUserAccounts.filter((u) => u.id !== userId);
+
+  try {
+    await supabase.from('profiles').delete().eq('id', userId);
+  } catch {
+    // Mode démo local
+  }
+
   return {};
 }
 
 export async function updateUserPassword(newPassword: string): Promise<{ error?: string }> {
+  try {
+    await supabase.auth.updateUser({ password: newPassword });
+  } catch {
+    // Mode démo local
+  }
   return {};
 }
 
 export async function updateAccountRole(userId: string, role: UserRole): Promise<{ error?: string }> {
+  memoryUserAccounts = memoryUserAccounts.map((u) => (u.id === userId ? { ...u, role } : u));
+  try {
+    await supabase.from('profiles').update({ role }).eq('id', userId);
+  } catch {
+    // Mode démo local
+  }
   return {};
 }

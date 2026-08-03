@@ -2,7 +2,7 @@ const puppeteer = require('puppeteer');
 const path = require('path');
 const fs = require('fs');
 
-const screenshotDir = 'C:\\Users\\silve\\.gemini\\antigravity-ide\\brain\\adc10b13-5140-4801-a23b-7bbe230e7d30';
+const screenshotDir = 'C:\\Users\\silve\\.gemini\\antigravity-ide\\brain\\7246451d-3e61-49bf-a032-979871295d4e';
 
 if (!fs.existsSync(screenshotDir)) {
   fs.mkdirSync(screenshotDir, { recursive: true });
@@ -19,8 +19,8 @@ if (!fs.existsSync(screenshotDir)) {
   const page = await browser.newPage();
 
   try {
-    console.log('Navigating to http://localhost:3000 ...');
-    await page.goto('http://localhost:3000', { waitUntil: 'networkidle2' });
+    console.log('Navigating to http://localhost:3001 ...');
+    await page.goto('http://localhost:3001', { waitUntil: 'networkidle2' });
     await new Promise(r => setTimeout(r, 2000));
     
     // Take screenshot of Login page

@@ -26,7 +26,7 @@ export type FormulaType =
 // ─── Statuts d'absence ────────────────────────────────────────────────────────
 
 /** Statut de présence/absence d'un élève pour une matière ou une évaluation. */
-export type AbsenceStatus = 'PRESENT' | 'ABSENT' | 'EXCUSED';
+export type AbsenceStatus = 'PRESENT' | 'ABSENT' | 'EXCUSED' | 'EXCUSED_ABSENT' | 'DISPENSED';
 
 // ─── Entrée du moteur ─────────────────────────────────────────────────────────
 

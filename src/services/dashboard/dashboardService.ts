@@ -169,15 +169,16 @@ export async function getFinancialKPIs(schoolYear: string = 'ay-2026'): Promise<
   };
 }
 
-export async function getFinancialCharts(schoolYear: string = 'ay-2026'): Promise<FinancialChartData> {
+export async function getFinancialCharts(schoolYear: string = '2024-2025'): Promise<FinancialChartData> {
+  const mult = schoolYear === '2022-2023' ? 0.72 : schoolYear === '2023-2024' ? 0.86 : schoolYear === '2025-2026' ? 1.14 : 1.0;
   return {
     chartSeries: [
-      { mois: 'Sept', Revenus: 8500000, Dépenses: 3200000 },
-      { mois: 'Oct', Revenus: 6200000, Dépenses: 2800000 },
-      { mois: 'Nov', Revenus: 5400000, Dépenses: 3100000 },
-      { mois: 'Déc', Revenus: 4800000, Dépenses: 2900000 },
-      { mois: 'Janv', Revenus: 7100000, Dépenses: 3400000 },
-      { mois: 'Fév', Revenus: 5900000, Dépenses: 2950000 },
+      { mois: 'Sept', Revenus: Math.round(8500000 * mult), Dépenses: Math.round(3200000 * mult) },
+      { mois: 'Oct', Revenus: Math.round(6200000 * mult), Dépenses: Math.round(2800000 * mult) },
+      { mois: 'Nov', Revenus: Math.round(5400000 * mult), Dépenses: Math.round(3100000 * mult) },
+      { mois: 'Déc', Revenus: Math.round(4800000 * mult), Dépenses: Math.round(2900000 * mult) },
+      { mois: 'Janv', Revenus: Math.round(7100000 * mult), Dépenses: Math.round(3400000 * mult) },
+      { mois: 'Fév', Revenus: Math.round(5900000 * mult), Dépenses: Math.round(2950000 * mult) },
     ],
     monthlyRevenues: [],
     monthlyExpenses: [],
@@ -185,7 +186,7 @@ export async function getFinancialCharts(schoolYear: string = 'ay-2026'): Promis
   };
 }
 
-export async function getAlerts(schoolYear: string = 'ay-2026'): Promise<DashboardAlertItem[]> {
+export async function getAlerts(schoolYear: string = '2024-2025'): Promise<DashboardAlertItem[]> {
   const masterAlerts = await dashboardService.getDashboardAlerts(schoolYear);
   return masterAlerts.map((a) => ({
     id: a.id,
@@ -198,12 +199,26 @@ export async function getAlerts(schoolYear: string = 'ay-2026'): Promise<Dashboa
   }));
 }
 
-export async function getRecentActivities(): Promise<ActivityItem[]> {
+export async function getRecentActivities(schoolYear?: string, limit: number = 10): Promise<ActivityItem[]> {
   return dashboardService.getRecentActivities();
 }
 
-export async function getCalendarEvents(): Promise<CalendarEventMaster[]> {
+export async function getCalendarEvents(schoolYear?: string): Promise<CalendarEventMaster[]> {
   return STATIC_CALENDAR_EVENTS;
+}
+
+export async function getStudentStatistics(schoolYear: string = '2024-2025') {
+  const mult = schoolYear === '2022-2023' ? 0.72 : schoolYear === '2023-2024' ? 0.86 : schoolYear === '2025-2026' ? 1.14 : 1.0;
+  return {
+    genderRatio: { girls: 52, boys: 48 },
+    countByLevel: {
+      CP1: Math.round(30 * mult),
+      CE1: Math.round(28 * mult),
+      CE2: Math.round(25 * mult),
+      CM1: Math.round(32 * mult),
+      CM2: Math.round(27 * mult),
+    },
+  };
 }
 
 // ─── Service Master Dashboard ────────────────────────────────────────────────
@@ -213,32 +228,34 @@ export const dashboardService = {
   /**
    * Calcule dynamiquement tous les indicateurs principaux du Dashboard
    */
-  async getMasterKPIs(academicYearId: string = 'ay-2026'): Promise<DashboardKPIsMaster> {
+  async getMasterKPIs(academicYearId: string = '2024-2025'): Promise<DashboardKPIsMaster> {
+    const mult = academicYearId === '2022-2023' ? 0.72 : academicYearId === '2023-2024' ? 0.86 : academicYearId === '2025-2026' ? 1.14 : 1.0;
+
     try {
       const scolarEnrollments = await studentFinancialEnrollmentService.getEnrollmentsByYear(academicYearId);
-      const collectedAmount = scolarEnrollments.reduce((s, e) => s + e.totalPaid, 0);
-      const remainingAmount = scolarEnrollments.reduce((s, e) => s + e.remainingBalance, 0);
-      const totalDue = scolarEnrollments.reduce((s, e) => s + e.netAmountDue, 0);
-      const recoveryRatePercent = totalDue > 0 ? Math.round((collectedAmount / totalDue) * 100) : 0;
+      const collectedAmount = scolarEnrollments.length > 0 ? scolarEnrollments.reduce((s, e) => s + e.totalPaid, 0) : Math.round(24500000 * mult);
+      const remainingAmount = scolarEnrollments.length > 0 ? scolarEnrollments.reduce((s, e) => s + e.remainingBalance, 0) : Math.round(4200000 * mult);
+      const totalDue = collectedAmount + remainingAmount;
+      const recoveryRatePercent = totalDue > 0 ? Math.round((collectedAmount / totalDue) * 100) : 85;
 
       const canteenEnrollments = await canteenEnrollmentService.getEnrollmentsByYear(academicYearId);
-      const canteenSubscribersCount = canteenEnrollments.filter((e) => e.status === 'ACTIVE').length;
+      const canteenSubscribersCount = canteenEnrollments.length > 0 ? canteenEnrollments.filter((e) => e.status === 'ACTIVE').length : Math.round(88 * mult);
 
       const transportEnrollments = await transportEnrollmentService.getEnrollmentsByYear(academicYearId);
-      const transportEnrolledCount = transportEnrollments.filter((e) => e.status === 'ACTIVE').length;
+      const transportEnrolledCount = transportEnrollments.length > 0 ? transportEnrollments.filter((e) => e.status === 'ACTIVE').length : Math.round(64 * mult);
 
       const expenseKpis = await expenseService.getKPIs(academicYearId);
-      const monthlyExpenses = expenseKpis.totalMonth;
+      const monthlyExpenses = expenseKpis.totalMonth > 0 ? expenseKpis.totalMonth : Math.round(4275000 * mult);
 
       const studentsRes = await listStudents({ schoolYear: academicYearId, pageSize: 1 });
       const staffRes = await listStaff({ pageSize: 1 });
       const classroomsRes = await getClassrooms({ schoolYearId: academicYearId });
 
-      const totalStudents = studentsRes.data && studentsRes.data.totalCount > 0 ? studentsRes.data.totalCount : Math.max(scolarEnrollments.length, 142);
-      const totalStaff = staffRes.data && staffRes.data.totalCount > 0 ? staffRes.data.totalCount : 24;
+      const totalStudents = studentsRes.data && studentsRes.data.totalCount > 0 ? studentsRes.data.totalCount : Math.round(142 * mult);
+      const totalStaff = staffRes.data && staffRes.data.totalCount > 0 ? staffRes.data.totalCount : Math.round(24 * (mult > 1 ? 1.1 : 1));
       const classroomsList = classroomsRes.data || [];
       const totalClasses = classroomsList.length > 0 ? classroomsList.length : 12;
-      const lastAverageGrade = 14.85;
+      const lastAverageGrade = Math.round((14.85 + (mult - 1) * 0.4) * 100) / 100;
 
       return {
         totalStudents,
@@ -254,15 +271,15 @@ export const dashboardService = {
       };
     } catch {
       return {
-        totalStudents: 142,
+        totalStudents: Math.round(142 * mult),
         totalStaff: 24,
         totalClasses: 12,
-        collectedAmount: 24500000,
-        remainingAmount: 4200000,
+        collectedAmount: Math.round(24500000 * mult),
+        remainingAmount: Math.round(4200000 * mult),
         recoveryRatePercent: 85,
-        canteenSubscribersCount: 88,
-        transportEnrolledCount: 64,
-        monthlyExpenses: 4275000,
+        canteenSubscribersCount: Math.round(88 * mult),
+        transportEnrolledCount: Math.round(64 * mult),
+        monthlyExpenses: Math.round(4275000 * mult),
         lastAverageGrade: 14.85,
       };
     }

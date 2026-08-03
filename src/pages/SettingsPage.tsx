@@ -4,12 +4,23 @@ import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmContext';
 import { useSettings } from '../hooks/useSettings';
 import { useUsers, useRoles, usePermissions } from '../hooks/users';
-import { UserRole, UserAccount } from '../types';
+import { UserRole, UserAccount, SchoolYearItem } from '../types';
 import { ROLE_MODULES } from '../constants/permissions';
 import {
   Building, Calendar, Clock, Sliders, Users, Shield, Plus, Save,
-  Trash2, Lock, Eye, EyeOff, X, Search
+  Trash2, Lock, Eye, EyeOff, X, Search, Settings2, Check, RotateCcw, ShieldCheck,
+  Upload, Image, Copy,
 } from 'lucide-react';
+import DuplicateSchoolYearWizardModal from '../components/settings/DuplicateSchoolYearWizardModal';
+import PermissionsManager from '../components/settings/PermissionsManager/index';
+import UsersManager from '../components/settings/UsersManager/index';
+import UsersAndRolesManager from '../components/settings/UsersManager/UsersAndRolesManager';
+
+const ALL_SYSTEM_MODULES = [
+  'Dashboard', 'Élèves', 'Parents', 'Classes', 'Personnel',
+  'Cantine', 'Transport', 'Activités', 'Scolarité', 'Dépenses',
+  'Rapports', 'Historique', 'Statistiques', 'Paramètres', 'Notes',
+];
 
 const ROLES: { value: UserRole; label: string; color: string; description: string }[] = [
   { value: 'ADMIN_GENERALE', label: 'Administrateur Général', color: '#4f46e5', description: 'Accès complet à toutes les fonctionnalités.' },
@@ -26,8 +37,24 @@ export default function SettingsPage() {
   // Hooks d'Architecture 5 Couches
   const {
     loading: settingsLoading, saving: settingsSaving, schoolInfo, schoolYears, academicTerms, generalConfig,
-    saveSchoolInfo, addSchoolYear, activateSchoolYear, closeSchoolYear, saveTerms, saveGeneralConfig,
+    saveSchoolInfo, addSchoolYear, activateSchoolYear, closeSchoolYear, archiveSchoolYear, updateSchoolYear, deleteSchoolYear, saveTerms, saveGeneralConfig,
   } = useSettings();
+
+  const [blockedDeleteSummary, setBlockedDeleteSummary] = useState<{
+    yearLabel: string;
+    error: string;
+    summary: {
+      classesCount: number;
+      studentsCount: number;
+      gradesCount: number;
+      bulletinsCount: number;
+      paymentsCount: number;
+      documentsCount: number;
+      totalRecordsCount: number;
+    };
+  } | null>(null);
+
+  const [duplicateYearTarget, setDuplicateYearTarget] = useState<SchoolYearItem | null>(null);
 
   const {
     users: userAccountsList, allUsers, loading: usersLoading, saving: usersSaving,
@@ -45,6 +72,29 @@ export default function SettingsPage() {
     name: '', logoUrl: '', address: '', phone: '', email: '',
     city: '', country: '', currency: '', language: '',
   });
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      addNotification('error', 'Le fichier doit être une image valide (PNG, JPEG, SVG, WebP).');
+      return;
+    }
+
+    if (file.size > 3 * 1024 * 1024) {
+      addNotification('error', 'La taille du logo ne doit pas dépasser 3 Mo.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64Url = event.target?.result as string;
+      setInfoForm((prev) => ({ ...prev, logoUrl: base64Url }));
+      addNotification('success', 'Nouveau logo sélectionné. Cliquez sur Sauvegarder pour valider !');
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Formulaire Nouvelle Année
   const [showAddYearModal, setShowAddYearModal] = useState(false);
@@ -66,6 +116,45 @@ export default function SettingsPage() {
     fullName: '', username: '', password: '', role: 'FINANCE' as UserRole,
   });
 
+  // Habilitations Personnalisées par Rôle (Persistence LocalStorage)
+  const STORAGE_KEY_ROLE_MODULES = 'gesco_custom_role_modules';
+  const [customRoleModules, setCustomRoleModules] = useState<Record<UserRole, string[]>>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_ROLE_MODULES);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return ROLE_MODULES;
+  });
+
+  const toggleModuleForRole = (roleValue: UserRole, mod: string) => {
+    if (!isAdmin) {
+      addNotification('error', 'Seul un Administrateur Général peut modifier les habilitations.');
+      return;
+    }
+    setCustomRoleModules((prev) => {
+      const currentMods = prev[roleValue] || [];
+      const updated = currentMods.includes(mod)
+        ? currentMods.filter((m) => m !== mod)
+        : [...currentMods, mod];
+
+      const newObj = { ...prev, [roleValue]: updated };
+      try {
+        localStorage.setItem(STORAGE_KEY_ROLE_MODULES, JSON.stringify(newObj));
+      } catch {}
+      return newObj;
+    });
+    addNotification('success', `Habilitation "${mod}" mise à jour.`);
+  };
+
+  const handleResetRoleModules = () => {
+    if (!isAdmin) return;
+    setCustomRoleModules(ROLE_MODULES);
+    try {
+      localStorage.removeItem(STORAGE_KEY_ROLE_MODULES);
+    } catch {}
+    addNotification('success', 'Habilitations réinitialisées aux valeurs par défaut.');
+  };
+
   useEffect(() => {
     if (schoolInfo) setInfoForm(schoolInfo);
     if (generalConfig) setConfigForm(generalConfig);
@@ -84,8 +173,12 @@ export default function SettingsPage() {
   const handleSaveInfo = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = await saveSchoolInfo(infoForm);
-    if (res.error) addNotification('error', res.error);
-    else addNotification('success', 'Informations de l\'établissement enregistrées !');
+    if (res.error) {
+      addNotification('error', res.error);
+    } else {
+      window.dispatchEvent(new CustomEvent('gesco_school_info_updated', { detail: infoForm }));
+      addNotification('success', 'Informations et logo de l\'établissement enregistrés avec succès !');
+    }
   };
 
   // Actions Années Scolaires
@@ -166,17 +259,40 @@ export default function SettingsPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-      {/* En-tête de la page */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Paramètres</h1>
-          <p className="page-subtitle">Configuration globale du système & habilitations</p>
+      {/* ── BANNIÈRE HERO SAAS ─────────────────────────────────────────────── */}
+      <div
+        className="card shadow-lg"
+        style={{
+          borderRadius: '16px',
+          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+          color: '#ffffff',
+          padding: '24px 28px',
+          border: 'none',
+          boxShadow: '0 12px 32px rgba(15, 23, 42, 0.2)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Settings2 size={26} color="#ffffff" />
+            </div>
+            <div>
+              <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em' }}>
+                Paramètres
+              </h1>
+              <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: '#94a3b8', fontWeight: 500 }}>
+                Configuration globale du système &amp; habilitations
+              </p>
+            </div>
+          </div>
+          {isAdmin && activeTab === 'accounts' && (
+            <button id="btn-open-add-user" className="btn btn-sm" onClick={() => setShowAddUserModal(true)}
+              style={{ background: 'rgba(255,255,255,0.15)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 10, fontWeight: 700, backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <Plus size={14} /> Créer un Accès
+            </button>
+          )}
         </div>
-        {isAdmin && activeTab === 'accounts' && (
-          <button id="btn-open-add-user" className="btn btn-primary btn-sm" onClick={() => setShowAddUserModal(true)}>
-            <Plus size={14} /> Créer un Accès
-          </button>
-        )}
       </div>
 
       {!isAdmin && (
@@ -195,21 +311,21 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Onglets de navigation */}
-      <div style={{ display: 'flex', gap: '0.25rem', borderBottom: '1px solid var(--border)', overflowX: 'auto' }}>
+      {/* Onglets de navigation — style underline premium sans emojis */}
+      <div style={{ display: 'flex', gap: '0.25rem', borderBottom: '2px solid #e2e8f0', overflowX: 'auto' }}>
         {[
-          { id: 'school', label: '🏢 Établissement', icon: Building },
-          { id: 'years', label: '📅 Années Scolaires', icon: Calendar },
-          { id: 'terms', label: '⏱️ Trimestres & Semestres', icon: Clock },
-          { id: 'config', label: '⚙️ Config. Générale', icon: Sliders },
-          { id: 'accounts', label: '👥 Comptes Utilisateurs', icon: Users },
-          { id: 'permissions', label: '🔒 Habilitations par Rôle', icon: Lock },
+          { id: 'school',   label: 'Établissement',       icon: <Building size={15} /> },
+          { id: 'years',    label: 'Années Scolaires',   icon: <Calendar size={15} /> },
+          { id: 'terms',    label: 'Trimestres',          icon: <Clock size={15} /> },
+          { id: 'config',   label: 'Config. Générale',   icon: <Sliders size={15} /> },
+          { id: 'accounts', label: 'Utilisateurs & Rôles',icon: <Users size={15} /> },
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
             style={{
-              padding: '0.75rem 1.25rem',
+              display: 'flex', alignItems: 'center', gap: 7,
+              padding: '0.75rem 1.125rem',
               background: 'none',
               border: 'none',
               fontFamily: 'inherit',
@@ -220,107 +336,181 @@ export default function SettingsPage() {
               cursor: 'pointer',
               whiteSpace: 'nowrap',
               transition: 'all 0.15s ease',
-              marginBottom: '-1px',
+              marginBottom: '-2px',
             }}
           >
-            {tab.label}
+            {tab.icon} {tab.label}
           </button>
         ))}
       </div>
 
       {/* 1. INFORMATIONS ÉTABLISSEMENT */}
       {activeTab === 'school' && (
-        <form onSubmit={handleSaveInfo} className="card">
-          <div className="card-header">
-            <h3 style={{ fontSize: '0.9375rem' }}>Informations Générales de l'Établissement</h3>
+        <form onSubmit={handleSaveInfo} className="card shadow-sm" style={{ borderRadius: 16, border: '1px solid #e2e8f0' }}>
+          <div className="card-header" style={{ padding: '18px 24px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>Informations Générales &amp; Identité Visuelle</h3>
           </div>
-          <div className="card-body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
-            <div className="form-group">
-              <label className="form-label">Nom de l'Établissement *</label>
-              <input
-                className="form-input"
-                value={infoForm.name}
-                onChange={(e) => setInfoForm({ ...infoForm, name: e.target.value })}
-                disabled={!isAdmin}
-                required
-              />
+          <div className="card-body" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            
+            {/* WIDGET UPLOAD LOGO ÉTABLISSEMENT */}
+            <div style={{
+              background: '#f8fafc',
+              border: '1px dashed #cbd5e1',
+              borderRadius: 14,
+              padding: '20px 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 20,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{
+                  width: 72,
+                  height: 72,
+                  borderRadius: 14,
+                  background: '#ffffff',
+                  border: '2px solid #e2e8f0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
+                  flexShrink: 0,
+                }}>
+                  {infoForm.logoUrl ? (
+                    <img src={infoForm.logoUrl} alt="Logo Établissement" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  ) : (
+                    <div style={{ width: 44, height: 44, borderRadius: 10, background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1.4rem' }}>
+                      G
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 800, color: '#0f172a' }}>
+                    Logo Officiel de l'Établissement
+                  </h4>
+                  <p style={{ margin: '3px 0 0', fontSize: '0.78125rem', color: '#64748b', maxWidth: 450 }}>
+                    Ce logo apparaîtra automatiquement sur l'en-tête de vos bulletins de notes, reçus de paiement et documents imprimables officiels.
+                  </p>
+                </div>
+              </div>
+
+              {isAdmin && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <label className="btn btn-primary btn-sm fw-bold" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, margin: 0, padding: '8px 14px', borderRadius: 10 }}>
+                    <Upload size={14} /> Uploader un Logo
+                    <input
+                      type="file"
+                      accept="image/png, image/jpeg, image/svg+xml, image/webp"
+                      onChange={handleLogoUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                  {infoForm.logoUrl && (
+                    <button
+                      type="button"
+                      className="btn btn-outline-danger btn-sm fw-bold"
+                      onClick={() => setInfoForm((prev) => ({ ...prev, logoUrl: '' }))}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, borderRadius: 10 }}
+                    >
+                      <Trash2 size={14} /> Supprimer
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
-            <div className="form-group">
-              <label className="form-label">Email Officiel *</label>
-              <input
-                className="form-input"
-                type="email"
-                value={infoForm.email}
-                onChange={(e) => setInfoForm({ ...infoForm, email: e.target.value })}
-                disabled={!isAdmin}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Téléphone</label>
-              <input
-                className="form-input"
-                value={infoForm.phone}
-                onChange={(e) => setInfoForm({ ...infoForm, phone: e.target.value })}
-                disabled={!isAdmin}
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Adresse Physique</label>
-              <input
-                className="form-input"
-                value={infoForm.address}
-                onChange={(e) => setInfoForm({ ...infoForm, address: e.target.value })}
-                disabled={!isAdmin}
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Ville</label>
-              <input
-                className="form-input"
-                value={infoForm.city}
-                onChange={(e) => setInfoForm({ ...infoForm, city: e.target.value })}
-                disabled={!isAdmin}
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Pays</label>
-              <input
-                className="form-input"
-                value={infoForm.country}
-                onChange={(e) => setInfoForm({ ...infoForm, country: e.target.value })}
-                disabled={!isAdmin}
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Devise Comptable</label>
-              <select
-                className="form-select"
-                value={infoForm.currency}
-                onChange={(e) => setInfoForm({ ...infoForm, currency: e.target.value })}
-                disabled={!isAdmin}
-              >
-                <option value="FCFA">FCFA (Franc CFA)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="USD">USD ($)</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Langue du Système</label>
-              <select
-                className="form-select"
-                value={infoForm.language}
-                onChange={(e) => setInfoForm({ ...infoForm, language: e.target.value })}
-                disabled={!isAdmin}
-              >
-                <option value="Français (FR)">Français (FR)</option>
-                <option value="English (EN)">English (EN)</option>
-              </select>
+
+            {/* FORMULAIRE DES CHAMPS DE SAISIE */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+              <div className="form-group">
+                <label className="form-label">Nom de l'Établissement *</label>
+                <input
+                  className="form-input"
+                  value={infoForm.name}
+                  onChange={(e) => setInfoForm({ ...infoForm, name: e.target.value })}
+                  disabled={!isAdmin}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Email Officiel *</label>
+                <input
+                  className="form-input"
+                  type="email"
+                  value={infoForm.email}
+                  onChange={(e) => setInfoForm({ ...infoForm, email: e.target.value })}
+                  disabled={!isAdmin}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Téléphone</label>
+                <input
+                  className="form-input"
+                  value={infoForm.phone}
+                  onChange={(e) => setInfoForm({ ...infoForm, phone: e.target.value })}
+                  disabled={!isAdmin}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Adresse Physique</label>
+                <input
+                  className="form-input"
+                  value={infoForm.address}
+                  onChange={(e) => setInfoForm({ ...infoForm, address: e.target.value })}
+                  disabled={!isAdmin}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Ville</label>
+                <input
+                  className="form-input"
+                  value={infoForm.city}
+                  onChange={(e) => setInfoForm({ ...infoForm, city: e.target.value })}
+                  disabled={!isAdmin}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Pays</label>
+                <input
+                  className="form-input"
+                  value={infoForm.country}
+                  onChange={(e) => setInfoForm({ ...infoForm, country: e.target.value })}
+                  disabled={!isAdmin}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Devise Comptable</label>
+                <select
+                  className="form-select"
+                  value={infoForm.currency}
+                  onChange={(e) => setInfoForm({ ...infoForm, currency: e.target.value })}
+                  disabled={!isAdmin}
+                >
+                  <option value="FCFA">FCFA (Franc CFA)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="USD">USD ($)</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Langue du Système</label>
+                <select
+                  className="form-select"
+                  value={infoForm.language}
+                  onChange={(e) => setInfoForm({ ...infoForm, language: e.target.value })}
+                  disabled={!isAdmin}
+                >
+                  <option value="Français (FR)">Français (FR)</option>
+                  <option value="English (EN)">English (EN)</option>
+                </select>
+              </div>
             </div>
           </div>
           {isAdmin && (
-            <div className="card-footer" style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button type="submit" className="btn btn-primary" disabled={settingsSaving}>
+            <div className="card-footer" style={{ padding: '16px 24px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end' }}>
+              <button type="submit" className="btn btn-primary fw-bold" disabled={settingsSaving} style={{ display: 'flex', alignItems: 'center', gap: 6, borderRadius: 10, padding: '10px 20px' }}>
                 <Save size={15} /> Sauvegarder les Informations
               </button>
             </div>
@@ -362,18 +552,29 @@ export default function SettingsPage() {
                       <td>{year.endDate}</td>
                       <td>
                         {year.isActive ? (
-                          <span className="badge badge-success">✓ Active</span>
+                          <span className="badge badge-success" style={{ fontWeight: 800 }}>🟢 Active</span>
+                        ) : year.isArchived ? (
+                          <span className="badge" style={{ background: '#f3e8ff', color: '#6b21a8', fontWeight: 800 }}>📦 Archivée</span>
                         ) : year.isClosed ? (
-                          <span className="badge badge-neutral">Clôturée</span>
+                          <span className="badge badge-neutral" style={{ fontWeight: 800 }}>🔒 Clôturée</span>
                         ) : (
-                          <span className="badge badge-warning">En attente</span>
+                          <span className="badge badge-warning" style={{ fontWeight: 800 }}>⏳ Préparation</span>
                         )}
                       </td>
                       <td>
-                        <div className="flex gap-2">
-                          {isAdmin && !year.isActive && !year.isClosed && (
+                        <div className="flex gap-2" style={{ alignItems: 'center' }}>
+                          {isAdmin && (
                             <button
-                              className="btn btn-outline btn-sm"
+                              className="btn btn-outline btn-sm fw-bold"
+                              style={{ borderColor: '#6366f1', color: '#4f46e5', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 4 }}
+                              onClick={() => setDuplicateYearTarget(year)}
+                            >
+                              <Copy size={13} /> Dupliquer
+                            </button>
+                          )}
+                          {isAdmin && !year.isActive && (
+                            <button
+                              className="btn btn-outline btn-sm fw-bold"
                               onClick={async () => {
                                 const res = await activateSchoolYear(year.id);
                                 if (res.error) addNotification('error', res.error);
@@ -385,24 +586,75 @@ export default function SettingsPage() {
                           )}
                           {isAdmin && !year.isClosed && (
                             <button
-                              className="btn btn-ghost btn-sm"
-                              style={{ color: 'var(--color-danger)' }}
+                              className="btn btn-ghost btn-sm text-warning fw-bold"
                               onClick={async () => {
                                 const isConfirmed = await confirm({
                                   title: "Clôture d'année scolaire",
-                                  message: `Clôturer définitivement l'année ${year.label} ? Cette action est irréversible.`,
+                                  message: `Clôturer l'année ${year.label} ? Les données passeront en lecture seule.`,
                                   confirmText: 'Oui, clôturer',
                                   cancelText: 'Annuler',
-                                  variant: 'danger',
+                                  variant: 'warning',
                                 });
                                 if (isConfirmed) {
                                   const res = await closeSchoolYear(year.id);
                                   if (res.error) addNotification('error', res.error);
-                                  else addNotification('success', `Année ${year.label} clôturée.`);
+                                  else addNotification('success', `Année ${year.label} clôturée avec succès.`);
                                 }
                               }}
                             >
-                              Clôturer
+                              🔒 Clôturer
+                            </button>
+                          )}
+                          {isAdmin && year.isClosed && !year.isArchived && (
+                            <button
+                              className="btn btn-ghost btn-sm fw-bold"
+                              style={{ color: '#8b5cf6' }}
+                              onClick={async () => {
+                                const isConfirmed = await confirm({
+                                  title: "Archivage d'année scolaire",
+                                  message: `Archiver l'année ${year.label} ? Elle sera retirée des listes opérationnelles tout en conservant le consulter de l'historique.`,
+                                  confirmText: 'Oui, archiver',
+                                  cancelText: 'Annuler',
+                                  variant: 'primary',
+                                });
+                                if (isConfirmed) {
+                                  const res = await archiveSchoolYear(year.id);
+                                  if (res.error) addNotification('error', res.error);
+                                  else addNotification('success', `Année ${year.label} archivée avec succès.`);
+                                }
+                              }}
+                            >
+                              📦 Archiver
+                            </button>
+                          )}
+                          {isAdmin && !year.isActive && (
+                            <button
+                              className="btn btn-ghost btn-sm text-danger fw-bold"
+                              onClick={async () => {
+                                const res = await deleteSchoolYear(year.id);
+                                if (res?.summary?.hasData) {
+                                  setBlockedDeleteSummary({
+                                    yearLabel: year.label,
+                                    error: res.error || 'Impossible de supprimer cette année scolaire.',
+                                    summary: res.summary,
+                                  });
+                                } else if (res?.error) {
+                                  addNotification('error', res.error);
+                                } else {
+                                  const isConfirmed = await confirm({
+                                    title: "Suppression définitive",
+                                    message: `Cette année scolaire ${year.label} ne contient aucune donnée. Voulez-vous la supprimer définitivement ?`,
+                                    confirmText: 'Oui, supprimer définitivement',
+                                    cancelText: 'Annuler',
+                                    variant: 'danger',
+                                  });
+                                  if (isConfirmed) {
+                                    addNotification('success', `Année ${year.label} supprimée avec succès.`);
+                                  }
+                                }
+                              }}
+                            >
+                              <Trash2 size={14} /> Supprimer
                             </button>
                           )}
                         </div>
@@ -414,6 +666,88 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── MODAL SÉCURITÉ : BLOCAGE DE SUPPRESSION SI DONNÉES PRÉSENTES ────────────── */}
+      {blockedDeleteSummary && (
+        <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: 20 }}>
+          <div className="card shadow-2xl" style={{ maxWidth: 540, width: '100%', borderRadius: 20, border: 'none', background: '#ffffff', overflow: 'hidden' }}>
+            <div style={{ padding: '24px 28px', background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Shield size={24} color="#ffffff" />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 900, color: '#ffffff' }}>Suppression Bloquée (Sécurité)</h3>
+                  <p style={{ margin: 0, fontSize: '0.75rem', color: '#fecaca', fontWeight: 600 }}>Année Scolaire {blockedDeleteSummary.yearLabel}</p>
+                </div>
+              </div>
+              <button onClick={() => setBlockedDeleteSummary(null)} style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 12, padding: '14px 16px', color: '#991b1b', fontSize: '0.875rem', fontWeight: 700, lineHeight: 1.4 }}>
+                ⚠️ Impossible de supprimer cette année scolaire. Cette année contient des données historiques. Veuillez utiliser l'action « Clôturer » ou « Archiver ».
+              </div>
+
+              <h4 style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Résumé des Données Détectées dans le Système :
+              </h4>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+                <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Classes :</span>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 900, color: '#0f172a' }}>{blockedDeleteSummary.summary.classesCount}</div>
+                </div>
+                <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Élèves Inscrits :</span>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 900, color: '#0f172a' }}>{blockedDeleteSummary.summary.studentsCount}</div>
+                </div>
+                <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Notes &amp; Évaluations :</span>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 900, color: '#0f172a' }}>{blockedDeleteSummary.summary.gradesCount}</div>
+                </div>
+                <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Bulletins Générés :</span>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 900, color: '#0f172a' }}>{blockedDeleteSummary.summary.bulletinsCount}</div>
+                </div>
+                <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Versements &amp; Reçus :</span>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 900, color: '#0f172a' }}>{blockedDeleteSummary.summary.paymentsCount}</div>
+                </div>
+                <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Documents Liés :</span>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 900, color: '#0f172a' }}>{blockedDeleteSummary.summary.documentsCount}</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+                <button className="btn btn-primary fw-bold" onClick={() => setBlockedDeleteSummary(null)} style={{ borderRadius: 10, padding: '10px 20px' }}>
+                  Compris
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL ASSISTANT DUPLICATION D'ANNÉE SCOLAIRE ──────────────────────── */}
+      {duplicateYearTarget && (
+        <DuplicateSchoolYearWizardModal
+          sourceYear={duplicateYearTarget}
+          existingYears={schoolYears}
+          onClose={() => setDuplicateYearTarget(null)}
+          onSuccess={(newYearLabel) => {
+            addNotification('success', `Année scolaire ${newYearLabel} préparée et dupliquée avec succès !`);
+            addSchoolYear({
+              label: newYearLabel,
+              startDate: '2026-09-15',
+              endDate: '2027-06-30',
+            });
+          }}
+        />
       )}
 
       {/* 3. TRIMESTRES / SEMESTRES */}
@@ -555,126 +889,8 @@ export default function SettingsPage() {
         </form>
       )}
 
-      {/* 5. COMPTES UTILISATEURS (Connecté via useUsers Hook) */}
-      {activeTab === 'accounts' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {/* Barre de Recherche et Filtres */}
-          <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-            <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-              <Search size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input
-                className="form-input"
-                style={{ paddingLeft: '2.25rem' }}
-                placeholder="Rechercher un utilisateur par nom ou identifiant..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            <select
-              className="form-select"
-              style={{ width: 'auto', minWidth: 160 }}
-              value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
-            >
-              <option value="ALL">Tous les Rôles</option>
-              {ROLES.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
-          </div>
-
-          {userAccountsList.length === 0 ? (
-            <div className="empty-state card">
-              <div className="card-body">
-                <div className="empty-state-icon">👤</div>
-                <div className="empty-state-title">Aucun utilisateur trouvé</div>
-              </div>
-            </div>
-          ) : (
-            userAccountsList.map((user) => {
-              const roleInfo = ROLES.find((r) => r.value === user.role);
-              return (
-                <div key={user.id} className="card card-hover" style={{ borderLeft: `4px solid ${roleInfo?.color || 'var(--border)'}` }}>
-                  <div className="card-body" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <img
-                      src={user.avatarUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${user.username}`}
-                      alt={user.fullName}
-                      style={{ width: 48, height: 48, borderRadius: '50%', border: '2px solid var(--border)', flexShrink: 0 }}
-                    />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.9375rem' }}>
-                        {user.fullName}
-                        {user.id === currentUser?.id && (
-                          <span className="badge badge-info" style={{ marginLeft: '0.5rem', verticalAlign: 'middle' }}>Vous</span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>@{user.username}</div>
-                      <span style={{
-                        display: 'inline-flex', alignItems: 'center',
-                        fontSize: '0.6875rem', fontWeight: 700, marginTop: '0.25rem',
-                        color: roleInfo?.color || 'var(--text-secondary)',
-                        background: `${roleInfo?.color || '#6b7280'}18`,
-                        padding: '0.15rem 0.5rem', borderRadius: '99px',
-                      }}>
-                        {roleInfo?.label || user.role}
-                      </span>
-                    </div>
-
-                    {isAdmin && user.id !== currentUser?.id && (
-                      <div className="flex gap-2" style={{ flexShrink: 0 }}>
-                        <select
-                          className="form-select"
-                          value={user.role}
-                          onChange={(e) => handleUpdateRoleSubmit(user.id, e.target.value as UserRole)}
-                          style={{ fontSize: '0.75rem', padding: '0.375rem 0.625rem', width: 'auto' }}
-                          disabled={usersSaving}
-                          id={`select-user-role-${user.id}`}
-                        >
-                          {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-                        </select>
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          style={{ color: 'var(--color-danger)' }}
-                          onClick={() => handleArchiveUserSubmit(user)}
-                          disabled={usersSaving}
-                          id={`btn-delete-user-${user.id}`}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      )}
-
-      {/* 6. HABILITATIONS PAR RÔLE (Connecté via usePermissions Hook) */}
-      {activeTab === 'permissions' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-          {ROLES.map((role) => (
-            <div key={role.value} className="card card-hover" style={{ borderTop: `4px solid ${role.color}` }}>
-              <div className="card-header" style={{ borderBottom: 'none', paddingBottom: '0.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                  <h4 style={{ fontSize: '0.9375rem', fontWeight: 800 }}>{role.label}</h4>
-                </div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{role.description}</p>
-              </div>
-              <div className="card-body" style={{ paddingTop: '0.5rem' }}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
-                  {ROLE_MODULES[role.value].map((mod) => (
-                    <span key={mod} className="badge badge-info" style={{ fontSize: '0.6875rem', background: `${role.color}15`, color: role.color, border: `1px solid ${role.color}25` }}>
-                      {mod}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* 5. UTILISATEURS & ACCÈS (Module Reconstruit Notion / Linear / Stripe feel) */}
+      {activeTab === 'accounts' && <UsersManager />}
 
       {/* Modal Créer Année Scolaire */}
       {showAddYearModal && (

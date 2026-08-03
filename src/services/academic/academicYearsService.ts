@@ -38,9 +38,8 @@ function createError<T>(error: any, fallbackMessage: string): ServiceResponse<T>
 
 const localYearsCache: Map<string, AcademicYear> = new Map();
 
-/**
- * Récupère l'ensemble des années scolaires de l'établissement
- */
+import { fetchSchoolYearsList } from '../settings/settingsService';
+
 export async function getAcademicYears(): Promise<ServiceResponse<AcademicYear[]>> {
   try {
     const { data: rows, error } = await supabase
@@ -64,6 +63,19 @@ export async function getAcademicYears(): Promise<ServiceResponse<AcademicYear[]
       return createSuccess(years);
     }
 
+    const settingsYears = await fetchSchoolYearsList();
+    if (settingsYears && settingsYears.length > 0) {
+      const mappedYears: AcademicYear[] = settingsYears.map((y) => ({
+        id: y.id,
+        name: y.label,
+        startDate: y.startDate,
+        endDate: y.endDate,
+        isCurrent: y.isActive,
+        status: y.isActive ? 'Active' : (y.isClosed ? 'Clôturée' : 'Préparation'),
+      }));
+      return createSuccess(mappedYears);
+    }
+
     if (localYearsCache.size > 0) {
       return createSuccess(Array.from(localYearsCache.values()));
     }
@@ -76,14 +88,6 @@ export async function getAcademicYears(): Promise<ServiceResponse<AcademicYear[]
         endDate: '2027-06-30',
         isCurrent: true,
         status: 'Active',
-      },
-      {
-        id: 'ay-2025',
-        name: '2025-2026',
-        startDate: '2025-09-15',
-        endDate: '2026-06-30',
-        isCurrent: false,
-        status: 'Clôturée',
       },
     ];
 

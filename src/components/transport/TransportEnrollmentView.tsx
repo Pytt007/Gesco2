@@ -21,7 +21,7 @@ const DEMO_STUDENTS = [
 export const TransportEnrollmentView: React.FC = () => {
   const { schoolYear } = useSchoolYear();
   const { showToast } = useToast();
-  const academicYearId = schoolYear?.id || 'ay-2026';
+  const academicYearId = schoolYear || 'ay-2026';
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<typeof DEMO_STUDENTS>([]);

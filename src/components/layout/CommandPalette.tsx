@@ -32,18 +32,32 @@ interface CommandItemData {
 }
 
 const ALL_MODULE_COMMANDS: CommandItemData[] = [
-  { id: 'cmd-dashboard', title: 'Tableau de bord', subtitle: 'Vue synthétique & KPIs', category: 'Module', icon: <LayoutDashboard className="h-4 w-4 text-purple-600" />, targetView: 'DASHBOARD' },
-  { id: 'cmd-students', title: 'Gestion des Élèves', subtitle: 'Inscriptions & Dossiers', category: 'Module', icon: <Users className="h-4 w-4 text-purple-600" />, targetView: 'STUDENTS' },
-  { id: 'cmd-parents', title: 'Parents & Responsables', subtitle: 'Contacts & Tutorat', category: 'Module', icon: <UserCheck className="h-4 w-4 text-purple-600" />, targetView: 'PARENTS' },
-  { id: 'cmd-classes', title: 'Classes & Salles', subtitle: 'Niveaux & Effectifs', category: 'Module', icon: <GraduationCap className="h-4 w-4 text-purple-600" />, targetView: 'CLASSES' },
-  { id: 'cmd-staff', title: 'Personnel & Enseignants', subtitle: 'RH & Titulaires', category: 'Module', icon: <Briefcase className="h-4 w-4 text-purple-600" />, targetView: 'STAFF' },
-  { id: 'cmd-scolarity', title: 'Frais de Scolarité', subtitle: 'Encaissements & Récépissés', category: 'Module', icon: <ClipboardList className="h-4 w-4 text-purple-600" />, targetView: 'SCOLARITY' },
-  { id: 'cmd-canteen', title: 'Cantine Scolaire', subtitle: 'Abonnés & Repas', category: 'Module', icon: <UtensilsCrossed className="h-4 w-4 text-purple-600" />, targetView: 'CANTEEN' },
-  { id: 'cmd-transport', title: 'Transport Scolaire', subtitle: 'Lignes & Circuit', category: 'Module', icon: <Bus className="h-4 w-4 text-purple-600" />, targetView: 'TRANSPORT' },
-  { id: 'cmd-expenses', title: 'Dépenses & Budget', subtitle: 'Achats & Charges', category: 'Module', icon: <TrendingDown className="h-4 w-4 text-purple-600" />, targetView: 'EXPENSES' },
-  { id: 'cmd-notes', title: 'Saisie des Notes', subtitle: 'Évaluations & Devoirs', category: 'Module', icon: <BookOpen className="h-4 w-4 text-purple-600" />, targetView: 'NOTES' },
-  { id: 'cmd-reports', title: 'Centre de Rapports', subtitle: 'Bulletins & Exports PDF/Excel', category: 'Module', icon: <FileBarChart className="h-4 w-4 text-purple-600" />, targetView: 'REPORTS' },
-  { id: 'cmd-settings', title: 'Paramètres du Système', subtitle: 'Configurations & Rôles', category: 'Module', icon: <Settings className="h-4 w-4 text-purple-600" />, targetView: 'SETTINGS' },
+  // 🏠 Dashboard
+  { id: 'cmd-dashboard',         title: 'Tableau de bord',          subtitle: 'Vue synthétique & KPIs',            category: 'Module', icon: <LayoutDashboard className="h-4 w-4 text-indigo-600" />,  targetView: 'DASHBOARD' },
+
+  // 🎓 Scolarité
+  { id: 'cmd-students',          title: 'Élèves',                   subtitle: 'Inscriptions & Dossiers',           category: 'Module', icon: <Users className="h-4 w-4 text-indigo-600" />,          targetView: 'STUDENTS' },
+  { id: 'cmd-parents',           title: 'Parents & Responsables',   subtitle: 'Contacts & Tutorat',               category: 'Module', icon: <UserCheck className="h-4 w-4 text-indigo-600" />,      targetView: 'PARENTS' },
+  { id: 'cmd-classes',           title: 'Classes',                  subtitle: 'Niveaux & Effectifs',              category: 'Module', icon: <GraduationCap className="h-4 w-4 text-indigo-600" />,  targetView: 'CLASSES' },
+  { id: 'cmd-staff',             title: 'Personnel & Enseignants',  subtitle: 'RH & Titulaires de classe',        category: 'Module', icon: <Briefcase className="h-4 w-4 text-indigo-600" />,      targetView: 'STAFF' },
+  { id: 'cmd-notes',             title: 'Notes & Évaluations',      subtitle: 'Saisie & résultats',              category: 'Module', icon: <BookOpen className="h-4 w-4 text-indigo-600" />,       targetView: 'NOTES' },
+
+  // 💰 Finance
+  { id: 'cmd-finance-payments',  title: 'Encaissements',            subtitle: 'Paiements & Reçus scolarité',      category: 'Module', icon: <ClipboardList className="h-4 w-4 text-green-600" />,   targetView: 'FINANCE_PAYMENTS' },
+  { id: 'cmd-finance-tracking',  title: 'Dossiers Financiers',      subtitle: 'Suivi & échéanciers élèves',       category: 'Module', icon: <TrendingDown className="h-4 w-4 text-green-600" />,    targetView: 'FINANCE_TRACKING' },
+
+  // 🏢 Gestion
+  { id: 'cmd-canteen',           title: 'Cantine Scolaire',         subtitle: 'Abonnements & Repas',              category: 'Module', icon: <UtensilsCrossed className="h-4 w-4 text-orange-600" />, targetView: 'CANTEEN' },
+  { id: 'cmd-transport',         title: 'Transport Scolaire',       subtitle: 'Lignes & Circuits',               category: 'Module', icon: <Bus className="h-4 w-4 text-orange-600" />,            targetView: 'TRANSPORT' },
+  { id: 'cmd-expenses',          title: 'Dépenses & Budget',        subtitle: 'Charges & Fonctionnement',         category: 'Module', icon: <TrendingDown className="h-4 w-4 text-orange-600" />,    targetView: 'EXPENSES' },
+
+  // 📊 Analyses
+  { id: 'cmd-reports',           title: 'Rapports',                 subtitle: 'Exports PDF & Excel',             category: 'Module', icon: <FileBarChart className="h-4 w-4 text-sky-600" />,      targetView: 'REPORTS' },
+  { id: 'cmd-statistics',        title: 'Statistiques',             subtitle: 'KPIs & Comparatifs multi-années', category: 'Module', icon: <FileBarChart className="h-4 w-4 text-sky-600" />,      targetView: 'STATISTICS' },
+  { id: 'cmd-history',           title: 'Journal d\'Audit',         subtitle: 'Historique & traçabilité',        category: 'Module', icon: <FileBarChart className="h-4 w-4 text-sky-600" />,      targetView: 'HISTORY' },
+
+  // ⚙️ Paramètres
+  { id: 'cmd-settings',          title: 'Paramètres du Système',   subtitle: 'Configuration & Rôles',           category: 'Module', icon: <Settings className="h-4 w-4 text-slate-600" />,       targetView: 'SETTINGS' },
 ];
 
 export default function CommandPalette({ isOpen, onClose, onNavigate }: CommandPaletteProps) {
