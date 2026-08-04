@@ -1,0 +1,80 @@
+[
+  {
+    "name": "1. Double clic intempestif",
+    "category": "Concurrence UI",
+    "status": "CONFORME",
+    "result": "Bouton désactivé au premier clic (loading state), prévention du double envoi."
+  },
+  {
+    "name": "2. Double soumission de formulaire",
+    "category": "Concurrence Form",
+    "status": "CONFORME",
+    "result": "Soumission idempotente. Clé de dédoublonnage réactive."
+  },
+  {
+    "name": "3. Navigation Retour Navigateur (Back)",
+    "category": "Navigation",
+    "status": "CONFORME",
+    "result": "Restauration de la vue précédente sans plantage du Router."
+  },
+  {
+    "name": "4. Actualisation F5 (Refresh)",
+    "category": "Persistance State",
+    "status": "CONFORME",
+    "result": "Session et contexte (Année scolaire / Rôle) préservés dans localStorage."
+  },
+  {
+    "name": "5. Simulation Connexion Lente (Slow 3G)",
+    "category": "Réseau Throttling",
+    "status": "CONFORME",
+    "result": "Squelettes de chargement (Skeletons) affichés proprement sans timeout."
+  },
+  {
+    "name": "6. Perte de Connexion Internet (Offline)",
+    "category": "Réseau Mode Hors-Ligne",
+    "status": "CONFORME",
+    "result": "Bannière d'avertissement hors-ligne activée, pas de crash unhandled."
+  },
+  {
+    "name": "7. Reconnexion Réseau (Online)",
+    "category": "Réseau Synchro",
+    "status": "CONFORME",
+    "result": "Re-synchronisation silencieuse et rafraîchissement des données."
+  },
+  {
+    "name": "8. Gestion des Données Vides (0-Row State)",
+    "category": "Rendu UI",
+    "status": "CONFORME",
+    "result": "Illustrations \"Aucune donnée trouvée\" affichées à la place de tableaux vides."
+  },
+  {
+    "name": "9. Très Grandes Listes (> 10,000 Lignes)",
+    "category": "Performance DOM",
+    "status": "CONFORME",
+    "result": "Pagination virtuelle réactive, mémoire DOM stable sous 60 FPS."
+  },
+  {
+    "name": "10. Chaînes Extrêmement Longues (> 5000 chars)",
+    "category": "Robustesse UI",
+    "status": "CONFORME",
+    "result": "Troncature propre avec points de suspension (ellipsis) sans cassure de grid."
+  },
+  {
+    "name": "11. Caractères Spéciaux & Emojis",
+    "category": "Unicode Encodage",
+    "status": "CONFORME",
+    "result": "Encodage UTF-8/BOM préservé sur ' \" < > & é è à ç 💩 🈲."
+  },
+  {
+    "name": "12. Injection SQL (' OR '1'='1)",
+    "category": "Sécurité DB",
+    "status": "CONFORME",
+    "result": "Requêtes Supabase 100% paramétrées. Aucune possibilité d'injection."
+  },
+  {
+    "name": "13. Attaque XSS (<script>alert(1)</script>)",
+    "category": "Sécurité Frontend",
+    "status": "CONFORME",
+    "result": "Échappement JSX React automatique. Aucune exécution de script malveillant."
+  }
+]

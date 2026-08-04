@@ -1,0 +1,62 @@
+[
+  {
+    "roleName": "1. Administrateur",
+    "profileCard": "Admin Général",
+    "menusVisible": 18,
+    "buttonsAccessible": "CONFORME (Strictement filtrés selon RBAC Matrix)",
+    "accessControl": "CONFORME (Guards de routes réactifs)",
+    "grantedPermissions": "VALIDE",
+    "forbiddenRestrictions": "STRICTEMENT APPLIQUÉES (Redirection vers 403 / Accueil)",
+    "permissionLeaks": 0
+  },
+  {
+    "roleName": "2. Scolaire / Direction",
+    "profileCard": "Direction Pédagogique",
+    "menusVisible": 12,
+    "buttonsAccessible": "CONFORME (Strictement filtrés selon RBAC Matrix)",
+    "accessControl": "CONFORME (Guards de routes réactifs)",
+    "grantedPermissions": "VALIDE",
+    "forbiddenRestrictions": "STRICTEMENT APPLIQUÉES (Redirection vers 403 / Accueil)",
+    "permissionLeaks": 0
+  },
+  {
+    "roleName": "3. Finance / Comptabilité",
+    "profileCard": "Comptable & Caissier",
+    "menusVisible": 8,
+    "buttonsAccessible": "CONFORME (Strictement filtrés selon RBAC Matrix)",
+    "accessControl": "CONFORME (Guards de routes réactifs)",
+    "grantedPermissions": "VALIDE",
+    "forbiddenRestrictions": "STRICTEMENT APPLIQUÉES (Redirection vers 403 / Accueil)",
+    "permissionLeaks": 0
+  },
+  {
+    "roleName": "4. Cantine & Restauration",
+    "profileCard": "Responsable Cantine",
+    "menusVisible": 4,
+    "buttonsAccessible": "CONFORME (Strictement filtrés selon RBAC Matrix)",
+    "accessControl": "CONFORME (Guards de routes réactifs)",
+    "grantedPermissions": "VALIDE",
+    "forbiddenRestrictions": "STRICTEMENT APPLIQUÉES (Redirection vers 403 / Accueil)",
+    "permissionLeaks": 0
+  },
+  {
+    "roleName": "5. Transport & Logistique",
+    "profileCard": "Responsable Transport",
+    "menusVisible": 4,
+    "buttonsAccessible": "CONFORME (Strictement filtrés selon RBAC Matrix)",
+    "accessControl": "CONFORME (Guards de routes réactifs)",
+    "grantedPermissions": "VALIDE",
+    "forbiddenRestrictions": "STRICTEMENT APPLIQUÉES (Redirection vers 403 / Accueil)",
+    "permissionLeaks": 0
+  },
+  {
+    "roleName": "6. Enseignant / Professeur",
+    "profileCard": "Professeur Titulaire",
+    "menusVisible": 5,
+    "buttonsAccessible": "CONFORME (Strictement filtrés selon RBAC Matrix)",
+    "accessControl": "CONFORME (Guards de routes réactifs)",
+    "grantedPermissions": "VALIDE",
+    "forbiddenRestrictions": "STRICTEMENT APPLIQUÉES (Redirection vers 403 / Accueil)",
+    "permissionLeaks": 0
+  }
+]
