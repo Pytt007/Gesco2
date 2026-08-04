@@ -50,11 +50,13 @@ export async function getAssignments(): Promise<ServiceResponse<StudentAssignmen
 }
 
 export async function getAssignmentsByClass(classroomId: string): Promise<ServiceResponse<StudentAssignment[]>> {
+  if (!classroomId?.trim()) return createError(null, 'Identifiant classe manquant.');
   const list = Array.from(localAssignmentsCache.values()).filter((a) => a.classroomId === classroomId);
   return createSuccess(list);
 }
 
 export async function getAssignmentsByYear(academicYearId: string): Promise<ServiceResponse<StudentAssignment[]>> {
+  if (!academicYearId?.trim()) return createError(null, 'Identifiant année manquant.');
   const list = Array.from(localAssignmentsCache.values()).filter((a) => a.academicYearId === academicYearId);
   return createSuccess(list);
 }

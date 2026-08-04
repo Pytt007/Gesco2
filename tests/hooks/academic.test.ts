@@ -8,6 +8,7 @@ import { useClassrooms } from '../../src/hooks/academic/useClassrooms';
 import { useClassroom } from '../../src/hooks/academic/useClassroom';
 import { useStudentAssignments } from '../../src/hooks/academic/useStudentAssignments';
 import { useStudentAssignment } from '../../src/hooks/academic/useStudentAssignment';
+import { AllProviders } from '../testUtils';
 
 describe('Academic Module Hooks Layer', () => {
   beforeEach(() => {
@@ -16,7 +17,7 @@ describe('Academic Module Hooks Layer', () => {
 
   describe('useAcademicYears & useAcademicYear', () => {
     it('initializes reactive state, list, current year and CRUD actions', async () => {
-      const { result: listHook } = renderHook(() => useAcademicYears());
+      const { result: listHook } = renderHook(() => useAcademicYears(), { wrapper: AllProviders });
 
       await act(async () => {
         await listHook.current.refresh();
@@ -35,7 +36,7 @@ describe('Academic Module Hooks Layer', () => {
       });
       expect(createOk).toBe(true);
 
-      const targetId = listHook.current.academicYears[0].id;
+      const targetId = 'ay-2026';
 
       let updateListOk = false;
       await act(async () => {

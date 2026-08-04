@@ -171,17 +171,18 @@ export async function getFinancialKPIs(schoolYear: string = 'ay-2026'): Promise<
 
 export async function getFinancialCharts(schoolYear: string = '2024-2025'): Promise<FinancialChartData> {
   const mult = schoolYear === '2022-2023' ? 0.72 : schoolYear === '2023-2024' ? 0.86 : schoolYear === '2025-2026' ? 1.14 : 1.0;
+  const chartSeries = [
+    { mois: 'Sept', Revenus: Math.round(8500000 * mult), Dépenses: Math.round(3200000 * mult) },
+    { mois: 'Oct', Revenus: Math.round(6200000 * mult), Dépenses: Math.round(2800000 * mult) },
+    { mois: 'Nov', Revenus: Math.round(5400000 * mult), Dépenses: Math.round(3100000 * mult) },
+    { mois: 'Déc', Revenus: Math.round(4800000 * mult), Dépenses: Math.round(2900000 * mult) },
+    { mois: 'Janv', Revenus: Math.round(7100000 * mult), Dépenses: Math.round(3400000 * mult) },
+    { mois: 'Fév', Revenus: Math.round(5900000 * mult), Dépenses: Math.round(2950000 * mult) },
+  ];
   return {
-    chartSeries: [
-      { mois: 'Sept', Revenus: Math.round(8500000 * mult), Dépenses: Math.round(3200000 * mult) },
-      { mois: 'Oct', Revenus: Math.round(6200000 * mult), Dépenses: Math.round(2800000 * mult) },
-      { mois: 'Nov', Revenus: Math.round(5400000 * mult), Dépenses: Math.round(3100000 * mult) },
-      { mois: 'Déc', Revenus: Math.round(4800000 * mult), Dépenses: Math.round(2900000 * mult) },
-      { mois: 'Janv', Revenus: Math.round(7100000 * mult), Dépenses: Math.round(3400000 * mult) },
-      { mois: 'Fév', Revenus: Math.round(5900000 * mult), Dépenses: Math.round(2950000 * mult) },
-    ],
-    monthlyRevenues: [],
-    monthlyExpenses: [],
+    chartSeries,
+    monthlyRevenues: chartSeries.map((s) => ({ periodLabel: s.mois, amount: s.Revenus, value: s.Revenus })),
+    monthlyExpenses: chartSeries.map((s) => ({ periodLabel: s.mois, amount: s.Dépenses, value: s.Dépenses })),
     revenueDistribution: [],
   };
 }

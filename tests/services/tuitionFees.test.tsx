@@ -6,6 +6,7 @@ import { useTuitionFees } from '../../src/hooks/finance/useTuitionFees';
 import { TuitionFeesConfigView } from '../../src/components/finance/TuitionFeesConfigView';
 import { ToastProvider } from '../../src/context/ToastContext';
 import { SchoolYearProvider } from '../../src/context/SchoolYearContext';
+import { AllProviders } from '../testUtils';
 
 describe('Tuition Fees Module Layer (Configuration des frais de scolarité)', () => {
   beforeEach(() => {
@@ -144,11 +145,9 @@ describe('Tuition Fees Module Layer (Configuration des frais de scolarité)', ()
   describe('Tuition Fees UI Component Layer (TuitionFeesConfigView)', () => {
     it('renders title, academic year selector, level rows and duplicate button', async () => {
       render(
-        <ToastProvider>
-          <SchoolYearProvider>
-            <TuitionFeesConfigView />
-          </SchoolYearProvider>
-        </ToastProvider>
+        <AllProviders>
+          <TuitionFeesConfigView />
+        </AllProviders>
       );
 
       expect(screen.getByText('Configuration des frais de scolarité')).toBeInTheDocument();

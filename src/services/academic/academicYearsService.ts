@@ -36,7 +36,11 @@ function createError<T>(error: any, fallbackMessage: string): ServiceResponse<T>
   return { success: false, error: errMsg };
 }
 
-const localYearsCache: Map<string, AcademicYear> = new Map();
+const INITIAL_YEARS: AcademicYear[] = [
+  { id: 'ay-2026', name: '2026-2027', startDate: '2026-09-15', endDate: '2027-06-30', isCurrent: true, status: 'Active' },
+  { id: 'ay-2025', name: '2025-2026', startDate: '2025-09-15', endDate: '2026-06-30', isCurrent: false, status: 'Clôturée' },
+];
+const localYearsCache: Map<string, AcademicYear> = new Map(INITIAL_YEARS.map((y) => [y.id, y]));
 
 import { fetchSchoolYearsList } from '../settings/settingsService';
 

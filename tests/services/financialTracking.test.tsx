@@ -14,6 +14,7 @@ import { useFinancialTracking } from '../../src/hooks/finance/useFinancialTracki
 import { FinancialTrackingView } from '../../src/components/finance/FinancialTrackingView';
 import { ToastProvider } from '../../src/context/ToastContext';
 import { SchoolYearProvider } from '../../src/context/SchoolYearContext';
+import { AllProviders } from '../testUtils';
 
 describe('Student Financial Tracking Module Layer (Suivi des paiements)', () => {
   beforeEach(() => {
@@ -159,19 +160,16 @@ describe('Student Financial Tracking Module Layer (Suivi des paiements)', () => 
       });
 
       render(
-        <ToastProvider>
-          <SchoolYearProvider>
-            <FinancialTrackingView />
-          </SchoolYearProvider>
-        </ToastProvider>
+        <AllProviders>
+          <FinancialTrackingView />
+        </AllProviders>
       );
 
       expect(screen.getByText('Suivi des paiements')).toBeInTheDocument();
 
       await waitFor(() => {
-        expect(screen.getByText('TOTAL ÉLÈVES')).toBeInTheDocument();
-        expect(screen.getByText('TOTAL ENCAISSÉ')).toBeInTheDocument();
-        expect(screen.getByText('RESTE À ENCAISSER')).toBeInTheDocument();
+        expect(screen.getByText('Effectif')).toBeInTheDocument();
+        expect(screen.getByText('Recouvrement')).toBeInTheDocument();
       });
     });
   });

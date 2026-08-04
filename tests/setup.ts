@@ -3,15 +3,27 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
 const createMockChain = () => {
-  const chain: any = new Proxy({}, {
-    get(_target, prop) {
-      if (prop === 'single') return async () => ({ data: null, error: { message: 'Supabase mock fallback' } });
-      if (prop === 'maybeSingle') return async () => ({ data: null, error: null });
-      if (prop === 'then') return (resolve: any) => resolve({ data: null, error: { message: 'Supabase mock fallback' } });
-      if (typeof prop === 'symbol') return undefined;
-      return () => chain;
+  const chain: any = new Proxy(
+    function () {},
+    {
+      get(_target, prop) {
+        if (prop === 'then') {
+          return (resolve: any) => resolve({ data: [], error: null });
+        }
+        if (prop === 'single') {
+          return async () => ({ data: null, error: null });
+        }
+        if (prop === 'maybeSingle') {
+          return async () => ({ data: null, error: null });
+        }
+        if (typeof prop === 'symbol') return undefined;
+        return (..._args: any[]) => chain;
+      },
+      apply() {
+        return chain;
+      }
     }
-  });
+  );
   return chain;
 };
 
@@ -19,7 +31,7 @@ vi.mock('../src/services/common/supabaseClient', () => {
   return {
     supabase: {
       from: () => createMockChain(),
-      rpc: async () => ({ data: null, error: { message: 'Supabase mock fallback' } }),
+      rpc: async () => ({ data: null, error: null }),
       auth: {
         getUser: async () => ({ data: { user: null }, error: null }),
         getSession: async () => ({ data: { session: null }, error: null }),
@@ -37,4 +49,3 @@ vi.mock('../src/services/common/supabaseClient', () => {
     emailToUsername: (e: string) => e.replace('@gesco-v1.local', ''),
   };
 });
-

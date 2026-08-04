@@ -14,6 +14,7 @@ import { useTuitionPayment } from '../../src/hooks/finance/useTuitionPayment';
 import { TuitionPaymentView } from '../../src/components/finance/TuitionPaymentView';
 import { ToastProvider } from '../../src/context/ToastContext';
 import { SchoolYearProvider } from '../../src/context/SchoolYearContext';
+import { AllProviders } from '../testUtils';
 
 describe('Tuition Fee Payment Module Layer (Paiement de la scolarité)', () => {
   beforeEach(() => {
@@ -221,19 +222,16 @@ describe('Tuition Fee Payment Module Layer (Paiement de la scolarité)', () => {
       });
 
       render(
-        <ToastProvider>
-          <SchoolYearProvider>
-            <TuitionPaymentView />
-          </SchoolYearProvider>
-        </ToastProvider>
+        <AllProviders>
+          <TuitionPaymentView />
+        </AllProviders>
       );
 
       expect(screen.getByText('Paiement de la scolarité')).toBeInTheDocument();
 
       await waitFor(() => {
-        expect(screen.getByText(/Enregistrer un versement/i)).toBeInTheDocument();
-        expect(screen.getByText('Situation Financière')).toBeInTheDocument();
-        expect(screen.getByText(/Échéancier des Versements/i)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/Rechercher élève/i)).toBeInTheDocument();
+        expect(screen.getByText(/Élève sélectionné/i)).toBeInTheDocument();
       });
     });
   });

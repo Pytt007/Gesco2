@@ -190,12 +190,14 @@ export async function updateStaff(id: string, updates: Partial<StaffMember>): Pr
 }
 
 export async function archiveStaff(id: string): Promise<ServiceResponse<boolean>> {
+  if (!id?.trim()) return createError(null, 'Identifiant manquant.');
   const cached = localStaffCache.get(id);
   if (cached) localStaffCache.set(id, { ...cached, status: 'Archivé' });
   return createSuccess(true, 'Archivé.');
 }
 
 export async function restoreStaff(id: string): Promise<ServiceResponse<boolean>> {
+  if (!id?.trim()) return createError(null, 'Identifiant manquant.');
   const cached = localStaffCache.get(id);
   if (cached) localStaffCache.set(id, { ...cached, status: 'Actif' });
   return createSuccess(true, 'Restauré.');

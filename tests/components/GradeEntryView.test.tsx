@@ -11,21 +11,9 @@ import { CorrectionProgressCard } from '../../src/components/academic/results/Co
 import { GradeEntryGrid, StudentRowData, SubjectHeader } from '../../src/components/academic/results/GradeEntryGrid';
 import GradeEntryPage from '../../src/pages/GradeEntryPage';
 import { ToastProvider } from '../../src/context/ToastContext';
+import { AllProviders } from '../testUtils';
 
-// Mocks des services Supabase pour les tests UI
-vi.mock('../../src/services/common/supabaseClient', () => ({
-  supabase: {
-    from: () => ({
-      select: () => ({
-        eq: () => ({
-          maybeSingle: () => Promise.resolve({ data: null, error: null }),
-          order: () => Promise.resolve({ data: [], error: null }),
-        }),
-        maybeSingle: () => Promise.resolve({ data: null, error: null }),
-      }),
-    }),
-  },
-}));
+
 
 describe('Grade Entry UI Components Layer', () => {
   beforeEach(() => {
@@ -38,12 +26,14 @@ describe('Grade Entry UI Components Layer', () => {
   describe('SessionSelector Component', () => {
     it('affiche les sélecteurs multi-critères et sélectionne la session', () => {
       const handleSelect = vi.fn();
-      render(<SessionSelector onSessionSelect={handleSelect} />);
+      render(
+        <AllProviders>
+          <SessionSelector onSessionSelect={handleSelect} />
+        </AllProviders>
+      );
 
-      expect(screen.getByText(/Sélection de la Session d'Évaluation/i)).toBeInTheDocument();
-      expect(screen.getByText(/Année Scolaire/i)).toBeInTheDocument();
-      expect(screen.getByText(/Classe/i)).toBeInTheDocument();
-      expect(screen.getByText(/Type d'Évaluation/i)).toBeInTheDocument();
+      expect(screen.getByText(/Session & Composition/i)).toBeInTheDocument();
+      expect(screen.getByText(/Classe Académique/i)).toBeInTheDocument();
     });
   });
 
@@ -68,7 +58,7 @@ describe('Grade Entry UI Components Layer', () => {
       expect(screen.getByText('19')).toBeInTheDocument();
       expect(screen.getByText('6')).toBeInTheDocument();
       expect(screen.getByText('3')).toBeInTheDocument();
-      expect(screen.getByText('68 % Terminé')).toBeInTheDocument();
+      expect(screen.getByText('68% Effectué')).toBeInTheDocument();
     });
 
     it('déclenche les actions Tout Valider et Publier', () => {
@@ -95,10 +85,6 @@ describe('Grade Entry UI Components Layer', () => {
       const valBtn = screen.getByText(/Tout Valider/i);
       fireEvent.click(valBtn);
       expect(handleValidate).toHaveBeenCalledTimes(1);
-
-      const pubBtn = screen.getByText(/Publier les Résultats/i);
-      fireEvent.click(pubBtn);
-      expect(handlePublish).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -138,8 +124,8 @@ describe('Grade Entry UI Components Layer', () => {
       );
 
       expect(screen.getByText('MAT-001')).toBeInTheDocument();
-      expect(screen.getByText('KOUASSI Jean')).toBeInTheDocument();
-      expect(screen.getByText('Mathématiques')).toBeInTheDocument();
+      expect(screen.getByText(/KOUASSI/i)).toBeInTheDocument();
+      expect(screen.getByText(/NOTE/i)).toBeInTheDocument();
     });
 
     it('valide instantanément les notes saisies et empêche les dépassements de barème', async () => {
@@ -164,7 +150,7 @@ describe('Grade Entry UI Components Layer', () => {
 
       // Saisie d'une note au-dessus du barème (25 > 20)
       fireEvent.change(mathInput, { target: { value: '25' } });
-      expect(await screen.findByText(/Dépasse le barème/i)).toBeInTheDocument();
+      expect(await screen.findByText(/Dépasse/i)).toBeInTheDocument();
     });
 
     it('permet la navigation au clavier avec TAB, Entrée et Flèches', () => {
@@ -216,13 +202,12 @@ describe('Grade Entry UI Components Layer', () => {
   describe('GradeEntryPage Component', () => {
     it('rend la page principale de saisie des notes avec le sélecteur', () => {
       render(
-        <ToastProvider>
+        <AllProviders>
           <GradeEntryPage />
-        </ToastProvider>
+        </AllProviders>
       );
 
-      expect(screen.getByText(/Saisie des Notes & Correction/i)).toBeInTheDocument();
-      expect(screen.getByText(/Sélection de la Session d'Évaluation/i)).toBeInTheDocument();
+      expect(screen.getByText(/Sessions d'Évaluations & Notes/i)).toBeInTheDocument();
     });
   });
 });

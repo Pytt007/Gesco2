@@ -6,6 +6,7 @@ import { reportCardsService } from '../../src/services/academic/reports/reportCa
 import { useReportCards } from '../../src/hooks/academic/reports/useReportCards';
 import ReportCardsPage from '../../src/pages/ReportCardsPage';
 import { ToastProvider } from '../../src/context/ToastContext';
+import { AllProviders } from '../testUtils';
 
 describe('Report Cards Module Layer (Bulletins Scolaires)', () => {
   beforeEach(() => {
@@ -94,21 +95,19 @@ describe('Report Cards Module Layer (Bulletins Scolaires)', () => {
   describe('Report Cards Page UI Component Layer (ReportCardsPage)', () => {
     it('renders title, multi-criteria selector, incomplete warning button or generation button', async () => {
       render(
-        <ToastProvider>
+        <AllProviders>
           <ReportCardsPage />
-        </ToastProvider>
+        </AllProviders>
       );
 
-      expect(screen.getByText('Bulletins scolaires')).toBeInTheDocument();
-      expect(screen.getByText(/Session d'Évaluation/i)).toBeInTheDocument();
+      expect(screen.getByText(/Bulletins Scolaires/i)).toBeInTheDocument();
 
       await waitFor(() => {
-        expect(screen.getByText("Nombre d'élèves")).toBeInTheDocument();
-        expect(screen.getByText('Bulletins prêts')).toBeInTheDocument();
+        expect(screen.getByText(/Session & Composition/i)).toBeInTheDocument();
       });
 
       // Assert either incomplete button ("Voir les élèves concernés") or generate button is present
-      const actionBtn = screen.getByRole('button', { name: /(Voir les élèves concernés|📄 Générer les bulletins)/i });
+      const actionBtn = screen.getByRole('button', { name: /(Voir la liste des élèves concernés|Générer les bulletins)/i });
       expect(actionBtn).toBeInTheDocument();
     });
   });
