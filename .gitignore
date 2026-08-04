@@ -28,3 +28,5 @@ test-results
 *.njsproj
 *.sln
 *.sw?
+
+screenshots_live_full_test/
