@@ -1,32 +1,93 @@
-# Logs
-logs
+# ─── Dépendances ────────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# ─── Build / Dist ────────────────────────────────────────────────
+dist/
+dist-ssr/
+build/
+
+# ─── Environnement (secrets) ─────────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.local
+
+# ─── Logs ────────────────────────────────────────────────────────
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+git-log.txt
+git-push-log.txt
 
-node_modules
-dist
-dist-ssr
-*.local
+# ─── Tests & Couverture ──────────────────────────────────────────
+coverage/
+test-results/
+playwright-report/
+qa_deep_visual_audit/
+qa_validation_results/
 
-# Test outputs & AI metadata
-playwright-report
-test-results
-.antigravity
-.gemini
-.memory
+# ─── Scripts QA / Audit Puppeteer (dev uniquement) ───────────────
+puppeteer_*.cjs
+puppeteer_*.json
+chrome_devtools_audit.cjs
+chrome_devtools_results.json
+connect_and_login.cjs
+deep_visual_live_audit.cjs
+e2e_full_lifecycle_scenario.cjs
+e2e_lifecycle_results.json
+full_interactive_live_test.cjs
+generate_visual_audit_report.cjs
+launch_real_chrome.cjs
+live_chrome_beta_runner.cjs
+live_demo_test.cjs
+open_browser_test.cjs
+open_visible_browser.cjs
+supabase_mcp_audit.cjs
+supabase_audit_results.json
+qa_e2e_campaign.cjs
+qa_playwright_audit_results.json
+audit_all_tabs.mjs
+scratch_test.mjs
+visual_journey.cjs
+
+# ─── Scripts locaux (Windows) ────────────────────────────────────
+RUN_LIVE_TEST.bat
+bring_browser_to_front.ps1
+
+# ─── Screenshots ─────────────────────────────────────────────────
+screenshots_live_full_test/
+screenshots_e2e/
+*.png
+!public/**/*.png
+!src/**/*.png
+
+# ─── Fichiers temporaires / divers ───────────────────────────────
+metadata.json
+[full_path_of_file_1]
+[full_path_of_file_2]
+
+# ─── AI / IDE metadata ───────────────────────────────────────────
+.antigravity/
+.gemini/
+.memory/
 .project.json
 
-# Editor directories and files
-.idea
+# ─── Éditeurs ────────────────────────────────────────────────────
+.idea/
 .DS_Store
+.vscode/*
+!.vscode/extensions.json
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-screenshots_live_full_test/
+# ─── TypeScript cache ────────────────────────────────────────────
+*.tsbuildinfo
