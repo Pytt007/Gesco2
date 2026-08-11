@@ -181,8 +181,8 @@ export async function getFinancialCharts(schoolYear: string = '2024-2025'): Prom
   ];
   return {
     chartSeries,
-    monthlyRevenues: chartSeries.map((s) => ({ periodLabel: s.mois, amount: s.Revenus, value: s.Revenus })),
-    monthlyExpenses: chartSeries.map((s) => ({ periodLabel: s.mois, amount: s.Dépenses, value: s.Dépenses })),
+    monthlyRevenues: chartSeries.map((s) => ({ mois: s.mois, montant: s.Revenus, periodLabel: s.mois, amount: s.Revenus, value: s.Revenus })),
+    monthlyExpenses: chartSeries.map((s) => ({ mois: s.mois, montant: s.Dépenses, periodLabel: s.mois, amount: s.Dépenses, value: s.Dépenses })),
     revenueDistribution: [],
   };
 }

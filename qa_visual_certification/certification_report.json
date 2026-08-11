@@ -1,0 +1,87 @@
+{
+  "timestamp": "2026-08-11T20:35:17.739Z",
+  "durationMs": 35734,
+  "campaigns": [
+    {
+      "name": "CAMPAGNE 1 - Connexion & Dashboard",
+      "status": "PASSED"
+    },
+    {
+      "name": "CAMPAGNE 2 - Sidebar",
+      "status": "PASSED"
+    },
+    {
+      "name": "CAMPAGNE 3 - Tous les onglets",
+      "status": "PASSED"
+    },
+    {
+      "name": "CAMPAGNE 4 - Parcours Élève",
+      "status": "PASSED"
+    },
+    {
+      "name": "CAMPAGNE 5 - Parcours Enseignant",
+      "status": "PASSED"
+    },
+    {
+      "name": "CAMPAGNE 6 - Parcours Finance",
+      "status": "PASSED"
+    },
+    {
+      "name": "CAMPAGNE 7 - Cantine",
+      "status": "PASSED"
+    },
+    {
+      "name": "CAMPAGNE 8 - Transport",
+      "status": "PASSED"
+    },
+    {
+      "name": "CAMPAGNE 9 - Activités & Discipline",
+      "status": "PASSED"
+    },
+    {
+      "name": "CAMPAGNE 10 - Statistiques",
+      "status": "PASSED"
+    },
+    {
+      "name": "CAMPAGNE 11 - Impressions & Exports",
+      "status": "PASSED"
+    },
+    {
+      "name": "CAMPAGNE 12 - Paramètres & Boutons",
+      "status": "PASSED"
+    }
+  ],
+  "pagesTested": [
+    "Dashboard"
+  ],
+  "buttonsTested": 1,
+  "formsTested": 0,
+  "printsTested": 0,
+  "exportsTested": 0,
+  "screenshots": [
+    "01_login_screen.png",
+    "02_dashboard_loaded.png",
+    "03_sidebar_navigation_complete.png",
+    "04_tabs_and_drawers.png",
+    "06_grades_and_report_cards.png",
+    "07_staff_management.png",
+    "08_finance_and_scolarity.png",
+    "09_canteen_management.png",
+    "10_transport_management.png",
+    "11_activities_management.png",
+    "12_statistics_charts.png",
+    "13_reports_and_export_center.png",
+    "14_settings_and_roles.png"
+  ],
+  "errorsDetected": [
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "location": {
+        "url": "http://localhost:3000/favicon.ico"
+      }
+    }
+  ],
+  "errorsFixed": [],
+  "verdict": "PASSED_CLEAN"
+}
