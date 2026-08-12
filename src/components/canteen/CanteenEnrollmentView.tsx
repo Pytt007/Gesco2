@@ -13,13 +13,8 @@ import {
 
 const LEVEL_ORDER: CanteenLevelCode[] = ['PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
 
-// Données de démonstration (simulées depuis la DB)
-const DEMO_STUDENTS = [
-  { id: 'st-004', name: 'KOFFI Amélie', matricule: 'MAT-2026-004', className: 'CE1 A', levelCode: 'CE1' as CanteenLevelCode, parentSponsor: 'KOFFI Edmond', parentPhone: '0700000004' },
-  { id: 'st-005', name: 'BAMBA Seydou', matricule: 'MAT-2026-005', className: 'GS B', levelCode: 'GS' as CanteenLevelCode, parentSponsor: 'BAMBA Ibrahim', parentPhone: '0700000005' },
-  { id: 'st-006', name: 'TRAORE Fatoumata', matricule: 'MAT-2026-006', className: 'CM1 A', levelCode: 'CM1' as CanteenLevelCode, parentSponsor: 'TRAORE Moussa', parentPhone: '0700000006' },
-  { id: 'st-007', name: 'DIALLO Mamadou', matricule: 'MAT-2026-007', className: 'CP2 B', levelCode: 'CP2' as CanteenLevelCode, parentSponsor: 'DIALLO Ousmane', parentPhone: '0700000007' },
-];
+const DEMO_STUDENTS: any[] = [];
+
 
 export const CanteenEnrollmentView: React.FC = () => {
   const { schoolYear } = useSchoolYear();

@@ -39,40 +39,9 @@ export function updateLineEnrollmentCount(lineId: string, delta: number) {
 // ─── Données de démo ──────────────────────────────────────────────────────────
 
 function initDemoLines(yearId: string) {
-  if (lineStore.size > 0) return;
-
-  const demos: TransportLine[] = [
-    {
-      id: 'line-001', name: 'Ligne Cocody', zone: 'Cocody, Angré, Riviera',
-      vehicleId: 'veh-001', vehicleName: 'Bus 01', vehicleLicensePlate: 'CI-1234-AB', vehicleCapacity: 25,
-      driverId: 'drv-001', driverName: 'KOUAMÉ Brou Félix', driverPhone: '0701234567',
-      annualFee: 250000, periodsCount: 3, enrolledCount: 18, availableSeats: 7, occupancyRate: 72,
-      academicYearId: yearId, status: 'ACTIVE',
-      createdAt: '2026-09-01T00:00:00Z', updatedAt: '2026-09-01T00:00:00Z',
-    },
-    {
-      id: 'line-002', name: 'Ligne Yopougon', zone: 'Yopougon, Selmer',
-      vehicleId: 'veh-002', vehicleName: 'Bus 02', vehicleLicensePlate: 'CI-5678-CD', vehicleCapacity: 30,
-      driverId: 'drv-002', driverName: 'BAMBA Souleymane', driverPhone: '0709876543',
-      annualFee: 220000, periodsCount: 3, enrolledCount: 24, availableSeats: 6, occupancyRate: 80,
-      academicYearId: yearId, status: 'ACTIVE',
-      createdAt: '2026-09-01T00:00:00Z', updatedAt: '2026-09-01T00:00:00Z',
-    },
-    {
-      id: 'line-003', name: 'Ligne Abobo', zone: 'Abobo, Adjamé',
-      vehicleId: 'veh-003', vehicleName: 'Minibus 01', vehicleLicensePlate: 'CI-9012-EF', vehicleCapacity: 18,
-      driverId: 'drv-003', driverName: 'YAO Kouassi Jean', driverPhone: '0705556666',
-      annualFee: 200000, periodsCount: 3, enrolledCount: 5, availableSeats: 13, occupancyRate: 28,
-      academicYearId: yearId, status: 'SUSPENDED',
-      createdAt: '2026-09-01T00:00:00Z', updatedAt: '2026-09-01T00:00:00Z',
-    },
-  ];
-
-  demos.forEach((l) => {
-    lineStore.set(l.id, l);
-    enrollmentCountByLine.set(l.id, l.enrolledCount);
-  });
+  // Application 100% vierge
 }
+
 
 // ─── Service Lignes ───────────────────────────────────────────────────────────
 

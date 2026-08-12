@@ -455,10 +455,10 @@ export const templateEngine = {
 
       case 'STUDENT_INFO':
         return `<div class="info-grid" style="background: #eff6ff; border-color: #bfdbfe;">
-          <div class="info-item"><span class="info-label">Matricule :</span><span class="info-value" style="font-weight: bold;">${data.matricule || 'MAT-2026-001'}</span></div>
-          <div class="info-item"><span class="info-label">Élève :</span><span class="info-value" style="font-weight: bold;">${data.studentName || 'KOUASSI Jean'}</span></div>
-          <div class="info-item"><span class="info-label">Classe :</span><span class="info-value">${data.className || 'CM2 A'}</span></div>
-          <div class="info-item"><span class="info-label">Date de Naissance :</span><span class="info-value">${data.birthDate || '12/05/2014'}</span></div>
+          <div class="info-item"><span class="info-label">Matricule :</span><span class="info-value" style="font-weight: bold;">${data.matricule || '—'}</span></div>
+          <div class="info-item"><span class="info-label">Élève :</span><span class="info-value" style="font-weight: bold;">${data.studentName || '—'}</span></div>
+          <div class="info-item"><span class="info-label">Classe :</span><span class="info-value">${data.className || '—'}</span></div>
+          <div class="info-item"><span class="info-label">Date de Naissance :</span><span class="info-value">${data.birthDate || '—'}</span></div>
         </div>`;
 
       case 'GRADES_TABLE': {
@@ -533,10 +533,8 @@ export const templateEngine = {
             </tr>
           </thead>
           <tbody>
-            ${(data.students || [
-              { matricule: 'MAT-001', name: 'KOUASSI Jean' },
-              { matricule: 'MAT-002', name: 'KONAN Marie' },
-            ])
+            ${(data.students || [])
+
               .map(
                 (st: any, i: number) => `<tr>
               <td>${i + 1}</td>

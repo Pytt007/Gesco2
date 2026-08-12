@@ -11,12 +11,8 @@ import {
   DollarSign, Tag, RotateCcw, MapPin, X,
 } from 'lucide-react';
 
-const DEMO_STUDENTS = [
-  { id: 'st-010', name: 'OUÉDRAOGO Fatimata', matricule: 'MAT-2026-010', className: 'CE1 A', levelCode: 'CE1', parentSponsor: 'OUÉDRAOGO Salif', parentPhone: '0700000010' },
-  { id: 'st-011', name: 'KONÉ Ibrahim', matricule: 'MAT-2026-011', className: 'CM2 B', levelCode: 'CM2', parentSponsor: 'KONÉ Moussa', parentPhone: '0700000011' },
-  { id: 'st-012', name: 'COULIBALY Amina', matricule: 'MAT-2026-012', className: 'CP2 A', levelCode: 'CP2', parentSponsor: 'COULIBALY Adama', parentPhone: '0700000012' },
-  { id: 'st-013', name: 'DIARRA Seydou', matricule: 'MAT-2026-013', className: 'GS B', levelCode: 'GS', parentSponsor: 'DIARRA Boubacar', parentPhone: '0700000013' },
-];
+const DEMO_STUDENTS: any[] = [];
+
 
 export const TransportEnrollmentView: React.FC = () => {
   const { schoolYear } = useSchoolYear();
