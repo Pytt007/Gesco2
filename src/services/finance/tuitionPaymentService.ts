@@ -141,6 +141,27 @@ export const tuitionPaymentService = {
 
     localPaymentsStore.set(paymentId, paymentRecord);
 
+    try {
+      if (supabase) {
+        await supabase.from('tuition_payments').insert({
+          id: paymentRecord.id,
+          enrollment_id: paymentRecord.enrollmentId,
+          receipt_number: paymentRecord.receiptNumber,
+          amount: paymentRecord.amount,
+          payment_date: paymentRecord.paymentDate,
+          payment_mode: paymentRecord.paymentMode,
+          reference_number: paymentRecord.referenceNumber || null,
+          remarks: paymentRecord.remarks || null,
+          recorded_by: paymentRecord.recordedBy,
+          status: paymentRecord.status,
+          created_at: paymentRecord.createdAt,
+          updated_at: paymentRecord.updatedAt,
+        });
+      }
+    } catch (err) {
+      console.warn('[tuitionPaymentService] Supabase insert fallback:', err);
+    }
+
     // 5. Mise à jour de la répartition du solde sur les 8 échéances
     let remainingPaymentToDistribute = input.amount;
     const updatedInstallments = enrollment.installments.map((inst) => {
