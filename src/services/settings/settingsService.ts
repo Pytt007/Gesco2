@@ -51,7 +51,7 @@ export async function fetchSchoolInfo(): Promise<SchoolInfo> {
       .from('school_settings')
       .select('data')
       .eq('id', 'school_info')
-      .single();
+      .maybeSingle();
 
     if (!error && data?.data) {
       const merged = { ...DEFAULT_SCHOOL_INFO, ...data.data };
@@ -94,7 +94,7 @@ export async function fetchSchoolYearsList(): Promise<SchoolYearItem[]> {
       .from('school_settings')
       .select('data')
       .eq('id', 'school_years_list')
-      .single();
+      .maybeSingle();
 
     if (!error && Array.isArray(data?.data)) {
       localStorage.setItem('gesco_school_years', JSON.stringify(data.data));
@@ -162,7 +162,7 @@ export async function fetchAcademicTermsList(): Promise<AcademicTerm[]> {
       .from('school_settings')
       .select('data')
       .eq('id', 'academic_terms_list')
-      .single();
+      .maybeSingle();
 
     if (!error && Array.isArray(data?.data)) {
       localStorage.setItem('gesco_academic_terms', JSON.stringify(data.data));
@@ -197,7 +197,7 @@ export async function fetchGeneralConfig(): Promise<GeneralConfig> {
       .from('school_settings')
       .select('data')
       .eq('id', 'general_config')
-      .single();
+      .maybeSingle();
 
     if (!error && data?.data) {
       const merged = { ...DEFAULT_GENERAL_CONFIG, ...data.data };

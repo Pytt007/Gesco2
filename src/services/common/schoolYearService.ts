@@ -11,37 +11,42 @@ export interface SchoolYearSettings {
 }
 
 export async function fetchSchoolYearSetting(): Promise<SchoolYearSettings> {
-  const { data } = await supabase
-    .from('school_settings')
-    .select('id, current_school_year')
-    .limit(1);
+  try {
+    const { data, error } = await supabase
+      .from('school_settings')
+      .select('id, data')
+      .eq('id', 'active_school_year')
+      .maybeSingle();
 
-  if (data && data.length > 0) {
-    return {
-      id: data[0].id,
-      currentSchoolYear: data[0].current_school_year || '2024-2025',
-    };
+    if (!error && data?.data?.currentSchoolYear) {
+      return {
+        id: data.id,
+        currentSchoolYear: data.data.currentSchoolYear,
+      };
+    }
+  } catch {
+    // Fallback to default
   }
 
-  return { id: null, currentSchoolYear: '2024-2025' };
+  return { id: 'active_school_year', currentSchoolYear: '2024-2025' };
 }
 
 export async function persistSchoolYearSetting(
   settingsId: string | null,
   year: string
 ): Promise<string | null> {
-  if (settingsId) {
+  try {
+    const targetId = settingsId || 'active_school_year';
     await supabase
       .from('school_settings')
-      .update({ current_school_year: year, updated_at: new Date().toISOString() })
-      .eq('id', settingsId);
+      .upsert({
+        id: targetId,
+        data: { currentSchoolYear: year },
+        updated_at: new Date().toISOString(),
+      });
+    return targetId;
+  } catch {
     return settingsId;
-  } else {
-    const { data } = await supabase
-      .from('school_settings')
-      .insert({ current_school_year: year })
-      .select('id')
-      .single();
-    return data?.id || null;
   }
 }
+
