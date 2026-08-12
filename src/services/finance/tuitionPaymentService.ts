@@ -143,19 +143,24 @@ export const tuitionPaymentService = {
 
     try {
       if (supabase) {
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(paymentRecord.id);
+        const dbId = isUUID ? paymentRecord.id : crypto.randomUUID();
+        
+        let studentDbId: string | null = null;
+        if (enrollment.studentId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(enrollment.studentId)) {
+          studentDbId = enrollment.studentId;
+        }
+
         await supabase.from('tuition_payments').insert({
-          id: paymentRecord.id,
-          enrollment_id: paymentRecord.enrollmentId,
+          id: dbId,
           receipt_number: paymentRecord.receiptNumber,
+          student_id: studentDbId,
           amount: paymentRecord.amount,
-          payment_date: paymentRecord.paymentDate,
-          payment_mode: paymentRecord.paymentMode,
-          reference_number: paymentRecord.referenceNumber || null,
-          remarks: paymentRecord.remarks || null,
-          recorded_by: paymentRecord.recordedBy,
-          status: paymentRecord.status,
-          created_at: paymentRecord.createdAt,
-          updated_at: paymentRecord.updatedAt,
+          payment_method: paymentRecord.paymentMode || 'CASH',
+          payment_date: paymentRecord.paymentDate || new Date().toISOString(),
+          received_by: paymentRecord.recordedBy || 'Comptabilité',
+          payer_name: enrollment.parentSponsor || enrollment.studentName || 'Parent',
+          notes: paymentRecord.remarks || paymentRecord.referenceNumber || null,
         });
       }
     } catch (err) {
