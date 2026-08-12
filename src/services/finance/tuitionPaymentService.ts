@@ -112,14 +112,11 @@ export const tuitionPaymentService = {
         .select('next_value')
         .eq('year', new Date().getFullYear())
         .single();
-      if (seqRow?.next_value) {
-        receiptNumber = `REC-${new Date().getFullYear()}-${String(seqRow.next_value).padStart(6, '0')}`;
-      } else {
-        receiptNumber = `REC-${new Date().getFullYear()}-${String(receiptCounter++).padStart(6, '0')}`;
-      }
+      const randomDigits = Math.floor(Math.random() * 9000 + 1000);
+      receiptNumber = `REC-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}${randomDigits}`;
     } catch {
-      // Fallback sur compteur local si la table de séquence n'existe pas encore
-      receiptNumber = `REC-${new Date().getFullYear()}-${String(receiptCounter++).padStart(6, '0')}`;
+      const randomDigits = Math.floor(Math.random() * 9000 + 1000);
+      receiptNumber = `REC-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}${randomDigits}`;
     }
     const paymentId = `pay-${Date.now()}`;
     const recordedBy = input.recordedBy || 'Comptabilité GESCO';
