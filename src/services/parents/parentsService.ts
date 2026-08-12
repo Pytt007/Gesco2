@@ -134,20 +134,12 @@ export async function createParent(parentData: Partial<Parent>): Promise<Service
         id: createdParent.id,
         first_name: createdParent.firstName,
         last_name: createdParent.lastName,
-        profession: createdParent.profession,
-        email: createdParent.email,
-        phone_primary: createdParent.phonePrimary,
-        phone_secondary: createdParent.phoneSecondary,
-        whatsapp: createdParent.whatsapp,
-        address: createdParent.address,
-        city: createdParent.city,
-        preferred_contact_method: createdParent.preferredContactMethod,
-        receive_notifications: createdParent.receiveNotifications,
-        status: createdParent.status,
-        created_at: createdParent.createdAt,
-        updated_at: createdParent.updatedAt,
+        phone: createdParent.phonePrimary,
+        email: createdParent.email || null,
+        profession: createdParent.profession || null,
+        address: createdParent.address || null,
       });
-    } catch { /* Silent local fallback */ }
+    } catch (dbErr) { console.warn('[parentsService] Supabase insert fallback:', dbErr); }
 
     return createSuccess(createdParent, 'Responsable légal créé avec succès.');
   } catch (err) {
