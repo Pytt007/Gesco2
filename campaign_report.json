@@ -1,0 +1,335 @@
+{
+  "timestamp": "2026-08-12T12:04:49.760Z",
+  "phases": {
+    "1_preparation": {
+      "status": "DONE",
+      "jsErrors": 0,
+      "networkErrors": 0
+    },
+    "2_sessions": {
+      "sessionsCreated": 7
+    },
+    "3_permissions": {
+      "direction": {
+        "accessible": [
+          "STUDENTS",
+          "STAFF",
+          "CANTEEN",
+          "TRANSPORT",
+          "SETTINGS",
+          "FINANCE_PAYMENTS"
+        ],
+        "blocked": [],
+        "role": "ADMIN_GENERALE",
+        "navModuleIds": [
+          "STUDENTS",
+          "FINANCE_PAYMENTS",
+          "STUDENTS",
+          "STAFF",
+          "FINANCE_PAYMENTS",
+          "CANTEEN",
+          "TRANSPORT",
+          "SETTINGS"
+        ]
+      },
+      "admin": {
+        "accessible": [
+          "STUDENTS",
+          "STAFF",
+          "CANTEEN",
+          "TRANSPORT",
+          "SETTINGS",
+          "FINANCE_PAYMENTS"
+        ],
+        "blocked": [],
+        "role": "ADMIN_GENERALE",
+        "navModuleIds": [
+          "STUDENTS",
+          "FINANCE_PAYMENTS",
+          "STUDENTS",
+          "STAFF",
+          "FINANCE_PAYMENTS",
+          "CANTEEN",
+          "TRANSPORT",
+          "SETTINGS"
+        ]
+      },
+      "compta": {
+        "accessible": [
+          "FINANCE_PAYMENTS"
+        ],
+        "blocked": [],
+        "role": "FINANCE",
+        "navModuleIds": [
+          "FINANCE_PAYMENTS",
+          "FINANCE_PAYMENTS"
+        ]
+      },
+      "enseignant": {
+        "accessible": [
+          "STUDENTS",
+          "STAFF"
+        ],
+        "blocked": [],
+        "role": "SCOLAIRE_ENSEIGNANT",
+        "navModuleIds": [
+          "STUDENTS",
+          "STUDENTS",
+          "STAFF"
+        ]
+      },
+      "prof_cp1": {
+        "accessible": [
+          "STUDENTS",
+          "STAFF"
+        ],
+        "blocked": [],
+        "role": "SCOLAIRE_ENSEIGNANT",
+        "navModuleIds": [
+          "STUDENTS",
+          "STUDENTS",
+          "STAFF"
+        ]
+      },
+      "cantine": {
+        "accessible": [
+          "CANTEEN",
+          "TRANSPORT"
+        ],
+        "blocked": [],
+        "role": "CANTINE_TRANSPORT",
+        "navModuleIds": [
+          "CANTEEN",
+          "TRANSPORT"
+        ]
+      },
+      "transport": {
+        "accessible": [
+          "CANTEEN",
+          "TRANSPORT"
+        ],
+        "blocked": [],
+        "role": "CANTINE_TRANSPORT",
+        "navModuleIds": [
+          "CANTEEN",
+          "TRANSPORT"
+        ]
+      }
+    },
+    "4_concurrent": {
+      "scenariosRun": 4
+    },
+    "5_supabase": {
+      "tablesChecked": 8
+    },
+    "6_modules": {
+      "Élèves": {
+        "found": true,
+        "loaded": true,
+        "errors": 0
+      },
+      "Classes": {
+        "found": false
+      },
+      "Personnel": {
+        "found": false
+      },
+      "Finances": {
+        "found": false
+      },
+      "Cantine": {
+        "found": true,
+        "loaded": true,
+        "errors": 0
+      },
+      "Transport": {
+        "found": true,
+        "loaded": true,
+        "errors": 0
+      },
+      "Notes": {
+        "found": true,
+        "loaded": true,
+        "errors": 0
+      },
+      "Présences": {
+        "found": true,
+        "loaded": true,
+        "errors": 0
+      },
+      "Paramètres": {
+        "found": true,
+        "loaded": true,
+        "errors": 0
+      },
+      "Parents": {
+        "found": true,
+        "loaded": true,
+        "errors": 0
+      }
+    },
+    "7_export": {
+      "total": 0,
+      "active": 0,
+      "disabled": 0
+    },
+    "8_navigation": {
+      "direction": {
+        "visited": 6,
+        "failed": 0
+      },
+      "admin": {
+        "visited": 8,
+        "failed": 0
+      },
+      "compta": {
+        "visited": 6,
+        "failed": 0
+      },
+      "enseignant": {
+        "visited": 8,
+        "failed": 0
+      },
+      "prof_cp1": {
+        "visited": 8,
+        "failed": 0
+      },
+      "cantine": {
+        "visited": 5,
+        "failed": 0
+      },
+      "transport": {
+        "visited": 5,
+        "failed": 0
+      }
+    },
+    "9_load": {
+      "students": 20,
+      "payments": 20,
+      "staff": 0,
+      "errors": 0
+    },
+    "10_rls": {
+      "anonRead": "OPEN",
+      "anonWrite": "OPEN",
+      "overallStatus": "OPEN_NO_ROLE_RESTRICTION"
+    }
+  },
+  "anomalies": [
+    {
+      "phase": 10,
+      "description": "SÉCURITÉ: Les politiques RLS sont en mode \"FOR ALL USING (true)\" — aucune restriction de rôle appliquée côté Supabase. Toute personne avec la anon key peut lire/écrire toutes les tables. Les contrôles d'accès sont uniquement appliqués côté UI (client). RECOMMANDATION: Implémenter des politiques RLS basées sur auth.jwt() et les rôles.",
+      "severity": "HIGH",
+      "timestamp": "2026-08-12T12:07:05.451Z"
+    }
+  ],
+  "supabaseChecks": [
+    {
+      "test": "concurrent_students_insert",
+      "status": "PASS"
+    },
+    {
+      "test": "concurrent_payments_insert",
+      "status": "PASS"
+    },
+    {
+      "test": "concurrent_results_insert",
+      "status": "PASS"
+    },
+    {
+      "test": "uuid_conflict_prevention",
+      "status": "PASS"
+    },
+    {
+      "table": "students",
+      "count": 3,
+      "status": "OK",
+      "httpStatus": 200
+    },
+    {
+      "table": "parents",
+      "count": 3,
+      "status": "OK",
+      "httpStatus": 200
+    },
+    {
+      "table": "staff_members",
+      "count": 1,
+      "status": "OK",
+      "httpStatus": 200
+    },
+    {
+      "table": "tuition_payments",
+      "count": 3,
+      "status": "OK",
+      "httpStatus": 200
+    },
+    {
+      "table": "assessment_results",
+      "count": 3,
+      "status": "OK",
+      "httpStatus": 200
+    },
+    {
+      "table": "canteen_enrollments",
+      "count": 1,
+      "status": "OK",
+      "httpStatus": 200
+    },
+    {
+      "table": "transport_enrollments",
+      "count": 1,
+      "status": "OK",
+      "httpStatus": 200
+    },
+    {
+      "table": "assessment_sessions",
+      "count": 0,
+      "status": "OK",
+      "httpStatus": 200
+    },
+    {
+      "test": "fk_constraint_enforcement",
+      "status": "PASS"
+    }
+  ],
+  "screenshots": [
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase1_vercel_home_1786536295096.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase2_login_direction_1786536301313.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase2_login_admin_1786536307841.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase2_login_compta_1786536314455.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase2_login_enseignant_1786536320713.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase2_login_prof_cp1_1786536327126.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase2_login_cantine_1786536333680.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase2_login_transport_1786536340169.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase6_module__l_ves_1786536372739.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase6_module_Cantine_1786536374219.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase6_module_Transport_1786536377134.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase6_module_Notes_1786536378565.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase6_module_Pr_sences_1786536379980.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase6_module_Param_tres_1786536381434.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase6_module_Parents_1786536382909.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase8_direction_navigation_1786536388296.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase8_admin_navigation_1786536395330.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase8_compta_navigation_1786536400704.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase8_enseignant_navigation_1786536407951.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase8_prof_cp1_navigation_1786536415048.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase8_cantine_navigation_1786536419538.png",
+    "D:\\Applications\\Gesco-main\\campaign_screenshots\\phase8_transport_navigation_1786536424095.png"
+  ],
+  "summary": {
+    "total": 143,
+    "passed": 92,
+    "failed": 0,
+    "warnings": 12
+  },
+  "endTimestamp": "2026-08-12T12:07:05.452Z",
+  "verdict": {
+    "status": "CONDITIONNEL",
+    "criticalAnomalies": 0,
+    "highAnomalies": 1,
+    "mediumAnomalies": 0,
+    "totalPassed": 92,
+    "totalFailed": 0
+  }
+}

@@ -1,87 +1,450 @@
 {
-  "timestamp": "2026-08-11T20:35:17.739Z",
-  "durationMs": 35734,
+  "timestamp": "2026-08-12T08:54:44.775Z",
+  "targetUrl": "http://localhost:3000",
+  "durationMs": 53507,
   "campaigns": [
     {
-      "name": "CAMPAGNE 1 - Connexion & Dashboard",
+      "name": "Mire de Connexion & Sécurité",
       "status": "PASSED"
     },
     {
-      "name": "CAMPAGNE 2 - Sidebar",
+      "name": "Rôle Direction Générale",
       "status": "PASSED"
     },
     {
-      "name": "CAMPAGNE 3 - Tous les onglets",
+      "name": "Module Élèves & Inscriptions",
       "status": "PASSED"
     },
     {
-      "name": "CAMPAGNE 4 - Parcours Élève",
+      "name": "Module Parents & Tuteurs",
       "status": "PASSED"
     },
     {
-      "name": "CAMPAGNE 5 - Parcours Enseignant",
+      "name": "Classes & Structure Pédagogique",
       "status": "PASSED"
     },
     {
-      "name": "CAMPAGNE 6 - Parcours Finance",
+      "name": "Personnel & RH",
       "status": "PASSED"
     },
     {
-      "name": "CAMPAGNE 7 - Cantine",
+      "name": "Présences & Assiduité",
       "status": "PASSED"
     },
     {
-      "name": "CAMPAGNE 8 - Transport",
+      "name": "Emploi du Temps",
       "status": "PASSED"
     },
     {
-      "name": "CAMPAGNE 9 - Activités & Discipline",
+      "name": "Notes & Bulletins",
       "status": "PASSED"
     },
     {
-      "name": "CAMPAGNE 10 - Statistiques",
+      "name": "Finances & Scolarité",
       "status": "PASSED"
     },
     {
-      "name": "CAMPAGNE 11 - Impressions & Exports",
+      "name": "Cantine & Transport Scolaire",
       "status": "PASSED"
     },
     {
-      "name": "CAMPAGNE 12 - Paramètres & Boutons",
+      "name": "Impressions & Exports",
+      "status": "PASSED"
+    },
+    {
+      "name": "Paramètres Système",
+      "status": "PASSED"
+    },
+    {
+      "name": "Multi-Rôles Démo (Finance, Enseignant)",
       "status": "PASSED"
     }
   ],
   "pagesTested": [
-    "Dashboard"
+    "Élèves",
+    "Parents",
+    "Classes",
+    "Personnel",
+    "Présences",
+    "Emploi",
+    "Notes",
+    "Encaissements",
+    "Cantine",
+    "Transport",
+    "Rapports",
+    "Paramètres",
+    "Déconnexion"
   ],
-  "buttonsTested": 1,
-  "formsTested": 0,
+  "rolesTested": [
+    "Direction Générale (Admin)",
+    "Comptable / Finance",
+    "Enseignant"
+  ],
+  "buttonsTested": 20,
+  "formsTested": 2,
   "printsTested": 0,
   "exportsTested": 0,
   "screenshots": [
-    "01_login_screen.png",
-    "02_dashboard_loaded.png",
-    "03_sidebar_navigation_complete.png",
-    "04_tabs_and_drawers.png",
-    "06_grades_and_report_cards.png",
+    "01_login_view.png",
+    "02_dashboard_direction.png",
+    "03_students_list.png",
+    "04_student_wizard.png",
+    "05_parents_directory.png",
+    "06_classes_structure.png",
     "07_staff_management.png",
-    "08_finance_and_scolarity.png",
-    "09_canteen_management.png",
-    "10_transport_management.png",
-    "11_activities_management.png",
-    "12_statistics_charts.png",
-    "13_reports_and_export_center.png",
-    "14_settings_and_roles.png"
+    "08_attendance_tracking.png",
+    "09_timetable_view.png",
+    "10_assessment_hub.png",
+    "11_finance_scolarity.png",
+    "12_payment_modal.png",
+    "13_canteen_view.png",
+    "14_transport_view.png",
+    "15_reports_hub.png",
+    "16_settings_general.png",
+    "17_role_finance_dashboard.png",
+    "18_role_teacher_dashboard.png"
   ],
   "errorsDetected": [
     {
       "type": "CONSOLE_ERROR",
-      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)",
-      "location": {
-        "url": "http://localhost:3000/favicon.ico"
-      }
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 400 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
     }
   ],
-  "errorsFixed": [],
-  "verdict": "PASSED_CLEAN"
+  "verdict": "CERTIFIED_PRODUCTION_READY"
 }

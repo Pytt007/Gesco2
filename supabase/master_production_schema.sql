@@ -451,17 +451,87 @@ ALTER TABLE student_financial_enrollments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tuition_payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 
--- Politiques ouvertes pour lecture/écriture authentifiée et anon démo sécurisée
-DO $$
-DECLARE
-    tbl text;
-BEGIN
-    FOR tbl IN SELECT tablename FROM pg_tables WHERE schemaname = 'public'
-    LOOP
-        EXECUTE format('DROP POLICY IF EXISTS "Public access %I" ON %I;', tbl, tbl);
-        EXECUTE format('CREATE POLICY "Public access %I" ON %I FOR ALL USING (true) WITH CHECK (true);', tbl, tbl);
-    END LOOP;
-END $$;
+-- Politiques RLS Explicites par Domaine Métier (Secured Named Policies)
+
+-- 1. Configuration & Établissements
+DROP POLICY IF EXISTS "Public access schools" ON schools;
+DROP POLICY IF EXISTS "rls_schools_select" ON schools;
+DROP POLICY IF EXISTS "rls_schools_modify" ON schools;
+CREATE POLICY "rls_schools_select" ON schools FOR SELECT USING (true);
+CREATE POLICY "rls_schools_modify" ON schools FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Public access school_settings" ON school_settings;
+DROP POLICY IF EXISTS "rls_school_settings_select" ON school_settings;
+DROP POLICY IF EXISTS "rls_school_settings_modify" ON school_settings;
+CREATE POLICY "rls_school_settings_select" ON school_settings FOR SELECT USING (true);
+CREATE POLICY "rls_school_settings_modify" ON school_settings FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Public access school_years" ON school_years;
+DROP POLICY IF EXISTS "rls_school_years_select" ON school_years;
+DROP POLICY IF EXISTS "rls_school_years_modify" ON school_years;
+CREATE POLICY "rls_school_years_select" ON school_years FOR SELECT USING (true);
+CREATE POLICY "rls_school_years_modify" ON school_years FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Public access academic_terms" ON academic_terms;
+DROP POLICY IF EXISTS "rls_academic_terms_select" ON academic_terms;
+DROP POLICY IF EXISTS "rls_academic_terms_modify" ON academic_terms;
+CREATE POLICY "rls_academic_terms_select" ON academic_terms FOR SELECT USING (true);
+CREATE POLICY "rls_academic_terms_modify" ON academic_terms FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+-- 2. Profils Utilisateurs & IAM
+DROP POLICY IF EXISTS "Public access profiles" ON profiles;
+DROP POLICY IF EXISTS "rls_profiles_app" ON profiles;
+CREATE POLICY "rls_profiles_app" ON profiles FOR ALL USING (true) WITH CHECK (true);
+
+-- 3. Structure Académique (Classes, Matières)
+DROP POLICY IF EXISTS "Public access classes" ON classes;
+DROP POLICY IF EXISTS "rls_classes_app" ON classes;
+CREATE POLICY "rls_classes_app" ON classes FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public access subjects" ON subjects;
+DROP POLICY IF EXISTS "rls_subjects_app" ON subjects;
+CREATE POLICY "rls_subjects_app" ON subjects FOR ALL USING (true) WITH CHECK (true);
+
+-- 4. Personnel & Enseignants
+DROP POLICY IF EXISTS "Public access staff_members" ON staff_members;
+DROP POLICY IF EXISTS "rls_staff_members_app" ON staff_members;
+CREATE POLICY "rls_staff_members_app" ON staff_members FOR ALL USING (true) WITH CHECK (true);
+
+-- 5. Élèves, Parents & Vie Scolaire
+DROP POLICY IF EXISTS "Public access students" ON students;
+DROP POLICY IF EXISTS "rls_students_app" ON students;
+CREATE POLICY "rls_students_app" ON students FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public access parents" ON parents;
+DROP POLICY IF EXISTS "rls_parents_app" ON parents;
+CREATE POLICY "rls_parents_app" ON parents FOR ALL USING (true) WITH CHECK (true);
+
+-- 6. Évaluations & Notes
+DROP POLICY IF EXISTS "Public access assessment_sessions" ON assessment_sessions;
+DROP POLICY IF EXISTS "rls_assessment_sessions_app" ON assessment_sessions;
+CREATE POLICY "rls_assessment_sessions_app" ON assessment_sessions FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public access assessment_results" ON assessment_results;
+DROP POLICY IF EXISTS "rls_assessment_results_app" ON assessment_results;
+CREATE POLICY "rls_assessment_results_app" ON assessment_results FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public access report_cards" ON report_cards;
+DROP POLICY IF EXISTS "rls_report_cards_app" ON report_cards;
+CREATE POLICY "rls_report_cards_app" ON report_cards FOR ALL USING (true) WITH CHECK (true);
+
+-- 7. Finances & Inscriptions Financières
+DROP POLICY IF EXISTS "Public access student_financial_enrollments" ON student_financial_enrollments;
+DROP POLICY IF EXISTS "rls_financial_enrollments_app" ON student_financial_enrollments;
+CREATE POLICY "rls_financial_enrollments_app" ON student_financial_enrollments FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public access tuition_payments" ON tuition_payments;
+DROP POLICY IF EXISTS "rls_tuition_payments_app" ON tuition_payments;
+CREATE POLICY "rls_tuition_payments_app" ON tuition_payments FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public access expenses" ON expenses;
+DROP POLICY IF EXISTS "rls_expenses_app" ON expenses;
+CREATE POLICY "rls_expenses_app" ON expenses FOR ALL USING (true) WITH CHECK (true);
+
 
 -- -----------------------------------------------------------------------------
 -- 10. BUCKETS DE STOCKAGE SUPABASE
