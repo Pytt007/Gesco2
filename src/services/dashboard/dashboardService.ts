@@ -131,14 +131,8 @@ const STATIC_CALENDAR_EVENTS: CalendarEventMaster[] = [
   { id: 'evt-04', title: 'Rentrée des Classes 2026-2027', date: '2026-09-08', type: 'BACK_TO_SCHOOL', label: 'Rentrée', color: '#16a34a' },
 ];
 
-const FALLBACK_ACTIVITIES: ActivityItem[] = [
-  { id: 'act-01', type: 'PAYMENT', title: 'Paiement scolarité enregistré', description: 'KOUASSI Jean-Philippe (CP1 A) — 85 000 FCFA', timestamp: 'Il y a 10 min', badgeColor: '#16a34a', iconName: 'CreditCard' },
-  { id: 'act-02', type: 'ENROLLMENT', title: 'Nouvel élève inscrit', description: 'OUÉDRAOGO Fatimata inscrite en CE1 A', timestamp: 'Il y a 35 min', badgeColor: '#2563eb', iconName: 'UserPlus' },
-  { id: 'act-03', type: 'EXPENSE', title: 'Nouvelle dépense validée', description: 'Facture CIE Juin — 345 000 FCFA', timestamp: 'Il y a 2 heures', badgeColor: '#dc2626', iconName: 'TrendingDown' },
-  { id: 'act-04', type: 'REPORT', title: 'Bulletins 1er Trimestre générés', description: 'Classe de CP1 A — 28 bulletins compilés', timestamp: 'Il y a 3 heures', badgeColor: '#9333ea', iconName: 'FileText' },
-  { id: 'act-05', type: 'STAFF', title: 'Nouvel enseignant ajouté', description: 'M. TANO Eugénie affecté en Anglais', timestamp: 'Hier, 16h40', badgeColor: '#0ea5e9', iconName: 'Briefcase' },
-  { id: 'act-06', type: 'GRADE', title: 'Saisie de notes validée', description: 'Mathématiques CP1 A — Devoir N°2', timestamp: 'Hier, 14h20', badgeColor: '#d97706', iconName: 'BookOpen' },
-];
+const FALLBACK_ACTIVITIES: ActivityItem[] = [];
+
 
 // ─── Export Rétro-Compatibilité ──────────────────────────────────────────────
 
@@ -230,33 +224,31 @@ export const dashboardService = {
    * Calcule dynamiquement tous les indicateurs principaux du Dashboard
    */
   async getMasterKPIs(academicYearId: string = '2024-2025'): Promise<DashboardKPIsMaster> {
-    const mult = academicYearId === '2022-2023' ? 0.72 : academicYearId === '2023-2024' ? 0.86 : academicYearId === '2025-2026' ? 1.14 : 1.0;
-
     try {
       const scolarEnrollments = await studentFinancialEnrollmentService.getEnrollmentsByYear(academicYearId);
-      const collectedAmount = scolarEnrollments.length > 0 ? scolarEnrollments.reduce((s, e) => s + e.totalPaid, 0) : Math.round(24500000 * mult);
-      const remainingAmount = scolarEnrollments.length > 0 ? scolarEnrollments.reduce((s, e) => s + e.remainingBalance, 0) : Math.round(4200000 * mult);
+      const collectedAmount = scolarEnrollments.reduce((s, e) => s + (e.totalPaid || 0), 0);
+      const remainingAmount = scolarEnrollments.reduce((s, e) => s + (e.remainingBalance || 0), 0);
       const totalDue = collectedAmount + remainingAmount;
-      const recoveryRatePercent = totalDue > 0 ? Math.round((collectedAmount / totalDue) * 100) : 85;
+      const recoveryRatePercent = totalDue > 0 ? Math.round((collectedAmount / totalDue) * 100) : 0;
 
       const canteenEnrollments = await canteenEnrollmentService.getEnrollmentsByYear(academicYearId);
-      const canteenSubscribersCount = canteenEnrollments.length > 0 ? canteenEnrollments.filter((e) => e.status === 'ACTIVE').length : Math.round(88 * mult);
+      const canteenSubscribersCount = canteenEnrollments.filter((e) => e.status === 'ACTIVE').length;
 
       const transportEnrollments = await transportEnrollmentService.getEnrollmentsByYear(academicYearId);
-      const transportEnrolledCount = transportEnrollments.length > 0 ? transportEnrollments.filter((e) => e.status === 'ACTIVE').length : Math.round(64 * mult);
+      const transportEnrolledCount = transportEnrollments.filter((e) => e.status === 'ACTIVE').length;
 
       const expenseKpis = await expenseService.getKPIs(academicYearId);
-      const monthlyExpenses = expenseKpis.totalMonth > 0 ? expenseKpis.totalMonth : Math.round(4275000 * mult);
+      const monthlyExpenses = expenseKpis.totalMonth || 0;
 
       const studentsRes = await listStudents({ schoolYear: academicYearId, pageSize: 1 });
       const staffRes = await listStaff({ pageSize: 1 });
       const classroomsRes = await getClassrooms({ schoolYearId: academicYearId });
 
-      const totalStudents = studentsRes.data && studentsRes.data.totalCount > 0 ? studentsRes.data.totalCount : Math.round(142 * mult);
-      const totalStaff = staffRes.data && staffRes.data.totalCount > 0 ? staffRes.data.totalCount : Math.round(24 * (mult > 1 ? 1.1 : 1));
+      const totalStudents = studentsRes.data?.totalCount ?? 0;
+      const totalStaff = staffRes.data?.totalCount ?? 0;
       const classroomsList = classroomsRes.data || [];
-      const totalClasses = classroomsList.length > 0 ? classroomsList.length : 12;
-      const lastAverageGrade = Math.round((14.85 + (mult - 1) * 0.4) * 100) / 100;
+      const totalClasses = classroomsList.length;
+      const lastAverageGrade = 0;
 
       return {
         totalStudents,
@@ -272,19 +264,20 @@ export const dashboardService = {
       };
     } catch {
       return {
-        totalStudents: Math.round(142 * mult),
-        totalStaff: 24,
-        totalClasses: 12,
-        collectedAmount: Math.round(24500000 * mult),
-        remainingAmount: Math.round(4200000 * mult),
-        recoveryRatePercent: 85,
-        canteenSubscribersCount: Math.round(88 * mult),
-        transportEnrolledCount: Math.round(64 * mult),
-        monthlyExpenses: Math.round(4275000 * mult),
-        lastAverageGrade: 14.85,
+        totalStudents: 0,
+        totalStaff: 0,
+        totalClasses: 0,
+        collectedAmount: 0,
+        remainingAmount: 0,
+        recoveryRatePercent: 0,
+        canteenSubscribersCount: 0,
+        transportEnrolledCount: 0,
+        monthlyExpenses: 0,
+        lastAverageGrade: 0,
       };
     }
   },
+
 
   /**
    * Génère les alertes du système de façon strictement conditionnelle
