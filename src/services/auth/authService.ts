@@ -10,12 +10,12 @@ import { GescoUser, UserAccount, UserRole } from '../../types';
 const STORAGE_SESSION_KEY = 'gesco_auth_session';
 const STORAGE_USERS_KEY = 'gesco_memory_users';
 
-// ── COMPTES DÉMO PRÉ-CONFIGURÉS ──────────────────────────────────────────────
+// ── COMPTE ADMINISTRATEUR INITIAL ─────────────────────────────────────────────
 export const DEMO_USERS_MAP: Record<string, { passwords: string[]; user: GescoUser }> = {
   admin: {
     passwords: ['admin123', 'admin', 'gesco2026', 'Gesco2026!', 'password'],
     user: {
-      id: 'usr-demo-01',
+      id: '00000000-0000-0000-0000-000000000001',
       username: 'admin',
       role: 'ADMIN_GENERALE',
       fullName: 'Direction Générale (Admin)',
@@ -24,99 +24,9 @@ export const DEMO_USERS_MAP: Record<string, { passwords: string[]; user: GescoUs
       createdAt: '2026-01-01T00:00:00Z',
       isOwner: true,
     }
-  },
-  direction: {
-    passwords: ['direction123', 'direction', 'admin123', 'admin'],
-    user: {
-      id: 'usr-demo-04',
-      username: 'direction',
-      role: 'ADMIN_GENERALE',
-      fullName: 'Direction Pédagogique',
-      avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=direction',
-      status: 'ACTIF',
-      createdAt: '2026-01-01T00:00:00Z',
-      isOwner: true,
-    }
-  },
-  compta: {
-    passwords: ['compta123', 'compta', 'finance123', 'finance'],
-    user: {
-      id: 'usr-demo-02',
-      username: 'compta',
-      role: 'FINANCE',
-      fullName: 'Mme Awa Diop (Comptabilité & Finance)',
-      avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=awa',
-      status: 'ACTIF',
-      createdAt: '2026-01-02T00:00:00Z',
-      isOwner: false,
-    }
-  },
-  finance: {
-    passwords: ['finance123', 'finance', 'compta123', 'compta'],
-    user: {
-      id: 'usr-demo-02-fin',
-      username: 'finance',
-      role: 'FINANCE',
-      fullName: 'Mme Awa Diop (Comptabilité & Finance)',
-      avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=awa',
-      status: 'ACTIF',
-      createdAt: '2026-01-02T00:00:00Z',
-      isOwner: false,
-    }
-  },
-  prof_cp1: {
-    passwords: ['prof123', 'prof_cp1', 'enseignant123', 'prof'],
-    user: {
-      id: 'usr-demo-03',
-      username: 'prof_cp1',
-      role: 'SCOLAIRE_ENSEIGNANT',
-      fullName: 'M. Jean Kouassi (Professeur CP1)',
-      avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=jean',
-      status: 'ACTIF',
-      createdAt: '2026-01-03T00:00:00Z',
-      isOwner: false,
-    }
-  },
-  enseignant: {
-    passwords: ['enseignant123', 'enseignant', 'prof123', 'prof'],
-    user: {
-      id: 'usr-demo-03-ens',
-      username: 'enseignant',
-      role: 'SCOLAIRE_ENSEIGNANT',
-      fullName: 'M. Jean Kouassi (Professeur Titulaire)',
-      avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=jean',
-      status: 'ACTIF',
-      createdAt: '2026-01-03T00:00:00Z',
-      isOwner: false,
-    }
-  },
-  cantine: {
-    passwords: ['cantine123', 'cantine'],
-    user: {
-      id: 'usr-demo-05',
-      username: 'cantine',
-      role: 'CANTINE_TRANSPORT',
-      fullName: 'Responsable Cantine & Restauration',
-      avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=cantine',
-      status: 'ACTIF',
-      createdAt: '2026-01-04T00:00:00Z',
-      isOwner: false,
-    }
-  },
-  transport: {
-    passwords: ['transport123', 'transport'],
-    user: {
-      id: 'usr-demo-06',
-      username: 'transport',
-      role: 'CANTINE_TRANSPORT',
-      fullName: 'Responsable Transport & Logistique',
-      avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=transport',
-      status: 'ACTIF',
-      createdAt: '2026-01-05T00:00:00Z',
-      isOwner: false,
-    }
   }
 };
+
 
 export const DEMO_ADMIN_USER: GescoUser = DEMO_USERS_MAP.admin.user;
 
