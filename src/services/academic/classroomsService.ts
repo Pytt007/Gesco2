@@ -80,23 +80,24 @@ export async function searchClassrooms(filters: ClassroomFilters = {}): Promise<
     let rawList: Classroom[] = Array.from(localClassroomsCache.values());
 
     try {
-      const { data: rows } = await supabase
-        .from('classrooms')
+      // Priorité à la table 'classes' native du schéma de production
+      const { data: rows, error } = await supabase
+        .from('classes')
         .select('*')
         .limit(500);
 
-      if (rows && rows.length > 0) {
+      if (!error && rows && rows.length > 0) {
         rawList = rows.map((r: any) => ({
           id: r.id,
           schoolId: r.school_id,
-          academicYearId: r.academic_year_id,
+          academicYearId: r.school_year_id || r.academic_year_id,
           levelId: r.level_id,
           name: r.name,
-          roomName: r.room_name,
+          roomName: r.room || r.room_name || '',
           mainTeacherId: r.main_teacher_id,
           mainTeacherName: r.main_teacher_name || 'Enseignant non désigné',
           capacity: r.capacity || 35,
-          isActive: r.is_active ?? true,
+          isActive: r.status ? r.status === 'ACTIVE' : (r.is_active ?? true),
           createdAt: r.created_at,
           updatedAt: r.updated_at,
         }));

@@ -254,29 +254,25 @@ export async function listStudents(filters: StudentFilters = {}): Promise<Servic
 
     // Tentative de récupération Supabase si disponible
     try {
-      let query = supabase.from('students').select('*').limit(500);
-      if (schoolYear) {
-        query = query.eq('school_year', schoolYear);
-      }
-      const { data: rows } = await query;
-      if (rows && rows.length > 0) {
+      const { data: rows, error } = await supabase.from('students').select('*').limit(500);
+      if (!error && rows && rows.length > 0) {
         rawList = rows.map((row: any) => {
           const d = row.data as any;
           return {
             id: row.id,
-            matricule: d?.matricule || row.registration_number || `MAT-${row.id.slice(0, 6)}`,
+            matricule: d?.matricule || row.matricule || row.registration_number || `MAT-${row.id.slice(0, 6)}`,
             firstName: d?.firstName || row.first_name || 'Élève',
             lastName: d?.lastName || row.last_name || 'GESCO',
-            gender: d?.gender || row.gender || 'Masculin',
+            gender: d?.gender || (row.gender === 'F' ? 'Féminin' : 'Masculin'),
             photo: d?.photo || row.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${row.id}`,
-            grade: d?.grade || '6ème',
-            status: d?.status || row.status || 'Actif',
+            grade: d?.grade || row.class_id || '6ème',
+            status: d?.status || (row.status === 'ACTIVE' ? 'Actif' : (row.status || 'Actif')),
             feesStatus: d?.feesStatus || 'En attente',
             attendance: d?.attendance ?? 100,
             parentName: d?.parentName || '',
             parentPhone: d?.parentPhone || '',
             address: d?.address || '',
-            schoolYear: row.school_year || '2024-2025',
+            schoolYear: row.school_year_id || row.school_year || '2024-2025',
           };
         });
       }
