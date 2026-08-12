@@ -13,13 +13,8 @@ import {
   Sparkles, Check, ChevronRight, ShieldCheck, ArrowRight
 } from 'lucide-react';
 
-const FALLBACK_CLASSES = [
-  { id: 'cls-1', name: 'CP1 A' },
-  { id: 'cls-2', name: 'CE1 A' },
-  { id: 'cls-3', name: 'CE2 B' },
-  { id: 'cls-4', name: 'CM2 A' },
-  { id: 'cls-5', name: '6ème A' },
-];
+const FALLBACK_CLASSES: { id: string; name: string }[] = [];
+
 
 export default function AttendancePage() {
   const { schoolYear } = useSchoolYear();
