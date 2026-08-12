@@ -47,33 +47,26 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'w-calendar', title: 'Événements & Calendrier Scolaire', visible: true, order: 8 },
 ];
 
-// Graphique Financier Recettes vs Dépenses (Données dynamiques / fallback)
-const FINANCIAL_CHART_DATA = [
-  { mois: 'Sept', Recettes: 8500000, Dépenses: 3200000 },
-  { mois: 'Oct', Recettes: 6200000, Dépenses: 2800000 },
-  { mois: 'Nov', Recettes: 5400000, Dépenses: 3100000 },
-  { mois: 'Déc', Recettes: 4800000, Dépenses: 2900000 },
-  { mois: 'Janv', Recettes: 7100000, Dépenses: 3400000 },
-  { mois: 'Fév', Recettes: 5900000, Dépenses: 2950000 },
+// Graphique Financier Recettes vs Dépenses (Vierge par défaut)
+const FINANCIAL_CHART_DATA: { mois: string; Recettes: number; Dépenses: number }[] = [
+  { mois: 'Sept', Recettes: 0, Dépenses: 0 },
+  { mois: 'Oct', Recettes: 0, Dépenses: 0 },
+  { mois: 'Nov', Recettes: 0, Dépenses: 0 },
+  { mois: 'Déc', Recettes: 0, Dépenses: 0 },
+  { mois: 'Janv', Recettes: 0, Dépenses: 0 },
+  { mois: 'Fév', Recettes: 0, Dépenses: 0 },
 ];
 
-// Graphique Présences
+// Graphique Présences (Vierge par défaut)
 const ATTENDANCE_PIE_DATA = [
-  { name: 'Présents', value: 98.2, color: '#a855f7' },
-  { name: 'Absents Justifiés', value: 1.2, color: '#eab308' },
-  { name: 'Absences Non Justifiées', value: 0.6, color: '#2563eb' },
+  { name: 'Présents', value: 0, color: '#a855f7' },
+  { name: 'Absents Justifiés', value: 0, color: '#eab308' },
+  { name: 'Absences Non Justifiées', value: 0, color: '#2563eb' },
 ];
 
-// Graphique Répartition Genre par Niveau
-const GENDER_LEVEL_DATA = [
-  { niveau: 'Maternelle', Filles: 35, Garçons: 32 },
-  { niveau: 'CP1', Filles: 28, Garçons: 26 },
-  { niveau: 'CP2', Filles: 25, Garçons: 27 },
-  { niveau: 'CE1', Filles: 30, Garçons: 28 },
-  { niveau: 'CE2', Filles: 24, Garçons: 22 },
-  { niveau: 'CM1', Filles: 26, Garçons: 25 },
-  { niveau: 'CM2', Filles: 29, Garçons: 27 },
-];
+// Graphique Répartition Genre par Niveau (Vierge par défaut)
+const GENDER_LEVEL_DATA: any[] = [];
+
 
 export default function DashboardPage({ onNavigate }: DashboardPageProps) {
   const { schoolYear } = useSchoolYear();
@@ -474,7 +467,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
 
             <div style={{ marginTop: '0.875rem' }}>
               <div style={{ fontSize: '2.4rem', fontWeight: 900, lineHeight: 1, fontFamily: "'Outfit', sans-serif" }}>
-                {kpis?.canteenSubscribersCount ?? 118}
+                {kpis?.canteenSubscribersCount ?? 0}
               </div>
               <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', marginTop: '0.5rem', fontWeight: 500 }}>
                 Inscrits au service repas
@@ -548,7 +541,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
 
             <div style={{ marginTop: '0.875rem' }}>
               <div style={{ fontSize: '2.4rem', fontWeight: 900, lineHeight: 1, fontFamily: "'Outfit', sans-serif" }}>
-                18
+                {kpis?.totalStaff ?? 0}
               </div>
               <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', marginTop: '0.5rem', fontWeight: 500 }}>
                 Professeurs & Remplaçants
@@ -634,7 +627,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
             <div style={{ marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.375rem' }}>
                 <span className="badge badge-success" style={{ fontSize: '0.8125rem', padding: '0.4rem 0.875rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
-                  98.2% Présence
+                  0% Présence
                 </span>
               </div>
               <h3 style={{ margin: 0, fontSize: '1.0625rem', fontWeight: 800, color: '#1e293b', lineHeight: 1.25 }}>
@@ -665,7 +658,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
                 </ResponsiveContainer>
                 {/* Label central */}
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0f172a', fontFamily: "'Outfit', sans-serif", lineHeight: 1 }}>98.2%</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0f172a', fontFamily: "'Outfit', sans-serif", lineHeight: 1 }}>0%</div>
                 </div>
               </div>
 
