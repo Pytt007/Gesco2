@@ -163,6 +163,28 @@ export async function createStaff(staffData: Partial<StaffMember>): Promise<Serv
     };
 
     localStaffCache.set(newId, created);
+
+    // Persistance Supabase — table staff_members
+    try {
+      if (supabase) {
+        const { error: dbErr } = await supabase.from('staff_members').upsert({
+          id: newId,
+          first_name: created.firstName,
+          last_name: created.lastName,
+          email: created.email || null,
+          phone: created.phonePrimary || null,
+          role: created.role === 'Enseignant' ? 'TEACHER' : created.role === 'Directeur' ? 'DIRECTOR' : 'STAFF',
+          specialty: created.jobTitle || null,
+          hire_date: created.hireDate || new Date().toISOString().split('T')[0],
+          base_salary: created.baseSalary ?? 0,
+          status: created.status === 'Actif' ? 'ACTIVE' : 'INACTIVE',
+        }, { onConflict: 'id' });
+        if (dbErr) console.warn('[staffService] Supabase upsert warning:', dbErr.message);
+      }
+    } catch (dbErr) {
+      console.warn('[staffService] Supabase persist fallback:', dbErr);
+    }
+
     return createSuccess(created, 'Membre du personnel créé avec succès.');
   } catch (err) {
     return createError(err, 'Erreur de création du membre du personnel.');
