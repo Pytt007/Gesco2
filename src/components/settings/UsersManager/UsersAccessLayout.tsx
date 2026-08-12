@@ -1,9 +1,4 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// GESCO — UsersAccessLayout (src/components/settings/UsersManager/UsersAccessLayout.tsx)
-// Orchestrateur principal épuré du module Utilisateurs & Accès (Notion/Linear feel)
-// ─────────────────────────────────────────────────────────────────────────────
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, Shield } from 'lucide-react';
 import { useUsers } from '../../../hooks/users';
 import { useRoles } from '../../../hooks/users';
@@ -14,6 +9,7 @@ import { UsersListTab } from './UsersListTab';
 import { AccessProfilesTab } from './AccessProfilesTab';
 import { UserModal, ProfileOption, DEFAULT_PROFILES } from './UserModal';
 import { EditProfileModal } from './EditProfileModal';
+import { supabase } from '../../../services/common/supabaseClient';
 
 type ActiveTab = 'USERS' | 'PROFILES';
 
@@ -55,6 +51,29 @@ export const UsersAccessLayout: React.FC = () => {
       return DEFAULT_PROFILE_MODULES_MAP;
     }
   });
+
+  // Charger la configuration des profils depuis Supabase
+  useEffect(() => {
+    async function loadProfileModules() {
+      try {
+        const { data, error } = await supabase
+          .from('school_settings')
+          .select('data')
+          .eq('id', 'profile_modules_map')
+          .maybeSingle();
+
+        if (!error && data?.data) {
+          const merged = { ...DEFAULT_PROFILE_MODULES_MAP, ...data.data };
+          setProfileModulesMap(merged);
+          localStorage.setItem('gesco_profile_modules', JSON.stringify(merged));
+        }
+      } catch (err) {
+        console.warn('[GESCO] Utilisation du cache local pour les profils:', err);
+      }
+    }
+
+    loadProfileModules();
+  }, []);
 
   // Handlers Utilisateur
   const handleAddUser = () => {
@@ -153,8 +172,15 @@ export const UsersAccessLayout: React.FC = () => {
     setProfileModulesMap(updated);
     try {
       localStorage.setItem('gesco_profile_modules', JSON.stringify(updated));
-    } catch {}
-    addNotification('success', `Modules d'accès enregistrés pour le profil !`);
+      await supabase.from('school_settings').upsert({
+        id: 'profile_modules_map',
+        data: updated,
+        updated_at: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.warn('[GESCO] Erreur lors de la sauvegarde Supabase des profils:', err);
+    }
+    addNotification('success', `Modules d'accès enregistrés et synchronisés avec Supabase !`);
     return true;
   };
 
