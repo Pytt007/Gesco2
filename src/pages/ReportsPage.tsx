@@ -10,13 +10,8 @@ import {
   FileBarChart, LayoutGrid,
 } from 'lucide-react';
 
-const MOCK_CLASSES = [
-  { id: 'cls-1', name: 'CP1 A' },
-  { id: 'cls-2', name: 'CE1 A' },
-  { id: 'cls-3', name: 'CE2 B' },
-  { id: 'cls-4', name: 'CM2 A' },
-  { id: 'cls-5', name: '6ème A' },
-];
+const MOCK_CLASSES: { id: string; name: string }[] = [];
+
 
 const MOCK_LEVELS = ['Tous', 'Maternelle', 'Primaire', 'Collège'];
 const MOCK_PERIODS = ['Trimestre 1', 'Trimestre 2', 'Trimestre 3', 'Semestre 1', 'Semestre 2'];

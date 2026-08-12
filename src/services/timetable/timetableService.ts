@@ -13,34 +13,12 @@ import {
 import { ServiceResponse } from '../academic/academicYearsService';
 import { supabase } from '../common/supabaseClient';
 
-// ─── Données de démonstration ────────────────────────────────────────────────
+// ─── Données initiales (Vierge par défaut) ───────────────────────────────────
 
-const MOCK_CLASSES: ClassItem[] = [
-  { id: 'cls-cp1a', name: 'CP1 A', level: 'CP1' },
-  { id: 'cls-ce1a', name: 'CE1 A', level: 'CE1' },
-  { id: 'cls-ce2b', name: 'CE2 B', level: 'CE2' },
-  { id: 'cls-cm2a', name: 'CM2 A', level: 'CM2' },
-  { id: 'cls-6a',   name: '6ème A', level: '6ème' },
-];
+const MOCK_CLASSES: ClassItem[] = [];
+const MOCK_TEACHERS: TeacherItem[] = [];
+const MOCK_SUBJECTS: SubjectItem[] = [];
 
-const MOCK_TEACHERS: TeacherItem[] = [
-  { id: 'tch-001', name: 'KOUASSI Philippe', subjectName: 'Mathématiques' },
-  { id: 'tch-002', name: 'DOUAMBA Marie-Claire', subjectName: 'Français' },
-  { id: 'tch-003', name: 'YAO Kouamé', subjectName: 'Sciences' },
-  { id: 'tch-004', name: 'KONAN Brou', subjectName: 'Histoire-Géo' },
-  { id: 'tch-005', name: 'TANO Eugénie', subjectName: 'Anglais' },
-  { id: 'tch-006', name: 'BEDI Charles', subjectName: 'Éducation Physique' },
-];
-
-const MOCK_SUBJECTS: SubjectItem[] = [
-  { id: 'sbj-math', name: 'Mathématiques', color: '#2563eb' },
-  { id: 'sbj-fr',   name: 'Français', color: '#dc2626' },
-  { id: 'sbj-sn',   name: 'Sciences', color: '#16a34a' },
-  { id: 'sbj-hg',   name: 'Histoire-Géographie', color: '#d97706' },
-  { id: 'sbj-ang',  name: 'Anglais', color: '#9333ea' },
-  { id: 'sbj-eps',  name: 'Éducation Physique', color: '#0ea5e9' },
-  { id: 'sbj-arts', name: 'Arts Plastiques', color: '#ec4899' },
-];
 
 // ─── Stockage Local ─────────────────────────────────────────────────────────
 

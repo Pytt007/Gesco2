@@ -42,86 +42,19 @@ const TABS: { id: AnalyticsTab; label: string; icon: React.ReactNode; color: str
 
 // ─── DONNÉES SIMULÉES DE HAUTE PRÉCISION POUR LE PILOTAGE ──────────────────────
 
-const MOCK_MONTHLY_PERFORMANCE = [
-  { month: 'Sep', recettes: 45000000, depenses: 12000000, reussite: 82, assiduite: 96 },
-  { month: 'Oct', recettes: 28000000, depenses: 14500000, reussite: 84, assiduite: 95 },
-  { month: 'Nov', recettes: 18000000, depenses: 13000000, reussite: 86, assiduite: 94 },
-  { month: 'Déc', recettes: 12000000, depenses: 18000000, reussite: 83, assiduite: 92 },
-  { month: 'Jan', recettes: 35000000, depenses: 14000000, reussite: 88, assiduite: 95 },
-  { month: 'Fév', recettes: 22000000, depenses: 13500000, reussite: 87, assiduite: 96 },
-  { month: 'Mar', recettes: 15000000, depenses: 15000000, reussite: 89, assiduite: 97 },
-  { month: 'Avr', recettes: 30000000, depenses: 13800000, reussite: 91, assiduite: 96 },
-  { month: 'Mai', recettes: 14000000, depenses: 14200000, reussite: 90, assiduite: 98 },
-];
+// ─── DONNÉES DE PILOTAGE (Vierge par défaut) ──────────────────────────────────
 
-const MOCK_STUDENT_LEVEL_DISTRIBUTION = [
-  { name: 'Maternelle (PS-GS)', count: 180, color: '#0ea5e9' },
-  { name: 'Primaire (CP1-CE2)', count: 320, color: '#2563eb' },
-  { name: 'Moyen (CM1-CM2)',   count: 210, color: '#4f46e5' },
-  { name: 'Collège (6e-3e)',    count: 290, color: '#8b5cf6' },
-  { name: 'Lycée (2nd-Tle)',   count: 140, color: '#d946ef' },
-];
+const MOCK_MONTHLY_PERFORMANCE: any[] = [];
+const MOCK_STUDENT_LEVEL_DISTRIBUTION: any[] = [];
+const MOCK_GENDER_DISTRIBUTION: any[] = [];
+const MOCK_CLASS_GRADES: any[] = [];
+const MOCK_SUBJECT_PERFORMANCE: any[] = [];
+const MOCK_REVENUE_BY_TYPE: any[] = [];
+const MOCK_PAYMENT_MODES: any[] = [];
+const MOCK_CANTEEN_STATS: any[] = [];
+const MOCK_TRANSPORT_LINES_STATS: any[] = [];
+const MOCK_COMPARISON_YEARS: any[] = [];
 
-const MOCK_GENDER_DISTRIBUTION = [
-  { name: 'Filles', value: 610, color: '#ec4899' },
-  { name: 'Garçons', value: 530, color: '#3b82f6' },
-];
-
-const MOCK_CLASS_GRADES = [
-  { class: 'CP1 A', moyenne: 15.4, min: 11.0, max: 19.5, succes: 96 },
-  { class: 'CE1 A', moyenne: 14.8, min: 9.5,  max: 18.8, succes: 92 },
-  { class: 'CE2 B', moyenne: 13.9, min: 8.5,  max: 18.2, succes: 88 },
-  { class: 'CM1 A', moyenne: 14.2, min: 10.0, max: 19.0, succes: 91 },
-  { class: 'CM2 A', moyenne: 15.1, min: 10.5, max: 19.8, succes: 95 },
-  { class: '6ème A', moyenne: 12.8, min: 7.0,  max: 17.5, succes: 82 },
-  { class: '3ème A', moyenne: 13.5, min: 8.0,  max: 18.0, succes: 86 },
-];
-
-const MOCK_SUBJECT_PERFORMANCE = [
-  { subject: 'Mathématiques', note: 13.8, reussite: 84 },
-  { subject: 'Français',      note: 14.6, reussite: 91 },
-  { subject: 'Sciences / SVT',note: 15.2, reussite: 94 },
-  { subject: 'Histoire-Géo',  note: 14.1, reussite: 88 },
-  { subject: 'Anglais',       note: 13.2, reussite: 79 },
-  { subject: 'EPS',           note: 16.8, reussite: 99 },
-];
-
-const MOCK_REVENUE_BY_TYPE = [
-  { name: 'Frais de Scolarité', value: 165000000, color: '#10b981' },
-  { name: 'Cantine',            value: 38000000,  color: '#059669' },
-  { name: 'Transport',          value: 24000000,  color: '#047857' },
-  { name: 'Inscriptions & Droit',value: 12000000, color: '#34d399' },
-];
-
-const MOCK_PAYMENT_MODES = [
-  { name: 'Espèces (Caisse)', value: 45, color: '#2563eb' },
-  { name: 'Mobile Money (Orange/MTN/Wave)', value: 35, color: '#f59e0b' },
-  { name: 'Virement / Chèque', value: 20, color: '#8b5cf6' },
-];
-
-const MOCK_CANTEEN_STATS = [
-  { month: 'Oct', repasServis: 4200, abonnes: 210, tauxPaiement: 94 },
-  { month: 'Nov', repasServis: 4450, abonnes: 218, tauxPaiement: 92 },
-  { month: 'Déc', repasServis: 3100, abonnes: 215, tauxPaiement: 96 },
-  { month: 'Jan', repasServis: 4600, abonnes: 225, tauxPaiement: 95 },
-  { month: 'Fév', repasServis: 4300, abonnes: 228, tauxPaiement: 97 },
-];
-
-const MOCK_TRANSPORT_LINES_STATS = [
-  { name: 'Ligne 1 - Riviera / Cocody', capacite: 40, inscrits: 38, occupation: 95, couleur: '#4f46e5' },
-  { name: 'Ligne 2 - Marcory / Zone 4', capacite: 35, inscrits: 31, occupation: 88, couleur: '#06b6d4' },
-  { name: 'Ligne 3 - Yopougon / Express', capacite: 50, inscrits: 47, occupation: 94, couleur: '#10b981' },
-  { name: 'Ligne 4 - Abobo / Angré',    capacite: 30, inscrits: 22, occupation: 73, couleur: '#f59e0b' },
-];
-
-const MOCK_COMPARISON_YEARS = [
-  { metric: 'Effectif Total', annee2025: 1050, annee2026: 1140, diff: '+8.5%' },
-  { metric: 'Taux de Réussite', annee2025: '86.4%', annee2026: '89.2%', diff: '+2.8%' },
-  { metric: 'Recouvrement Financier', annee2025: '88.1%', annee2026: '92.4%', diff: '+4.3%' },
-  { metric: 'Abonnés Cantine', annee2025: 195, annee2026: 228, diff: '+16.9%' },
-  { metric: 'Passagers Transport', annee2025: 124, annee2026: 138, diff: '+11.2%' },
-  { metric: 'Moyenne Générale École', annee2025: '13.9/20', annee2026: '14.5/20', diff: '+0.6 pt' },
-];
 
 export default function StatisticsPage() {
   const { schoolYear } = useSchoolYear();
