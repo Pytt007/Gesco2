@@ -53,13 +53,11 @@ function createError<T>(error: any, fallbackMessage: string): ServiceResponse<T>
   return { success: false, error: errMsg };
 }
 
-const INITIAL_CLASSES: Classroom[] = [
-  { id: 'cls-1', academicYearId: 'ay-2026', levelId: 'lvl-cp1', name: 'CP1 A', roomName: 'Salle 101', mainTeacherId: 'stf-001', mainTeacherName: 'KOUASSI Marc', capacity: 35, isActive: true },
-  { id: 'cls-2', academicYearId: 'ay-2026', levelId: 'lvl-cp1', name: 'CP1 B', roomName: 'Salle 102', mainTeacherId: 'stf-002', mainTeacherName: 'KONÉ Bakary', capacity: 35, isActive: true },
-  { id: 'cls-3', academicYearId: 'ay-2026', levelId: 'lvl-cm2', name: 'CM2 A', roomName: 'Salle 201', mainTeacherId: 'stf-003', mainTeacherName: 'OUÉDRAOGO Souleymane', capacity: 40, isActive: true },
-];
+// Données initiales vierges
+const INITIAL_CLASSES: Classroom[] = [];
 
 const localClassroomsCache: Map<string, Classroom> = new Map(INITIAL_CLASSES.map(c => [c.id, c]));
+
 
 /**
  * Recherche et pagination des classes avec filtres

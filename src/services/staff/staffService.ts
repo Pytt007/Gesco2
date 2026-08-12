@@ -102,13 +102,11 @@ function createError<T>(error: any, fallbackMessage: string): ServiceResponse<T>
   return { success: false, error: errMsg };
 }
 
-const INITIAL_STAFF: StaffMember[] = [
-  { id: 'stf-001', employeeNumber: 'EMP-2026-001', firstName: 'Marc', lastName: 'KOUASSI', gender: 'Masculin', role: 'Enseignant', phonePrimary: '0708091011', email: 'marc.kouassi@gesco.ci', baseSalary: 250000, hireDate: '2022-09-01', status: 'Actif' },
-  { id: 'stf-002', employeeNumber: 'EMP-2026-002', firstName: 'Bakary', lastName: 'KONÉ', gender: 'Masculin', role: 'Enseignant', phonePrimary: '0506070809', email: 'bakary.kone@gesco.ci', baseSalary: 275000, hireDate: '2023-09-01', status: 'Actif' },
-  { id: 'stf-003', employeeNumber: 'EMP-2026-003', firstName: 'Souleymane', lastName: 'OUÉDRAOGO', gender: 'Masculin', role: 'Enseignant', phonePrimary: '0102030405', email: 'souleymane.o@gesco.ci', baseSalary: 300000, hireDate: '2021-09-01', status: 'Actif' },
-];
+// Données initiales vierges
+const INITIAL_STAFF: StaffMember[] = [];
 
 const localStaffCache: Map<string, StaffMember> = new Map(INITIAL_STAFF.map(s => [s.id, s]));
+
 
 /**
  * Crée un nouveau membre du personnel avec contrôles d'unicité (Tél, Email) et validation salaire

@@ -70,16 +70,11 @@ function createError<T>(error: any, fallbackMessage: string): ServiceResponse<T>
   return { success: false, error: errMsg };
 }
 
-// Données démo initiales
-const INITIAL_PARENTS: Parent[] = [
-  { id: 'par-001', firstName: 'Emmanuel', lastName: 'KOUASSI', relationshipType: 'Père', profession: 'Ingénieur BTP', phonePrimary: '0708091011', phoneSecondary: '0102030405', email: 'emmanuel.kouassi@gesco.ci', address: 'Abidjan Cocody', city: 'Abidjan', status: 'Actif', childrenCount: 1, createdAt: '2026-01-10T10:00:00Z' },
-  { id: 'par-002', firstName: 'Blaise', lastName: 'DOUAMBA', relationshipType: 'Père', profession: 'Comptable agréé', phonePrimary: '0506070809', phoneSecondary: '0707070707', email: 'blaise.douamba@gesco.ci', address: 'Abidjan Marcory', city: 'Abidjan', status: 'Actif', childrenCount: 1, createdAt: '2026-01-12T11:30:00Z' },
-  { id: 'par-003', firstName: 'Souleymane', lastName: 'OUÉDRAOGO', relationshipType: 'Tuteur Légal', profession: 'Commerçant', phonePrimary: '0102030405', phoneSecondary: '', email: 'souleymane.o@gesco.ci', address: 'Abidjan Yopougon', city: 'Abidjan', status: 'Actif', childrenCount: 1, createdAt: '2026-01-15T09:15:00Z' },
-  { id: 'par-004', firstName: 'Awa', lastName: 'DIABATÉ', relationshipType: 'Mère', profession: 'Enseignante', phonePrimary: '0744556677', phoneSecondary: '0588990011', email: 'awa.diabate@gesco.ci', address: 'Abidjan Koumassi', city: 'Abidjan', status: 'Inactif', childrenCount: 1, createdAt: '2026-01-20T14:40:00Z' },
-  { id: 'par-005', firstName: 'Kouadio', lastName: 'YAO', relationshipType: 'Père', profession: 'Fonctionnaire', phonePrimary: '0177889900', phoneSecondary: '', email: 'kouadio.yao@gesco.ci', address: 'Abidjan Treichville', city: 'Abidjan', status: 'Archivé', childrenCount: 1, createdAt: '2026-01-25T16:00:00Z' },
-];
+// Données initiales vierges
+const INITIAL_PARENTS: Parent[] = [];
 
 let localParentsStore: Parent[] = [...INITIAL_PARENTS];
+
 
 /**
  * Crée un nouveau responsable légal

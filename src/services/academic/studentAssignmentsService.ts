@@ -36,14 +36,11 @@ function createError<T>(error: any, fallbackMessage: string): ServiceResponse<T>
   return { success: false, error: errMsg };
 }
 
-const INITIAL_ASSIGNMENTS: StudentAssignment[] = [
-  { id: 'asg-01', studentId: 'stu-1001', classroomId: 'cls-1', academicYearId: 'ay-2026', assignmentDate: '2026-09-01', status: 'Actif' },
-  { id: 'asg-02', studentId: 'stu-1002', classroomId: 'cls-1', academicYearId: 'ay-2026', assignmentDate: '2026-09-01', status: 'Actif' },
-  { id: 'asg-03', studentId: 'stu-1003', classroomId: 'cls-2', academicYearId: 'ay-2026', assignmentDate: '2026-09-01', status: 'Actif' },
-  { id: 'asg-04', studentId: 'stu-1004', classroomId: 'cls-3', academicYearId: 'ay-2026', assignmentDate: '2026-09-01', status: 'Actif' },
-];
+// Données initiales vierges
+const INITIAL_ASSIGNMENTS: StudentAssignment[] = [];
 
 const localAssignmentsCache: Map<string, StudentAssignment> = new Map(INITIAL_ASSIGNMENTS.map(a => [a.id, a]));
+
 
 export async function getAssignments(): Promise<ServiceResponse<StudentAssignment[]>> {
   return createSuccess(Array.from(localAssignmentsCache.values()));

@@ -69,30 +69,11 @@ function createError<T>(error: any, fallbackMessage: string): ServiceResponse<T>
 export const OFFICIAL_BOY_AVATAR = 'https://api.dicebear.com/7.x/adventurer/svg?seed=girl&skinColor=8d5524,6c4524,4c3019&hairColor=000000,2c1b18,1a1a1a&backgroundColor=ffffff';
 export const OFFICIAL_GIRL_AVATAR = 'https://api.dicebear.com/7.x/adventurer/svg?seed=boy&skinColor=8d5524,6c4524,4c3019&hairColor=000000,2c1b18,1a1a1a&backgroundColor=ffffff';
 
-// Données fallback initiales de démonstration sur plusieurs années scolaires
-const INITIAL_MOCK_STUDENTS: Student[] = [
-  // ─── 2024-2025 (Année par défaut actuelle) ───
-  { id: 'stu-1001', matricule: 'MAT-2024-001', firstName: 'Jean-Philippe', lastName: 'KOUASSI', gender: 'Masculin', grade: 'CP1 A', status: 'Actif', feesStatus: 'Payé', attendance: 98, parentName: 'KOUASSI Marc', parentPhone: '0708091011', address: 'Abidjan Cocody', photo: OFFICIAL_BOY_AVATAR, schoolYear: '2024-2025' },
-  { id: 'stu-1002', matricule: 'MAT-2024-002', firstName: 'Fatimata', lastName: 'OUÉDRAOGO', gender: 'Féminin', grade: 'CE1 A', status: 'Actif', feesStatus: 'Partiel', attendance: 95, parentName: 'OUÉDRAOGO Souleymane', parentPhone: '0506070809', address: 'Abidjan Yopougon', photo: OFFICIAL_GIRL_AVATAR, schoolYear: '2024-2025' },
-  { id: 'stu-1003', matricule: 'MAT-2024-003', firstName: 'Marie', lastName: 'DOUAMBA', gender: 'Féminin', grade: 'CE2 B', status: 'Actif', feesStatus: 'Payé', attendance: 100, parentName: 'DOUAMBA Paul', parentPhone: '0102030405', address: 'Abidjan Marcory', photo: OFFICIAL_GIRL_AVATAR, schoolYear: '2024-2025' },
-  { id: 'stu-1004', matricule: 'MAT-2024-004', firstName: 'Patrick', lastName: 'YAO', gender: 'Masculin', grade: 'CM1 A', status: 'Actif', feesStatus: 'En retard', attendance: 88, parentName: 'YAO Kouadio', parentPhone: '0744556677', address: 'Abidjan Treichville', photo: OFFICIAL_BOY_AVATAR, schoolYear: '2024-2025' },
-  { id: 'stu-1005', matricule: 'MAT-2024-005', firstName: 'Awa', lastName: 'DIABATÉ', gender: 'Féminin', grade: '6ème A', status: 'Inactif', feesStatus: 'En attente', attendance: 75, parentName: 'DIABATÉ Ibrahima', parentPhone: '0588990011', address: 'Abidjan Koumassi', photo: OFFICIAL_GIRL_AVATAR, schoolYear: '2024-2025' },
-
-  // ─── 2023-2024 (Archive N-1) ───
-  { id: 'stu-2001', matricule: 'MAT-2023-010', firstName: 'Amadou', lastName: 'KONÉ', gender: 'Masculin', grade: 'CP1 B', status: 'Actif', feesStatus: 'Payé', attendance: 96, parentName: 'KONÉ Seydou', parentPhone: '0711223344', address: 'Abidjan Plateau', photo: OFFICIAL_BOY_AVATAR, schoolYear: '2023-2024' },
-  { id: 'stu-2002', matricule: 'MAT-2023-011', firstName: 'Sali', lastName: 'KOUADIO', gender: 'Féminin', grade: 'CE1 B', status: 'Actif', feesStatus: 'Payé', attendance: 99, parentName: 'KOUADIO Brou', parentPhone: '0522334455', address: 'Abidjan Bingerville', photo: OFFICIAL_GIRL_AVATAR, schoolYear: '2023-2024' },
-  { id: 'stu-2003', matricule: 'MAT-2023-012', firstName: 'Ibrahim', lastName: 'TRAORÉ', gender: 'Masculin', grade: 'CM1 A', status: 'Actif', feesStatus: 'Partiel', attendance: 91, parentName: 'TRAORÉ Adama', parentPhone: '0133445566', address: 'Abidjan Port-Bouët', photo: OFFICIAL_BOY_AVATAR, schoolYear: '2023-2024' },
-
-  // ─── 2022-2023 (Archive N-2) ───
-  { id: 'stu-3001', matricule: 'MAT-2022-020', firstName: 'Mohamed', lastName: 'BARRY', gender: 'Masculin', grade: 'CE2 A', status: 'Archivé', feesStatus: 'Payé', attendance: 97, parentName: 'BARRY Alpha', parentPhone: '0755667788', address: 'Abidjan Cocody', photo: OFFICIAL_BOY_AVATAR, schoolYear: '2022-2023' },
-  { id: 'stu-3002', matricule: 'MAT-2022-021', firstName: 'Grace', lastName: 'KOFFI', gender: 'Féminin', grade: 'CM2 B', status: 'Archivé', feesStatus: 'Payé', attendance: 100, parentName: 'KOFFI Henri', parentPhone: '0566778899', address: 'Abidjan Riviera', photo: OFFICIAL_GIRL_AVATAR, schoolYear: '2022-2023' },
-
-  // ─── 2025-2026 (Projection N+1) ───
-  { id: 'stu-4001', matricule: 'MAT-2025-030', firstName: 'Yves', lastName: 'KANGA', gender: 'Masculin', grade: 'CP1 A', status: 'Actif', feesStatus: 'Payé', attendance: 100, parentName: 'KANGA Charles', parentPhone: '0799887766', address: 'Abidjan Cocody', photo: OFFICIAL_BOY_AVATAR, schoolYear: '2025-2026' },
-  { id: 'stu-4002', matricule: 'MAT-2025-031', firstName: 'Estelle', lastName: 'GBANE', gender: 'Féminin', grade: 'CE2 A', status: 'Actif', feesStatus: 'En attente', attendance: 94, parentName: 'GBANE Lassina', parentPhone: '0511335577', address: 'Abidjan Abobo', photo: OFFICIAL_GIRL_AVATAR, schoolYear: '2025-2026' },
-];
+// Données initiales vierges
+const INITIAL_MOCK_STUDENTS: Student[] = [];
 
 let localStudentsStore: Student[] = [...INITIAL_MOCK_STUDENTS];
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MÉTHODES DU SERVICE ÉLÈVES
@@ -291,8 +272,9 @@ export async function listStudents(filters: StudentFilters = {}): Promise<Servic
     // Tentative de récupération Supabase si disponible
     try {
       const { data: rows, error } = await supabase.from('students').select('*').limit(500);
-      if (!error && rows && rows.length > 0) {
+      if (!error && Array.isArray(rows)) {
         rawList = rows.map((row: any) => {
+
           const d = row.data as any;
           return {
             id: row.id,
