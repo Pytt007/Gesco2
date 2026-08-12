@@ -37,84 +37,10 @@ export function normalizeDayKey(day: string): DayOfWeek {
 }
 
 function initDemoSchedule() {
-  if (scheduleStore.size > 0) return;
-
-  const demos: ScheduleSlotRecord[] = [
-    // Lundi CP1 A
-    {
-      id: 'slot-101',
-      academicYearId: 'ay-2026',
-      classId: 'cls-cp1a', className: 'CP1 A',
-      subjectId: 'sbj-fr', subjectName: 'Français', subjectColor: '#dc2626',
-      teacherId: 'tch-002', teacherName: 'DOUAMBA Marie-Claire',
-      room: 'Salle 101',
-      dayOfWeek: 'MONDAY',
-      startTime: '07:30', endTime: '08:30',
-      createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
-    },
-    {
-      id: 'slot-102',
-      academicYearId: 'ay-2026',
-      classId: 'cls-cp1a', className: 'CP1 A',
-      subjectId: 'sbj-math', subjectName: 'Mathématiques', subjectColor: '#2563eb',
-      teacherId: 'tch-001', teacherName: 'KOUASSI Philippe',
-      room: 'Salle 101',
-      dayOfWeek: 'MONDAY',
-      startTime: '08:30', endTime: '09:30',
-      createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
-    },
-    {
-      id: 'slot-103',
-      academicYearId: 'ay-2026',
-      classId: 'cls-cp1a', className: 'CP1 A',
-      subjectId: 'sbj-sn', subjectName: 'Sciences', subjectColor: '#16a34a',
-      teacherId: 'tch-003', teacherName: 'YAO Kouamé',
-      room: 'Salle 101',
-      dayOfWeek: 'MONDAY',
-      startTime: '10:30', endTime: '11:30',
-      createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
-    },
-
-    // Mardi CP1 A
-    {
-      id: 'slot-104',
-      academicYearId: 'ay-2026',
-      classId: 'cls-cp1a', className: 'CP1 A',
-      subjectId: 'sbj-math', subjectName: 'Mathématiques', subjectColor: '#2563eb',
-      teacherId: 'tch-001', teacherName: 'KOUASSI Philippe',
-      room: 'Salle 101',
-      dayOfWeek: 'TUESDAY',
-      startTime: '07:30', endTime: '08:30',
-      createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
-    },
-    {
-      id: 'slot-105',
-      academicYearId: 'ay-2026',
-      classId: 'cls-cp1a', className: 'CP1 A',
-      subjectId: 'sbj-ang', subjectName: 'Anglais', subjectColor: '#9333ea',
-      teacherId: 'tch-005', teacherName: 'TANO Eugénie',
-      room: 'Salle 101',
-      dayOfWeek: 'TUESDAY',
-      startTime: '08:30', endTime: '09:30',
-      createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
-    },
-
-    // Mercredi CP1 A
-    {
-      id: 'slot-106',
-      academicYearId: 'ay-2026',
-      classId: 'cls-cp1a', className: 'CP1 A',
-      subjectId: 'sbj-eps', subjectName: 'Éducation Physique', subjectColor: '#0ea5e9',
-      teacherId: 'tch-006', teacherName: 'BEDI Charles',
-      room: 'Terrain de sport',
-      dayOfWeek: 'WEDNESDAY',
-      startTime: '08:30', endTime: '10:30',
-      createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
-    },
-  ];
-
-  demos.forEach((d) => scheduleStore.set(d.id, d));
+  // Application 100% vierge
 }
+
+
 
 // Helper pour convertir "HH:mm" en minutes depuis minuit
 function timeToMinutes(timeStr: string): number {

@@ -16,21 +16,12 @@ export function clearFinancialEnrollmentsStore() {
   localFinancialEnrollmentsStore.clear();
 }
 
-/** Élève factice de démonstration pour les tests et démos sans base de données backend */
-const mockStudentsCatalog: Record<string, { name: string; matricule: string; photoUrl?: string }> = {
-  'st-001': { name: 'KOUASSI Jean-Philippe', matricule: 'MAT-2026-001' },
-  'st-002': { name: 'DOUAMBA Marie', matricule: 'MAT-2026-002' },
-  'st-003': { name: 'YAO Patrick', matricule: 'MAT-2026-003' },
-  'st-004': { name: 'KOFFI Amélie', matricule: 'MAT-2026-004' },
-};
+/** Catalogue vierge par défaut */
+const mockStudentsCatalog: Record<string, { name: string; matricule: string; photoUrl?: string }> = {};
 
-/** Classe factice de démonstration */
-const mockClassroomsCatalog: Record<string, { name: string; levelCode: TuitionLevelCode }> = {
-  'cls-1': { name: 'CP1 A', levelCode: 'CP1' },
-  'cls-2': { name: 'CP1 B', levelCode: 'CP1' },
-  'cls-3': { name: 'CM2 A', levelCode: 'CM2' },
-  'cls-4': { name: 'CE2 B', levelCode: 'CE2' },
-};
+/** Classe factice par défaut */
+const mockClassroomsCatalog: Record<string, { name: string; levelCode: TuitionLevelCode }> = {};
+
 
 /**
  * Génère automatiquement les 8 échéances réparties pour un solde donné
@@ -81,7 +72,7 @@ export const studentFinancialEnrollmentService = {
   /**
    * Obtient tous les dossiers financiers pour une année scolaire
    */
-  async getEnrollmentsByYear(academicYearId: string = 'ay-2026'): Promise<StudentFinancialEnrollment[]> {
+  async getEnrollmentsByYear(academicYearId: string = '2024-2025'): Promise<StudentFinancialEnrollment[]> {
     try {
       if (supabase) {
         const { data, error } = await supabase
@@ -90,7 +81,7 @@ export const studentFinancialEnrollmentService = {
           .eq('academic_year_id', academicYearId)
           .eq('status', 'ACTIVE');
 
-        if (!error && data && data.length > 0) {
+        if (!error && Array.isArray(data)) {
           return data.map((d: any) => ({
             id: d.id,
             studentId: d.student_id,
@@ -128,56 +119,15 @@ export const studentFinancialEnrollmentService = {
         }
       }
     } catch {
-      // Fallback local
+      // Fallback
     }
 
-    const localList = Array.from(localFinancialEnrollmentsStore.values()).filter(
+    return Array.from(localFinancialEnrollmentsStore.values()).filter(
       (e) => (e.academicYearId === academicYearId || !academicYearId) && e.status === 'ACTIVE'
     );
-    if (localList.length > 0) return localList;
-
-    // Synchronisation automatique depuis la liste des élèves en base
-    try {
-      if (supabase) {
-        const { data: studentsList } = await supabase.from('students').select('*').limit(100);
-        if (studentsList && studentsList.length > 0) {
-          return studentsList.map((st: any, idx: number) => {
-            const totalAnnual = 360000;
-            const regFee = 60000;
-            const installments = generateDefaultInstallments(totalAnnual, regFee);
-            const enr: StudentFinancialEnrollment = {
-              id: `enr-${st.id}`,
-              studentId: st.id,
-              studentName: `${st.last_name || ''} ${st.first_name || ''}`.trim(),
-              matricule: st.matricule || `MAT-2024-${idx + 100}`,
-              academicYearId: st.school_year_id || academicYearId,
-              classroomId: st.class_id || 'cls-default',
-              className: '6ème',
-              levelCode: '6e' as any,
-              registrationFee: regFee,
-              tuitionFee: 300000,
-              totalAnnualFee: totalAnnual,
-              discountType: 'NONE' as any,
-              discountValue: 0,
-              discountAmount: 0,
-              netTotalDue: totalAnnual,
-              totalPaid: 0,
-              remainingBalance: totalAnnual,
-              installmentsCount: 8,
-              installments,
-              status: 'ACTIVE',
-              createdAt: st.created_at || new Date().toISOString(),
-              updatedAt: st.updated_at || new Date().toISOString(),
-            };
-            localFinancialEnrollmentsStore.set(enr.id, enr);
-            return enr;
-          });
-        }
-      }
-    } catch { /* Fallback */ }
-
-    return [];
   },
+
+
 
   /**
    * Obtient le dossier financier d'un élève pour une année scolaire

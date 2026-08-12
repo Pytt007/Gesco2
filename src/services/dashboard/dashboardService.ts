@@ -514,11 +514,8 @@ export const dashboardService = {
     });
 
     // 4. Recherche Personnel
-    const mockStaff = [
-      { name: 'KOUASSI Philippe', role: 'Enseignant Mathématiques' },
-      { name: 'DOUAMBA Marie-Claire', role: 'Enseignante Français' },
-      { name: 'YAO Kouamé', role: 'Professeur Sciences' },
-    ];
+    const mockStaff: { name: string; role: string }[] = [];
+
     mockStaff.forEach((stf) => {
       if (stf.name.toLowerCase().includes(q) || stf.role.toLowerCase().includes(q)) {
         results.push({

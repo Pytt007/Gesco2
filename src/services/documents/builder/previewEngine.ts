@@ -38,20 +38,20 @@ export const previewEngine = {
 
       case 'STUDENT_INFORMATION':
         return `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: ${cfg.fontSize || '13px'}; padding: ${cfg.padding || '10px'}; background: ${cfg.backgroundColor || '#eff6ff'}; border-radius: ${cfg.borderRadius || '6px'};">
-          <div><strong>Matricule :</strong> ${data.matricule || 'MAT-2026-001'}</div>
-          <div><strong>Élève :</strong> <strong>${data.studentName || 'KOUASSI Jean'}</strong></div>
-          <div><strong>Classe :</strong> ${data.className || 'CM2 A'}</div>
-          <div><strong>Né(e) le :</strong> ${data.birthDate || '12/05/2014'}</div>
+          <div><strong>Matricule :</strong> ${data.matricule || '—'}</div>
+          <div><strong>Élève :</strong> <strong>${data.studentName || '—'}</strong></div>
+          <div><strong>Classe :</strong> ${data.className || '—'}</div>
+          <div><strong>Né(e) le :</strong> ${data.birthDate || '—'}</div>
         </div>`;
 
       case 'PARENT_INFORMATION':
         return `<div style="font-size: ${cfg.fontSize || '12px'}; color: ${cfg.color || '#334155'}; padding: 6px; background: #f1f5f9; border-radius: 4px; margin-top: 6px;">
-          <strong>Tuteur Légal :</strong> ${data.parentName || 'KOUASSI Philippe'} (${data.parentPhone || '+225 01 02 03 04 05'})
+          <strong>Tuteur Légal :</strong> ${data.parentName || '—'} (${data.parentPhone || '—'})
         </div>`;
 
       case 'CLASS_INFORMATION':
         return `<div style="font-size: ${cfg.fontSize || '12px'}; padding: 6px; background: #f8fafc; border-radius: 4px;">
-          <strong>Classe :</strong> ${data.className || 'CM2 A'} | <strong>Effectif :</strong> ${data.totalStudents || 25} élèves | <strong>Prof. Principal :</strong> ${data.headTeacher || 'Mme KONAN'}
+          <strong>Classe :</strong> ${data.className || '—'} | <strong>Effectif :</strong> ${data.totalStudents || 0} élèves | <strong>Prof. Principal :</strong> ${data.headTeacher || '—'}
         </div>`;
 
       case 'ASSESSMENT_INFORMATION':

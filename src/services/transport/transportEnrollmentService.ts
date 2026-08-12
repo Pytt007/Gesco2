@@ -21,62 +21,9 @@ export function clearTransportEnrollmentStore() { enrollmentStore.clear(); }
 // ─── Données de démo ──────────────────────────────────────────────────────────
 
 function initDemoEnrollments() {
-  if (enrollmentStore.size > 0) return;
-
-  const buildPeriods = (net: number, count: number): TransportPeriod[] => {
-    const base = Math.floor(net / count);
-    const rem = net - base * count;
-    return Array.from({ length: count }, (_, i) => ({
-      number: i + 1,
-      label: `Période ${i + 1}`,
-      amountDue: i === 0 ? base + rem : base,
-      amountPaid: i === 0 ? base + rem : 0,
-      status: i === 0 ? ('PAID' as const) : ('PENDING' as const),
-      dueDate: `2026-${String(10 + i).padStart(2, '0')}-01`,
-    }));
-  };
-
-  const demos: TransportEnrollment[] = [
-    {
-      id: 'te-001', studentId: 'st-001', studentName: 'KOUASSI Jean-Philippe',
-      matricule: 'MAT-2026-001', className: 'CP1 A', levelCode: 'CP1',
-      parentSponsor: 'KOUASSI Koffi', parentPhone: '0700000001',
-      lineId: 'line-001', lineName: 'Ligne Cocody', zone: 'Cocody, Angré, Riviera',
-      academicYearId: 'ay-2026', annualFee: 250000, periodsCount: 3,
-      discountType: 'NONE', discountValue: 0, discountAmount: 0,
-      netAmountDue: 250000, totalPaid: 83334, remainingBalance: 166666,
-      periods: buildPeriods(250000, 3),
-      status: 'ACTIVE',
-      createdAt: '2026-09-01T00:00:00Z', updatedAt: '2026-09-01T00:00:00Z',
-    },
-    {
-      id: 'te-002', studentId: 'st-002', studentName: 'DOUAMBA Marie',
-      matricule: 'MAT-2026-002', className: 'CE2 B', levelCode: 'CE2',
-      parentSponsor: 'DOUAMBA Aimé', parentPhone: '0700000002',
-      lineId: 'line-001', lineName: 'Ligne Cocody', zone: 'Cocody, Angré, Riviera',
-      academicYearId: 'ay-2026', annualFee: 250000, periodsCount: 3,
-      discountType: 'FIXED', discountValue: 25000, discountAmount: 25000,
-      netAmountDue: 225000, totalPaid: 225000, remainingBalance: 0,
-      periods: buildPeriods(225000, 3).map((p) => ({ ...p, amountPaid: p.amountDue, status: 'PAID' as const })),
-      status: 'ACTIVE',
-      createdAt: '2026-09-01T00:00:00Z', updatedAt: '2026-09-01T00:00:00Z',
-    },
-    {
-      id: 'te-003', studentId: 'st-003', studentName: 'YAO Patrick',
-      matricule: 'MAT-2026-003', className: 'CM2 A', levelCode: 'CM2',
-      parentSponsor: 'YAO Kouamé', parentPhone: '0700000003',
-      lineId: 'line-002', lineName: 'Ligne Yopougon', zone: 'Yopougon, Selmer',
-      academicYearId: 'ay-2026', annualFee: 220000, periodsCount: 3,
-      discountType: 'NONE', discountValue: 0, discountAmount: 0,
-      netAmountDue: 220000, totalPaid: 0, remainingBalance: 220000,
-      periods: buildPeriods(220000, 3),
-      status: 'ACTIVE',
-      createdAt: '2026-09-01T00:00:00Z', updatedAt: '2026-09-01T00:00:00Z',
-    },
-  ];
-
-  demos.forEach((e) => enrollmentStore.set(e.id, e));
+  // Application 100% vierge
 }
+
 
 // ─── Génération des périodes ──────────────────────────────────────────────────
 

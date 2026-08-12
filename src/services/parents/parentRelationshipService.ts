@@ -69,28 +69,8 @@ export interface RelationshipHistoryLog {
 // ─── Cache & Hist de Secours Local ──────────────────────────────────────────
 
 const localRelationshipsCache: Map<string, StudentParentRelationship> = new Map();
-const localHistoryLogs: RelationshipHistoryLog[] = [
-  {
-    id: 'log-hist-01',
-    studentId: 'stu-101',
-    studentName: 'KOUASSI Jean-Philippe',
-    parentId: 'par-001',
-    parentName: 'KOUASSI Emmanuel',
-    action: 'Désignation comme Responsable Payeur unique',
-    date: '2026-07-28 08:30',
-    author: 'Direction Administration',
-  },
-  {
-    id: 'log-hist-02',
-    studentId: 'stu-102',
-    studentName: 'DOUAMBA Marie',
-    parentId: 'par-002',
-    parentName: 'DOUAMBA Blaise',
-    action: 'Ajout du lien de parenté (Père)',
-    date: '2026-07-27 14:15',
-    author: 'Gestionnaire Scolaire',
-  },
-];
+const localHistoryLogs: RelationshipHistoryLog[] = [];
+
 
 function createSuccess<T>(data: T, message?: string): ServiceResponse<T> {
   return { success: true, data, message };
@@ -227,12 +207,8 @@ export async function getChildren(parentId: string): Promise<ServiceResponse<Lin
   try {
     const localChildren: LinkedStudentInfo[] = [];
 
-    const demoStudents: Record<string, { name: string; firstName: string; lastName: string; matricule: string; grade: string }> = {
-      'stu-101': { name: 'KOUASSI Jean-Philippe', firstName: 'Jean-Philippe', lastName: 'KOUASSI', matricule: 'GESCO-2026-001', grade: 'CP1 A' },
-      'stu-102': { name: 'DOUAMBA Marie', firstName: 'Marie', lastName: 'DOUAMBA', matricule: 'GESCO-2026-002', grade: 'CE1 A' },
-      'stu-103': { name: 'YAO Kouamé Patrick', firstName: 'Kouamé Patrick', lastName: 'YAO', matricule: 'GESCO-2026-003', grade: 'CE2 B' },
-      'stu-104': { name: 'OUÉDRAOGO Fatimata', firstName: 'Fatimata', lastName: 'OUÉDRAOGO', matricule: 'GESCO-2026-004', grade: 'CM2 A' },
-    };
+    const demoStudents: Record<string, { name: string; firstName: string; lastName: string; matricule: string; grade: string }> = {};
+
 
     for (const rel of localRelationshipsCache.values()) {
       if (rel.parentId === parentId) {

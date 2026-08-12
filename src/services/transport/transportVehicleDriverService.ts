@@ -22,38 +22,14 @@ export function clearTransportDriversStore()  { driverStore.clear(); }
 // ─── Données de démo ──────────────────────────────────────────────────────────
 
 function initDemoVehicles() {
-  if (vehicleStore.size > 0) return;
-
-  const demos: TransportVehicle[] = [
-    {
-      id: 'veh-001', name: 'Bus 01', brand: 'Mercedes', model: 'Sprinter 516',
-      licensePlate: 'CI-1234-AB', capacity: 25,
-      createdAt: '2026-09-01T00:00:00Z', updatedAt: '2026-09-01T00:00:00Z',
-    },
-    {
-      id: 'veh-002', name: 'Bus 02', brand: 'Toyota', model: 'Coaster',
-      licensePlate: 'CI-5678-CD', capacity: 30,
-      createdAt: '2026-09-01T00:00:00Z', updatedAt: '2026-09-01T00:00:00Z',
-    },
-    {
-      id: 'veh-003', name: 'Minibus 01', brand: 'Hyundai', model: 'H350',
-      licensePlate: 'CI-9012-EF', capacity: 18,
-      createdAt: '2026-09-01T00:00:00Z', updatedAt: '2026-09-01T00:00:00Z',
-    },
-  ];
-  demos.forEach((v) => vehicleStore.set(v.id, v));
+  // Application 100% vierge
 }
+
 
 function initDemoDrivers() {
-  if (driverStore.size > 0) return;
-
-  const demos: TransportDriver[] = [
-    { id: 'drv-001', name: 'KOUAMÉ Brou Félix', phone: '0701234567', createdAt: '2026-09-01T00:00:00Z', updatedAt: '2026-09-01T00:00:00Z' },
-    { id: 'drv-002', name: 'BAMBA Souleymane', phone: '0709876543', createdAt: '2026-09-01T00:00:00Z', updatedAt: '2026-09-01T00:00:00Z' },
-    { id: 'drv-003', name: 'YAO Kouassi Jean', phone: '0705556666', createdAt: '2026-09-01T00:00:00Z', updatedAt: '2026-09-01T00:00:00Z' },
-  ];
-  demos.forEach((d) => driverStore.set(d.id, d));
+  // Application 100% vierge
 }
+
 
 // ─── Service Véhicules ────────────────────────────────────────────────────────
 

@@ -13,51 +13,19 @@ import {
 import { ServiceResponse } from '../academic/academicYearsService';
 import { supabase } from '../common/supabaseClient';
 
-// ─── Membres du personnel de démonstration ───────────────────────────────────
+// ─── Membres du personnel de démonstration (Vierge par défaut) ───────────────
 
-const DEMO_STAFF_ROSTER: { id: string; matricule: string; firstName: string; lastName: string; role: string; phone: string; photoUrl?: string }[] = [
-  { id: 'stf-001', matricule: 'PER-2026-001', firstName: 'Philippe', lastName: 'KOUASSI', role: 'Enseignant Mathématiques', phone: '+225 07 08 12 34 56' },
-  { id: 'stf-002', matricule: 'PER-2026-002', firstName: 'Marie-Claire', lastName: 'DOUAMBA', role: 'Enseignante Français', phone: '+225 05 04 98 76 54' },
-  { id: 'stf-003', matricule: 'PER-2026-003', firstName: 'Kouamé', lastName: 'YAO', role: 'Professeur Sciences', phone: '+225 01 02 33 44 55' },
-  { id: 'stf-004', matricule: 'PER-2026-004', firstName: 'Brou', lastName: 'KONAN', role: 'Professeur Histoire-Géo', phone: '+225 07 44 55 66 77' },
-  { id: 'stf-005', matricule: 'PER-2026-005', firstName: 'Eugénie', lastName: 'TANO', role: 'Enseignante Anglais', phone: '+225 05 11 22 33 44' },
-  { id: 'stf-006', matricule: 'PER-2026-006', firstName: 'Charles', lastName: 'BEDI', role: 'Professeur Éducation Physique', phone: '+225 07 99 88 77 66' },
-  { id: 'stf-007', matricule: 'PER-2026-007', firstName: 'Adjoua', lastName: 'KOFFI', role: 'Directrice Pédagogique', phone: '+225 01 55 44 33 22' },
-  { id: 'stf-008', matricule: 'PER-2026-008', firstName: 'Ibrahim', lastName: 'SANOGO', role: 'Chef Comptable', phone: '+225 07 66 77 88 99' },
-  { id: 'stf-009', matricule: 'PER-2026-009', firstName: 'Awa', lastName: 'COULIBALY', role: 'Secrétaire Générale', phone: '+225 05 33 22 11 00' },
-  { id: 'stf-010', matricule: 'PER-2026-010', firstName: 'Bakary', lastName: 'DIARRA', role: 'Responsable Transport & Logistique', phone: '+225 07 22 33 44 55' },
-];
+const DEMO_STAFF_ROSTER: { id: string; matricule: string; firstName: string; lastName: string; role: string; phone: string; photoUrl?: string }[] = [];
 
 // ─── Stockage Local (Feuilles de présence personnel) ─────────────────────────
 
 const staffAttendanceStore: Map<string, StaffAttendanceSheet> = new Map(); // Clef : `date`
 
 function initDemoData() {
-  if (staffAttendanceStore.size > 0) return;
-
-  const todayStr = new Date().toISOString().split('T')[0];
-  const demoSheet: StaffAttendanceSheet = {
-    id: `sheet-staff-${todayStr}`,
-    academicYearId: 'ay-2026',
-    date: todayStr,
-    items: DEMO_STAFF_ROSTER.map((st, idx) => ({
-      staffId: st.id,
-      matricule: st.matricule,
-      firstName: st.firstName,
-      lastName: st.lastName,
-      role: st.role,
-      phone: st.phone,
-      status: idx === 2 ? 'LATE' : idx === 4 ? 'ON_LEAVE' : idx === 7 ? 'SICK_LEAVE' : 'PRESENT',
-      arrivalTime: idx === 2 ? '08:15' : undefined,
-      observation: idx === 2 ? 'Retard embouteillage' : idx === 4 ? 'Congé de formation' : idx === 7 ? 'Arrêt maladie transmis' : undefined,
-    })),
-    createdBy: 'Responsable RH',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  staffAttendanceStore.set(todayStr, demoSheet);
+  // Application 100% vierge
 }
+
+
 
 // ─── Service ─────────────────────────────────────────────────────────────────
 

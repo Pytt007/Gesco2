@@ -21,15 +21,8 @@ export interface AuditLogEntry {
   details: string;
 }
 
-const MOCK_AUDIT_LOGS: AuditLogEntry[] = [
-  { id: 'log-101', timestamp: '30/07/2026 16:45:12', user: 'Directeur Général', role: 'ADMIN_GENERAL', action: 'Modification des Habilitations par Rôle', module: 'SETTINGS', ipAddress: '192.168.1.10', severity: 'SUCCESS', details: 'Activation accès module Finance pour le rôle Sécurité.' },
-  { id: 'log-102', timestamp: '30/07/2026 16:22:04', user: 'Comptable Principal', role: 'ACCOUNTANT', action: 'Enregistrement Versement Scolarité #RCT-942', module: 'FINANCE', ipAddress: '192.168.1.24', severity: 'SUCCESS', details: 'Encaissement de 150 000 FCFA par Wave pour KOUASSI Jean.' },
-  { id: 'log-103', timestamp: '30/07/2026 15:10:45', user: 'Enseignant CM2 A', role: 'TEACHER', action: 'Saisie Notes Evaluation Mensuelle', module: 'PEDAGOGY', ipAddress: '192.168.1.55', severity: 'INFO', details: '24 notes enregistrées en Mathématiques CM2 A.' },
-  { id: 'log-104', timestamp: '30/07/2026 14:05:19', user: 'Responsable Cantine', role: 'STAFF', action: 'Souscription Abonnement Repas', module: 'CANTEEN', ipAddress: '192.168.1.33', severity: 'INFO', details: 'Nouvel abonnement mensuel activé pour DIOP Awa.' },
-  { id: 'log-105', timestamp: '30/07/2026 12:44:02', user: 'Super Admin', role: 'ADMIN_GENERAL', action: 'Réinitialisation Mot de Passe Utilisateur', module: 'SYSTEM', ipAddress: '192.168.1.10', severity: 'WARNING', details: 'Réinitialisation forcée du compte prof_maths_1.' },
-  { id: 'log-106', timestamp: '30/07/2026 11:15:30', user: 'Gestionnaire Transport', role: 'STAFF', action: 'Attribution Navette Ligne 1', module: 'TRANSPORT', ipAddress: '192.168.1.41', severity: 'INFO', details: 'Affectation élève Bamba Oumar à la Ligne Riviera.' },
-  { id: 'log-107', timestamp: '30/07/2026 09:30:11', user: 'Comptable Assistant', role: 'ACCOUNTANT', action: 'Tentative Annulation Versement Non Autorisée', module: 'FINANCE', ipAddress: '192.168.1.25', severity: 'DANGER', details: 'Tentative d\'annulation sans motif bloquée par le système.' },
-];
+const MOCK_AUDIT_LOGS: AuditLogEntry[] = [];
+
 
 export default function AuditHistoryPage() {
   const { schoolYear } = useSchoolYear();

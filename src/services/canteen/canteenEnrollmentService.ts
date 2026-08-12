@@ -16,48 +16,11 @@ export function clearCanteenEnrollmentsStore() {
   localCanteenEnrollmentsStore.clear();
 }
 
-/** Données de démonstration — élèves déjà inscrits à la cantine */
+/** Données de démonstration — Vierge par défaut */
 function initDemoCanteenEnrollments() {
-  if (localCanteenEnrollmentsStore.size > 0) return;
-
-  const demos: Omit<CanteenEnrollment, 'periods'>[] = [
-    {
-      id: 'ct-001', studentId: 'st-001', studentName: 'KOUASSI Jean-Philippe',
-      matricule: 'MAT-2026-001', className: 'CP1 A', levelCode: 'CP1',
-      parentSponsor: 'KOUASSI Koffi', parentPhone: '0700000001',
-      academicYearId: 'ay-2026', annualRate: 130000, periodsCount: 3,
-      discountType: 'NONE', discountValue: 0, discountAmount: 0,
-      netAmountDue: 130000, totalPaid: 86667, remainingBalance: 43333,
-      subscriptionStatus: 'ACTIVE',
-      createdAt: '2026-09-01T00:00:00Z', updatedAt: '2026-09-01T00:00:00Z',
-    },
-    {
-      id: 'ct-002', studentId: 'st-002', studentName: 'DOUAMBA Marie',
-      matricule: 'MAT-2026-002', className: 'CE2 B', levelCode: 'CE2',
-      parentSponsor: 'DOUAMBA Aimé', parentPhone: '0700000002',
-      academicYearId: 'ay-2026', annualRate: 135000, periodsCount: 3,
-      discountType: 'FIXED', discountValue: 15000, discountAmount: 15000,
-      netAmountDue: 120000, totalPaid: 120000, remainingBalance: 0,
-      subscriptionStatus: 'ACTIVE',
-      createdAt: '2026-09-01T00:00:00Z', updatedAt: '2026-09-01T00:00:00Z',
-    },
-    {
-      id: 'ct-003', studentId: 'st-003', studentName: 'YAO Patrick',
-      matricule: 'MAT-2026-003', className: 'CM2 A', levelCode: 'CM2',
-      parentSponsor: 'YAO Kouamé', parentPhone: '0700000003',
-      academicYearId: 'ay-2026', annualRate: 140000, periodsCount: 3,
-      discountType: 'NONE', discountValue: 0, discountAmount: 0,
-      netAmountDue: 140000, totalPaid: 0, remainingBalance: 140000,
-      subscriptionStatus: 'SUSPENDED',
-      createdAt: '2026-09-01T00:00:00Z', updatedAt: '2026-09-01T00:00:00Z',
-    },
-  ];
-
-  for (const d of demos) {
-    const periods = generateDefaultPeriods(d.netAmountDue, d.periodsCount);
-    localCanteenEnrollmentsStore.set(d.id, { ...d, periods });
-  }
+  // Application 100% vierge
 }
+
 
 /**
  * Génère les périodes de paiement réparties uniformément
