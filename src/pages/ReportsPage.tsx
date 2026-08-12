@@ -12,10 +12,10 @@ import {
 
 const MOCK_CLASSES: { id: string; name: string }[] = [];
 
+const FILTER_LEVELS = ['Tous', 'Maternelle', 'Primaire', 'Collège'];
+const FILTER_PERIODS = ['Trimestre 1', 'Trimestre 2', 'Trimestre 3', 'Semestre 1', 'Semestre 2'];
+const FILTER_EVAL_TYPES = ['Composition Mensuelle', 'Devoir Surveillé', 'Examen Blanc', 'Évaluation Continue'];
 
-const MOCK_LEVELS = ['Tous', 'Maternelle', 'Primaire', 'Collège'];
-const MOCK_PERIODS = ['Trimestre 1', 'Trimestre 2', 'Trimestre 3', 'Semestre 1', 'Semestre 2'];
-const MOCK_EVAL_TYPES = ['Composition Mensuelle', 'Devoir Surveillé', 'Examen Blanc', 'Évaluation Continue'];
 
 export default function ReportsPage() {
   const { schoolYear } = useSchoolYear();
@@ -164,7 +164,7 @@ export default function ReportsPage() {
                 onChange={(e) => setFilters({ ...filters, levelCode: e.target.value })}
                 style={{ height: '42px', borderRadius: '10px', fontWeight: 600, border: '1px solid #cbd5e1', fontSize: '0.875rem', width: '100%' }}
               >
-                {MOCK_LEVELS.map((lvl) => (
+                {FILTER_LEVELS.map((lvl) => (
                   <option key={lvl} value={lvl}>{lvl}</option>
                 ))}
               </select>
@@ -184,7 +184,7 @@ export default function ReportsPage() {
                 onChange={(e) => setFilters({ ...filters, period: e.target.value })}
                 style={{ height: '42px', borderRadius: '10px', fontWeight: 600, border: '1px solid #cbd5e1', fontSize: '0.875rem', width: '100%' }}
               >
-                {MOCK_PERIODS.map((p) => (
+                {FILTER_PERIODS.map((p) => (
                   <option key={p} value={p}>{p}</option>
                 ))}
               </select>
@@ -204,7 +204,7 @@ export default function ReportsPage() {
                 onChange={(e) => setFilters({ ...filters, assessmentType: e.target.value })}
                 style={{ height: '42px', borderRadius: '10px', fontWeight: 600, border: '1px solid #cbd5e1', fontSize: '0.875rem', width: '100%' }}
               >
-                {MOCK_EVAL_TYPES.map((t) => (
+                {FILTER_EVAL_TYPES.map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
               </select>

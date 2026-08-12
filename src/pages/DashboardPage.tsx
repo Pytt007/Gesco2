@@ -154,112 +154,112 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
     : currentUser?.role === 'SCOLAIRE_ENSEIGNANT' ? 'Enseignant'
     : 'Agent Administratif';
 
-  // Cartes KPI dynamiques
+  // Cartes KPI dynamiques — 100% connectées à Supabase, sans fallback numérique
   const allKpis = useMemo(() => [
     {
       id: 'kpi-students',
       label: 'Élèves actifs',
-      value: kpis ? `${kpis.totalStudents}` : '142',
-      trend: '+4.2%',
+      value: kpis ? `${kpis.totalStudents}` : '0',
+      trend: kpis && kpis.totalStudents > 0 ? 'Cette année' : 'Aucun inscrit',
       trendUp: true,
       icon: <Users size={22} />,
       color: '#4f46e5',
       bg: 'var(--primary-50, #eef2ff)',
       targetView: 'STUDENTS',
       requiredPermission: 'STUDENTS',
-      sparkline: [20, 35, 45, 60, 80, 110, 142],
+      sparkline: [0],
     },
     {
       id: 'kpi-recovery',
       label: 'Taux de Recouvrement',
-      value: kpis ? `${kpis.recoveryRatePercent}%` : '84%',
-      subtext: kpis ? `Encaissé : ${formatFCFA(kpis.collectedAmount)}` : 'Encaissé : 24.5 M FCFA',
-      trend: '+6.8%',
+      value: kpis ? `${kpis.recoveryRatePercent}%` : '0%',
+      subtext: kpis ? `Encaissé : ${formatFCFA(kpis.collectedAmount)}` : 'Encaissé : 0 F',
+      trend: kpis && kpis.recoveryRatePercent > 0 ? `${kpis.recoveryRatePercent}%` : 'Aucun encaissement',
       trendUp: true,
       icon: <DollarSign size={22} />,
       color: '#10b981',
       bg: 'var(--success-50, #ecfdf5)',
       targetView: 'SCOLARITY',
       requiredPermission: 'SCOLARITY',
-      sparkline: [40, 50, 65, 70, 78, 81, 84],
+      sparkline: [0],
     },
     {
       id: 'kpi-expenses',
       label: 'Dépenses du mois',
-      value: kpis ? formatFCFA(kpis.monthlyExpenses) : '1.4 M FCFA',
-      trend: '-2.1%',
-      trendUp: true,
+      value: kpis ? formatFCFA(kpis.monthlyExpenses) : '0 F',
+      trend: 'Ce mois',
+      trendUp: false,
       icon: <TrendingDown size={22} />,
       color: '#ef4444',
       bg: 'var(--danger-50, #fff1f2)',
       targetView: 'EXPENSES',
       requiredPermission: 'EXPENSES',
-      sparkline: [80, 75, 90, 85, 70, 65, 60],
+      sparkline: [0],
     },
     {
       id: 'kpi-staff',
       label: 'Personnel & RH',
-      value: kpis ? `${kpis.totalStaff}` : '24',
-      trend: '100% Présent',
+      value: kpis ? `${kpis.totalStaff}` : '0',
+      trend: kpis && kpis.totalStaff > 0 ? `${kpis.totalStaff} membres` : 'Aucun personnel',
       trendUp: true,
       icon: <Briefcase size={22} />,
       color: '#0ea5e9',
       bg: 'var(--info-50, #f0f9ff)',
       targetView: 'STAFF',
       requiredPermission: 'STAFF',
-      sparkline: [24, 24, 24, 24, 24, 24, 24],
+      sparkline: [0],
     },
     {
       id: 'kpi-classes',
       label: 'Classes académiques',
-      value: kpis ? `${kpis.totalClasses}` : '12',
-      trend: 'Capacité 92%',
+      value: kpis ? `${kpis.totalClasses}` : '0',
+      trend: kpis && kpis.totalClasses > 0 ? `${kpis.totalClasses} classes` : 'Aucune classe',
       trendUp: true,
       icon: <GraduationCap size={22} />,
       color: '#a855f7',
       bg: 'var(--purple-50, #faf5ff)',
       targetView: 'CLASSES',
       requiredPermission: 'CLASSES',
-      sparkline: [12, 12, 12, 12, 12, 12, 12],
+      sparkline: [0],
     },
     {
       id: 'kpi-canteen',
       label: 'Abonnés Cantine',
-      value: kpis ? `${kpis.canteenSubscribersCount}` : '118',
-      trend: '83% des élèves',
+      value: kpis ? `${kpis.canteenSubscribersCount}` : '0',
+      trend: kpis && kpis.canteenSubscribersCount > 0 ? `${kpis.canteenSubscribersCount} inscrits` : 'Aucun inscrit',
       trendUp: true,
       icon: <UtensilsCrossed size={22} />,
       color: '#f59e0b',
       bg: 'var(--warning-50, #fffbeb)',
       targetView: 'CANTEEN',
       requiredPermission: 'CANTEEN',
-      sparkline: [60, 75, 85, 95, 105, 112, 118],
+      sparkline: [0],
     },
     {
       id: 'kpi-transport',
       label: 'Élèves Transportés',
-      value: kpis ? `${kpis.transportEnrolledCount}` : '86',
-      trend: '4 Lignes actives',
+      value: kpis ? `${kpis.transportEnrolledCount}` : '0',
+      trend: kpis && kpis.transportEnrolledCount > 0 ? `${kpis.transportEnrolledCount} élèves` : 'Aucun inscrit',
       trendUp: true,
       icon: <Bus size={22} />,
       color: '#f97316',
       bg: 'var(--orange-50, #fff7ed)',
       targetView: 'TRANSPORT',
       requiredPermission: 'TRANSPORT',
-      sparkline: [40, 52, 60, 72, 80, 84, 86],
+      sparkline: [0],
     },
     {
       id: 'kpi-grades',
       label: 'Moyenne générale',
-      value: kpis ? `${kpis.lastAverageGrade} / 20` : '14.85 / 20',
-      trend: '+0.4 pt',
+      value: kpis && kpis.lastAverageGrade > 0 ? `${kpis.lastAverageGrade} / 20` : '— / 20',
+      trend: kpis && kpis.lastAverageGrade > 0 ? 'Dernier bilan' : 'Aucune note',
       trendUp: true,
       icon: <Award size={22} />,
       color: '#6366f1',
       bg: 'var(--indigo-50, #eef2ff)',
       targetView: 'NOTES',
       requiredPermission: 'NOTES',
-      sparkline: [13.5, 13.8, 14.0, 14.2, 14.5, 14.7, 14.85],
+      sparkline: [0],
     },
   ], [kpis]);
 
@@ -424,7 +424,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
                 <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#ffffff' }}>Élèves</span>
               </div>
               <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 10px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>
-                Actifs +2
+                {kpis && kpis.totalStudents > 0 ? `${kpis.totalStudents} élèves` : 'Aucun élève'}
               </span>
             </div>
 
@@ -461,7 +461,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
                 <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#ffffff' }}>Cantine</span>
               </div>
               <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 10px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: '#ffffff' }}>
-                Abonnés 83%
+                {kpis && kpis.canteenSubscribersCount > 0 ? `${kpis.canteenSubscribersCount} inscrits` : 'Aucun inscrit'}
               </span>
             </div>
 
@@ -507,7 +507,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
                 {`${(kpis?.collectedAmount ?? 0).toLocaleString('fr-FR')} F`}
               </div>
               <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', marginTop: '0.5rem', fontWeight: 600 }}>
-                ↗ +0.5% ce mois
+                {kpis && kpis.collectedAmount > 0 ? `Encaissé ce mois` : 'Aucun encaissement'}
               </div>
             </div>
           </div>
@@ -594,7 +594,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
             <div style={{ marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.375rem' }}>
                 <span className="badge badge-success" style={{ fontSize: '0.8125rem', padding: '0.4rem 0.875rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
-                  Recouvrement 84%
+                  {kpis ? `Recouvrement ${kpis.recoveryRatePercent}%` : 'Recouvrement 0%'}
                 </span>
               </div>
               <h3 style={{ margin: 0, fontSize: '1.0625rem', fontWeight: 800, color: '#1e293b', lineHeight: 1.25 }}>

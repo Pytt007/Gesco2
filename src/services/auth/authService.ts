@@ -216,42 +216,10 @@ export async function logoutUser(): Promise<void> {
   } catch {}
 }
 
-// ── GESTION DE LA LISTE DES COMPTES ─────────────────────────────────────────
+// ─── GESTION DE LA LISTE DES COMPTES ─────────────────────────────────────────
 const deletedUserIds = new Set<string>();
 
-const INITIAL_DEMO_ACCOUNTS: UserAccount[] = [
-  {
-    id: 'usr-demo-01',
-    username: 'admin',
-    fullName: 'Direction Générale (Admin)',
-    role: 'ADMIN_GENERALE',
-    avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=admin',
-    status: 'ACTIF',
-    createdAt: '2026-01-01T00:00:00Z',
-    isOwner: true,
-  },
-  {
-    id: 'usr-demo-02',
-    username: 'compta',
-    fullName: 'Mme Awa Diop (Comptabilité & Finance)',
-    role: 'FINANCE',
-    avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=awa',
-    status: 'ACTIF',
-    createdAt: '2026-01-02T00:00:00Z',
-    isOwner: false,
-  },
-  {
-    id: 'usr-demo-03',
-    username: 'prof_cp1',
-    fullName: 'M. Jean Kouassi (Professeur Titulaire CP1)',
-    role: 'SCOLAIRE_ENSEIGNANT',
-    avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=jean',
-    status: 'ACTIF',
-    createdAt: '2026-01-03T00:00:00Z',
-    isOwner: false,
-  },
-];
-
+// Aucun compte local fictif — source unique : Supabase `profiles`
 function getLocalUserAccounts(): UserAccount[] {
   try {
     const saved = localStorage.getItem(STORAGE_USERS_KEY);
@@ -260,8 +228,9 @@ function getLocalUserAccounts(): UserAccount[] {
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
   } catch {}
-  return INITIAL_DEMO_ACCOUNTS;
+  return [];
 }
+
 
 function saveLocalUserAccounts(accounts: UserAccount[]): void {
   try {

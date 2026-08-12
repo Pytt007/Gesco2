@@ -36,11 +36,9 @@ function createError<T>(error: any, fallbackMessage: string): ServiceResponse<T>
   return { success: false, error: errMsg };
 }
 
-const INITIAL_YEARS: AcademicYear[] = [
-  { id: 'ay-2026', name: '2026-2027', startDate: '2026-09-15', endDate: '2027-06-30', isCurrent: true, status: 'Active' },
-  { id: 'ay-2025', name: '2025-2026', startDate: '2025-09-15', endDate: '2026-06-30', isCurrent: false, status: 'Clôturée' },
-];
-const localYearsCache: Map<string, AcademicYear> = new Map(INITIAL_YEARS.map((y) => [y.id, y]));
+// Aucune année scolaire fictive — source unique : Supabase
+const localYearsCache: Map<string, AcademicYear> = new Map();
+
 
 import { fetchSchoolYearsList } from '../settings/settingsService';
 
@@ -80,24 +78,9 @@ export async function getAcademicYears(): Promise<ServiceResponse<AcademicYear[]
       return createSuccess(mappedYears);
     }
 
-    if (localYearsCache.size > 0) {
-      return createSuccess(Array.from(localYearsCache.values()));
-    }
+    // Aucun résultat Supabase — liste vide
+    return createSuccess([]);
 
-    const defaultYears: AcademicYear[] = [
-      {
-        id: 'ay-2026',
-        name: '2026-2027',
-        startDate: '2026-09-15',
-        endDate: '2027-06-30',
-        isCurrent: true,
-        status: 'Active',
-      },
-    ];
-
-    defaultYears.forEach((y) => localYearsCache.set(y.id, y));
-
-    return createSuccess(defaultYears);
   } catch (err) {
     return createError(err, 'Erreur lors de la récupération des années scolaires.');
   }
