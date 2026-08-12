@@ -162,6 +162,42 @@ export async function getClassroom(id: string): Promise<ServiceResponse<Classroo
     const cached = localClassroomsCache.get(id);
     if (cached) return createSuccess(cached);
 
+    try {
+      const { data, error } = await supabase
+        .from('classes')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (!error && data) {
+        const cls: Classroom = {
+          id: data.id,
+          academicYearId: data.school_year_id || '2024-2025',
+          levelId: data.level_id || 'lvl-cp1',
+          name: data.name,
+          roomName: data.room || '',
+          mainTeacherId: data.main_teacher_id || '',
+          mainTeacherName: 'Enseignant',
+          capacity: data.capacity || 35,
+          isActive: data.status === 'ACTIVE',
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+        localClassroomsCache.set(id, cls);
+        return createSuccess(cls);
+      }
+    } catch { /* Fallback */ }
+
+    // Recherche dans la liste globale
+    const allRes = await getClassrooms();
+    if (allRes.success && allRes.data) {
+      const found = allRes.data.find((c) => c.id === id || c.name === id);
+      if (found) {
+        localClassroomsCache.set(found.id, found);
+        return createSuccess(found);
+      }
+    }
+
     return createError(null, `Classe introuvable pour l'identifiant ${id}.`);
   } catch (err) {
     return createError(err, 'Erreur lors de la récupération de la classe.');
