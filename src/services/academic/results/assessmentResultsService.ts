@@ -246,6 +246,32 @@ export async function saveDraft(
     await recalculateSessionResults(sessionId, level, assessmentType);
 
     const finalUpdated = localResultsCache.get(resultId) || draftResult;
+
+    // 6. Persistance Supabase — table assessment_results (colonnes réelles: session_id, student_id, score)
+    try {
+      if (supabase) {
+        // Calculer la moyenne pour la colonne score
+        const scoredItems = finalUpdated.scores.filter((s) => s.score !== null);
+        const avgScore = scoredItems.length > 0
+          ? Number((scoredItems.reduce((acc, s) => acc + (s.score ?? 0), 0) / scoredItems.length).toFixed(2))
+          : 0;
+
+        const dbRow = {
+          id: resultId,
+          session_id: sessionId || null,
+          student_id: studentId || null,
+          score: avgScore,
+          comment: finalUpdated.appreciation || null,
+          is_absent: finalUpdated.scores.some((s) => s.absenceStatus === 'ABSENT'),
+        };
+
+        const { error: dbErr } = await supabase.from('assessment_results').upsert(dbRow, { onConflict: 'id' });
+        if (dbErr) console.warn('[assessmentResultsService] Supabase upsert warning:', dbErr.message);
+      }
+    } catch (dbErr) {
+      console.warn('[assessmentResultsService] Supabase persist fallback:', dbErr);
+    }
+
     return createSuccess(finalUpdated, 'Brouillon sauvegardé et résultats recalculés.');
   } catch (err) {
     return createError(err, 'Erreur lors de la sauvegarde du brouillon.');
