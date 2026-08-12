@@ -40,7 +40,7 @@ interface EditProfileModalProps {
 export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   isOpen,
   profile,
-  assignedModuleIds = ['STUDENTS', 'CLASSES', 'GRADES', 'REPORTS'],
+  assignedModuleIds,
   onClose,
   onSave,
 }) => {
@@ -48,9 +48,11 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (profile) {
+    if (isOpen && profile) {
       if (profile.value === 'ADMIN_GENERALE') {
         setSelectedModules(ALL_ASSIGNABLE_MODULES.map((m) => m.id));
+      } else if (assignedModuleIds && assignedModuleIds.length > 0) {
+        setSelectedModules([...assignedModuleIds]);
       } else if (profile.value === 'FINANCE') {
         setSelectedModules(['FINANCE', 'CANTEEN', 'TRANSPORT']);
       } else if (profile.value === 'CANTINE_TRANSPORT') {
@@ -58,10 +60,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       } else if (profile.value === 'SCOLAIRE_ENSEIGNANT') {
         setSelectedModules(['GRADES', 'STUDENTS']);
       } else {
-        setSelectedModules(assignedModuleIds);
+        setSelectedModules(['STUDENTS', 'CLASSES', 'GRADES', 'REPORTS']);
       }
     }
-  }, [profile, assignedModuleIds, isOpen]);
+  }, [isOpen, profile?.value]);
 
   if (!isOpen || !profile) return null;
 
@@ -180,6 +182,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     alignItems: 'flex-start',
                     gap: 12,
                     transition: 'all 0.15s ease',
+                    userSelect: 'none',
                   }}
                 >
                   <span style={{ fontSize: '1.25rem', lineHeight: 1, marginTop: 2 }}>{mod.icon}</span>
@@ -194,9 +197,18 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   <input
                     type="checkbox"
                     checked={isChecked}
-                    readOnly
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      toggleModule(mod.id);
+                    }}
                     disabled={isAdminProfile}
-                    style={{ width: 18, height: 18, accentColor: '#2563eb', marginTop: 2 }}
+                    style={{
+                      width: 18,
+                      height: 18,
+                      accentColor: '#2563eb',
+                      marginTop: 2,
+                      cursor: isAdminProfile ? 'default' : 'pointer',
+                    }}
                   />
                 </div>
               );

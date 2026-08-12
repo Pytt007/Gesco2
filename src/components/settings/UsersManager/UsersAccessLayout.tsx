@@ -17,6 +17,14 @@ import { EditProfileModal } from './EditProfileModal';
 
 type ActiveTab = 'USERS' | 'PROFILES';
 
+const DEFAULT_PROFILE_MODULES_MAP: Record<string, string[]> = {
+  ADMIN_GENERALE: ['STUDENTS', 'CLASSES', 'TEACHERS', 'GRADES', 'REPORTS', 'DISCIPLINE', 'LIBRARY', 'FINANCE', 'CANTEEN', 'TRANSPORT', 'SETTINGS', 'USERS'],
+  SCOLAIRE_ADMIN: ['STUDENTS', 'CLASSES', 'TEACHERS', 'GRADES', 'REPORTS', 'DISCIPLINE'],
+  FINANCE: ['FINANCE', 'CANTEEN', 'TRANSPORT'],
+  CANTINE_TRANSPORT: ['CANTEEN', 'TRANSPORT'],
+  SCOLAIRE_ENSEIGNANT: ['GRADES', 'STUDENTS'],
+};
+
 export const UsersAccessLayout: React.FC = () => {
   const { addNotification } = useToast();
   const confirm = useConfirm();
@@ -38,6 +46,15 @@ export const UsersAccessLayout: React.FC = () => {
 
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [editingProfile, setEditingProfile] = useState<ProfileOption | null>(null);
+
+  const [profileModulesMap, setProfileModulesMap] = useState<Record<string, string[]>>(() => {
+    try {
+      const saved = localStorage.getItem('gesco_profile_modules');
+      return saved ? { ...DEFAULT_PROFILE_MODULES_MAP, ...JSON.parse(saved) } : DEFAULT_PROFILE_MODULES_MAP;
+    } catch {
+      return DEFAULT_PROFILE_MODULES_MAP;
+    }
+  });
 
   // Handlers Utilisateur
   const handleAddUser = () => {
@@ -132,6 +149,11 @@ export const UsersAccessLayout: React.FC = () => {
   };
 
   const handleSaveProfile = async (profileValue: string, moduleIds: string[]) => {
+    const updated = { ...profileModulesMap, [profileValue]: moduleIds };
+    setProfileModulesMap(updated);
+    try {
+      localStorage.setItem('gesco_profile_modules', JSON.stringify(updated));
+    } catch {}
     addNotification('success', `Modules d'accès enregistrés pour le profil !`);
     return true;
   };
@@ -242,6 +264,7 @@ export const UsersAccessLayout: React.FC = () => {
       <EditProfileModal
         isOpen={showProfileModal}
         profile={editingProfile}
+        assignedModuleIds={editingProfile ? (profileModulesMap[editingProfile.value] || []) : []}
         onClose={() => setShowProfileModal(false)}
         onSave={handleSaveProfile}
       />
