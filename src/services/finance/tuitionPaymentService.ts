@@ -151,6 +151,11 @@ export const tuitionPaymentService = {
           studentDbId = enrollment.studentId;
         }
 
+        let receivedByUuid: string | null = null;
+        if (paymentRecord.recordedBy && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(paymentRecord.recordedBy)) {
+          receivedByUuid = paymentRecord.recordedBy;
+        }
+
         await supabase.from('tuition_payments').insert({
           id: dbId,
           receipt_number: paymentRecord.receiptNumber,
@@ -158,7 +163,7 @@ export const tuitionPaymentService = {
           amount: paymentRecord.amount,
           payment_method: paymentRecord.paymentMode || 'CASH',
           payment_date: paymentRecord.paymentDate || new Date().toISOString(),
-          received_by: paymentRecord.recordedBy || 'Comptabilité',
+          received_by: receivedByUuid,
           payer_name: enrollment.parentSponsor || enrollment.studentName || 'Parent',
           notes: paymentRecord.remarks || paymentRecord.referenceNumber || null,
         });
