@@ -141,6 +141,22 @@ export async function createStudent(studentData: Partial<Student>): Promise<Serv
 
     localStudentsStore.unshift(createdStudent);
 
+    // Résolution sécurisée de class_id pour respecter la contrainte foreign key
+    let resolvedClassId: string | null = null;
+    if ((studentData as any).classId) {
+      resolvedClassId = (studentData as any).classId;
+    } else if (studentData.grade) {
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(studentData.grade);
+      if (isUUID) {
+        resolvedClassId = studentData.grade;
+      } else {
+        try {
+          const { data: clsRow } = await supabase.from('classes').select('id').eq('name', studentData.grade).maybeSingle();
+          if (clsRow) resolvedClassId = clsRow.id;
+        } catch { /* Fallback */ }
+      }
+    }
+
     try {
       await supabase.from('students').insert({
         id: newId,
@@ -148,9 +164,9 @@ export async function createStudent(studentData: Partial<Student>): Promise<Serv
         first_name: createdStudent.firstName,
         last_name: createdStudent.lastName,
         gender: createdStudent.gender === 'Féminin' ? 'F' : 'M',
-        birth_date: '2012-05-15',
+        birth_date: '2014-06-15',
         nationality: 'Ivoirienne',
-        class_id: createdStudent.grade || null,
+        class_id: resolvedClassId,
         school_year_id: createdStudent.schoolYear || '2024-2025',
         avatar_url: createdStudent.photo,
         status: 'ACTIVE',

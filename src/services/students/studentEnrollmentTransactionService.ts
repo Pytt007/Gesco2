@@ -148,6 +148,7 @@ export async function executeStudentRegistrationTransaction(
       lastName: input.student.lastName,
       gender: input.student.gender,
       grade: classroom.name,
+      classId: classroom.id,
       status: 'Actif',
       feesStatus: input.payment.paidAmount >= (input.payment.registrationFee + input.payment.tuitionFee - input.payment.discountAmount) ? 'Payé' : 'Partiel',
       attendance: 100,
@@ -156,7 +157,7 @@ export async function executeStudentRegistrationTransaction(
       address: input.student.address || '',
       photo: input.student.photo || (input.student.gender === 'Féminin' ? 'https://api.dicebear.com/7.x/adventurer/svg?seed=boy&skinColor=8d5524,6c4524,4c3019&hairColor=000000,2c1b18,1a1a1a&backgroundColor=ffffff' : 'https://api.dicebear.com/7.x/adventurer/svg?seed=girl&skinColor=8d5524,6c4524,4c3019&hairColor=000000,2c1b18,1a1a1a&backgroundColor=ffffff'),
       schoolYear,
-    });
+    } as any);
 
     if (!studentCreateRes.success || !studentCreateRes.data) {
       throw new Error(studentCreateRes.error || 'Erreur lors de la création de la fiche élève.');
