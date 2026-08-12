@@ -144,10 +144,21 @@ export async function createStudent(studentData: Partial<Student>): Promise<Serv
     try {
       await supabase.from('students').insert({
         id: newId,
-        school_year: createdStudent.schoolYear,
-        data: createdStudent,
+        matricule: createdStudent.matricule,
+        first_name: createdStudent.firstName,
+        last_name: createdStudent.lastName,
+        gender: createdStudent.gender === 'Féminin' ? 'F' : 'M',
+        birth_date: '2012-05-15',
+        nationality: 'Ivoirienne',
+        class_id: createdStudent.grade || null,
+        school_year_id: createdStudent.schoolYear || '2024-2025',
+        avatar_url: createdStudent.photo,
+        status: 'ACTIVE',
+        school_year: createdStudent.schoolYear || '2024-2025',
       });
-    } catch { /* Silent local fallback */ }
+    } catch (err) {
+      console.warn('[studentsService] Supabase insert fallback:', err);
+    }
 
     return createSuccess(createdStudent, 'Elève créé avec succès.');
   } catch (err) {
@@ -166,8 +177,17 @@ export async function updateStudent(id: string, updates: Partial<Student>): Prom
     }
 
     try {
-      await supabase.from('students').update({ data: updates }).eq('id', id);
-    } catch { /* Silent local fallback */ }
+      await supabase.from('students').update({
+        first_name: updates.firstName,
+        last_name: updates.lastName,
+        gender: updates.gender ? (updates.gender === 'Féminin' ? 'F' : 'M') : undefined,
+        class_id: updates.grade,
+        avatar_url: updates.photo,
+        status: updates.status ? (updates.status === 'Actif' ? 'ACTIVE' : updates.status) : undefined,
+      }).eq('id', id);
+    } catch (err) {
+      console.warn('[studentsService] Supabase update fallback:', err);
+    }
 
     const updated = localStudentsStore.find((s) => s.id === id) || (updates as Student);
     return createSuccess(updated, 'Élève mis à jour avec succès.');
