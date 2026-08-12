@@ -145,6 +145,29 @@ export const attendanceService = {
     };
 
     attendanceStore.set(key, sheet);
+
+    try {
+      if (supabase && input.items && input.items.length > 0) {
+        const rowsToInsert = input.items.map((item) => {
+          const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.studentId);
+          return {
+            id: crypto.randomUUID(),
+            student_id: isUUID ? item.studentId : null,
+            class_id: input.classId || null,
+            date: input.date,
+            status: item.status || 'PRESENT',
+            reason: item.observation || null,
+            is_justified: item.status === 'ABSENT_JUSTIFIED',
+            recorded_by: null,
+          };
+        });
+
+        await supabase.from('student_attendance').insert(rowsToInsert);
+      }
+    } catch (err) {
+      console.warn('[attendanceService] Supabase insert fallback:', err);
+    }
+
     return {
       success: true,
       data: sheet,
