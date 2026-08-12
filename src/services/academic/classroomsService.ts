@@ -213,6 +213,24 @@ export async function createClassroom(classroomData: Partial<Classroom>): Promis
     };
 
     localClassroomsCache.set(createdClass.id, createdClass);
+
+    try {
+      await supabase.from('classes').insert({
+        id: createdClass.id,
+        name: createdClass.name,
+        level_id: createdClass.levelId,
+        school_year_id: createdClass.academicYearId,
+        capacity: createdClass.capacity,
+        main_teacher_id: createdClass.mainTeacherId || null,
+        room: createdClass.roomName,
+        status: createdClass.isActive ? 'ACTIVE' : 'INACTIVE',
+        created_at: now,
+        updated_at: now,
+      });
+    } catch (err) {
+      console.warn('[classroomsService] Supabase insert fallback:', err);
+    }
+
     return createSuccess(createdClass, 'Classe créée avec succès.');
   } catch (err) {
     return createError(err, 'Erreur lors de la création de la classe.');
@@ -247,6 +265,22 @@ export async function updateClassroom(id: string, updates: Partial<Classroom>): 
     };
 
     localClassroomsCache.set(id, updated);
+
+    try {
+      await supabase.from('classes').update({
+        name: updated.name,
+        level_id: updated.levelId,
+        school_year_id: updated.academicYearId,
+        capacity: updated.capacity,
+        main_teacher_id: updated.mainTeacherId || null,
+        room: updated.roomName,
+        status: updated.isActive ? 'ACTIVE' : 'INACTIVE',
+        updated_at: updated.updatedAt,
+      }).eq('id', id);
+    } catch (err) {
+      console.warn('[classroomsService] Supabase update fallback:', err);
+    }
+
     return createSuccess(updated, 'Classe mise à jour avec succès.');
   } catch (err) {
     return createError(err, 'Erreur lors de la mise à jour de la classe.');
