@@ -6,6 +6,7 @@ import {
 } from './types';
 import { canteenEnrollmentService } from './canteenEnrollmentService';
 import { ServiceResponse } from '../academic/academicYearsService';
+import { supabase } from '../common/supabaseClient';
 
 export const CANTEEN_PAYMENT_MODE_LABELS: Record<CanteenPaymentMode, string> = {
   CASH: 'Espèces',
@@ -91,6 +92,29 @@ export const canteenPaymentService = {
 
     // Mise à jour du solde de l'inscription
     canteenEnrollmentService.applyPayment(input.enrollmentId, input.amount, input.periodNumber);
+
+    // Persistance Supabase — enregistrement dans tuition_payments (type=CANTEEN)
+    try {
+      if (supabase) {
+        const year = new Date().getFullYear();
+        const ts = Date.now().toString().slice(-7);
+        const rand = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+        const receiptNb = `CANT-${year}-${ts}${rand}`;
+        await supabase.from('tuition_payments').insert({
+          id: crypto.randomUUID(),
+          receipt_number: receiptNb,
+          student_id: null,
+          amount: input.amount,
+          payment_method: input.paymentMode || 'CASH',
+          payment_date: new Date().toISOString(),
+          payer_name: enrollment.parentSponsor || enrollment.studentName || null,
+          notes: `CANTINE | Inscription: ${input.enrollmentId} | Reçu: ${receiptNumber}`,
+          received_by: null,
+        });
+      }
+    } catch (dbErr) {
+      console.warn('[canteenPaymentService] Supabase fallback:', dbErr);
+    }
 
     const newTotalPaid = totalPaidBefore + input.amount;
     const newBalance = Math.max(0, enrollment.netAmountDue - newTotalPaid);

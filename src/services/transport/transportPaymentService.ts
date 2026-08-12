@@ -10,6 +10,7 @@ import {
 } from './types';
 import { transportEnrollmentService } from './transportEnrollmentService';
 import { ServiceResponse } from '../academic/academicYearsService';
+import { supabase } from '../common/supabaseClient';
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -86,6 +87,29 @@ export const transportPaymentService = {
 
     // Mise à jour du solde
     transportEnrollmentService.applyPayment(input.enrollmentId, input.amount, input.periodNumber);
+
+    // Persistance Supabase — enregistrement dans tuition_payments (type=TRANSPORT)
+    try {
+      if (supabase) {
+        const year = new Date().getFullYear();
+        const ts = Date.now().toString().slice(-7);
+        const rand = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+        const receiptNb = `TRP-${year}-${ts}${rand}`;
+        await supabase.from('tuition_payments').insert({
+          id: crypto.randomUUID(),
+          receipt_number: receiptNb,
+          student_id: null,
+          amount: input.amount,
+          payment_method: input.paymentMode || 'CASH',
+          payment_date: new Date().toISOString(),
+          payer_name: enrollment.parentSponsor || enrollment.studentName || null,
+          notes: `TRANSPORT | Inscription: ${input.enrollmentId} | Reçu: ${receiptNumber}`,
+          received_by: null,
+        });
+      }
+    } catch (dbErr) {
+      console.warn('[transportPaymentService] Supabase fallback:', dbErr);
+    }
 
     const newTotalPaid = totalPaidBefore + input.amount;
     const newBalance = Math.max(0, enrollment.netAmountDue - newTotalPaid);
