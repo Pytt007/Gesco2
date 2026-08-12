@@ -148,12 +148,25 @@ export const attendanceService = {
 
     try {
       if (supabase && input.items && input.items.length > 0) {
+        let resolvedClassId: string | null = null;
+        if (input.classId) {
+          const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input.classId);
+          if (isUUID) {
+            resolvedClassId = input.classId;
+          } else {
+            try {
+              const { data: clsRow } = await supabase.from('classes').select('id').limit(1).maybeSingle();
+              if (clsRow) resolvedClassId = clsRow.id;
+            } catch {}
+          }
+        }
+
         const rowsToInsert = input.items.map((item) => {
           const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.studentId);
           return {
             id: crypto.randomUUID(),
             student_id: isUUID ? item.studentId : null,
-            class_id: input.classId || null,
+            class_id: resolvedClassId,
             date: input.date,
             status: item.status || 'PRESENT',
             reason: item.observation || null,
