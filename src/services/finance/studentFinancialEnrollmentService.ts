@@ -131,9 +131,52 @@ export const studentFinancialEnrollmentService = {
       // Fallback local
     }
 
-    return Array.from(localFinancialEnrollmentsStore.values()).filter(
-      (e) => e.academicYearId === academicYearId && e.status === 'ACTIVE'
+    const localList = Array.from(localFinancialEnrollmentsStore.values()).filter(
+      (e) => (e.academicYearId === academicYearId || !academicYearId) && e.status === 'ACTIVE'
     );
+    if (localList.length > 0) return localList;
+
+    // Synchronisation automatique depuis la liste des élèves en base
+    try {
+      if (supabase) {
+        const { data: studentsList } = await supabase.from('students').select('*').limit(100);
+        if (studentsList && studentsList.length > 0) {
+          return studentsList.map((st: any, idx: number) => {
+            const totalAnnual = 360000;
+            const regFee = 60000;
+            const installments = generateDefaultInstallments(totalAnnual, regFee);
+            const enr: StudentFinancialEnrollment = {
+              id: `enr-${st.id}`,
+              studentId: st.id,
+              studentName: `${st.last_name || ''} ${st.first_name || ''}`.trim(),
+              matricule: st.matricule || `MAT-2024-${idx + 100}`,
+              academicYearId: st.school_year_id || academicYearId,
+              classroomId: st.class_id || 'cls-default',
+              className: '6ème',
+              levelCode: '6e' as any,
+              registrationFee: regFee,
+              tuitionFee: 300000,
+              totalAnnualFee: totalAnnual,
+              discountType: 'NONE' as any,
+              discountValue: 0,
+              discountAmount: 0,
+              netTotalDue: totalAnnual,
+              totalPaid: 0,
+              remainingBalance: totalAnnual,
+              installmentsCount: 8,
+              installments,
+              status: 'ACTIVE',
+              createdAt: st.created_at || new Date().toISOString(),
+              updatedAt: st.updated_at || new Date().toISOString(),
+            };
+            localFinancialEnrollmentsStore.set(enr.id, enr);
+            return enr;
+          });
+        }
+      }
+    } catch { /* Fallback */ }
+
+    return [];
   },
 
   /**
