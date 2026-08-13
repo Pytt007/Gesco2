@@ -35,10 +35,10 @@
   --bg-app: #f8fafc;
   --bg-surface: #ffffff;
   --bg-surface-hover: #f1f5f9;
-  --bg-sidebar: #ffffff;
+  --bg-sidebar: #0f172a;
   --bg-sidebar-header: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  --bg-sidebar-hover: #eff6ff;
-  --bg-sidebar-active: #eff6ff;
+  --bg-sidebar-hover: rgba(255, 255, 255, 0.12);
+  --bg-sidebar-active: #2563eb;
 
   /* Textes */
   --text-primary: #0f172a;
@@ -601,7 +601,17 @@ p { color: var(--text-secondary); line-height: 1.7; }
   transition: var(--transition);
 }
 
-.sidebar-user:hover { background: var(--bg-sidebar-hover); }
+.sidebar-user:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+.sidebar-user:hover .sidebar-user-name {
+  color: #ffffff !important;
+}
+
+.sidebar-user:hover .sidebar-user-role {
+  color: #93c5fd !important;
+}
 
 .sidebar-avatar {
   width: 36px;
@@ -616,7 +626,7 @@ p { color: var(--text-secondary); line-height: 1.7; }
 
 .sidebar-user-name {
   font-size: 0.8125rem;
-  font-weight: 400;
+  font-weight: 700;
   color: #ffffff !important;
   white-space: nowrap;
   overflow: hidden;
@@ -626,7 +636,7 @@ p { color: var(--text-secondary); line-height: 1.7; }
 .sidebar-user-role {
   font-size: 0.6875rem;
   color: #93c5fd !important;
-  font-weight: 400;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   white-space: nowrap;
