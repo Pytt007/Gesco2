@@ -285,7 +285,17 @@ export const SessionsHubView: React.FC<SessionsHubViewProps> = ({
       ) : groupedTree.length === 0 ? (
         <div
           className="card shadow-sm text-center py-5"
-          style={{ borderRadius: 16, border: '1px dashed #cbd5e1', background: '#ffffff' }}
+          style={{
+            borderRadius: 16,
+            border: '1px dashed #cbd5e1',
+            background: '#ffffff',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            padding: '3.5rem 1.5rem',
+          }}
         >
           <div
             style={{
@@ -297,20 +307,29 @@ export const SessionsHubView: React.FC<SessionsHubViewProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              margin: '0 auto 1rem',
+              marginBottom: '1.25rem',
             }}
           >
             <BookOpen size={30} />
           </div>
-          <h4 style={{ fontWeight: 800, color: '#0f172a' }}>Aucune session d'évaluation trouvée</h4>
-          <p className="text-muted text-sm" style={{ maxWidth: 450, margin: '0 auto 1.5rem' }}>
+          <h4 style={{ fontWeight: 700, color: '#0f172a', margin: '0 0 0.5rem', textAlign: 'center' }}>
+            Aucune session d'évaluation trouvée
+          </h4>
+          <p className="text-muted text-sm" style={{ maxWidth: 460, margin: '0 0 1.5rem', textAlign: 'center', lineHeight: 1.5 }}>
             Aucune session d'évaluation ne correspond aux filtres appliqués pour l'année scolaire active.
           </p>
           {isDirectorOrAdmin && (
             <button
-              className="btn btn-primary btn-sm fw-bold mx-auto"
+              className="btn btn-primary btn-sm fw-bold"
               onClick={onOpenCreateModal}
-              style={{ borderRadius: 10, padding: '8px 20px' }}
+              style={{
+                borderRadius: 10,
+                padding: '10px 24px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                justifyContent: 'center',
+              }}
             >
               <Plus size={16} /> Créer une Session
             </button>
