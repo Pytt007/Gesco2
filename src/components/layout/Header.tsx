@@ -79,7 +79,7 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOp
           <ChevronRight size={12} />
           <span style={{ fontWeight: 700, color: '#2563eb' }}>{pageTitle}</span>
         </nav>
-        <h1 className="header-title" style={{ fontSize: '1.25rem', fontWeight: 800, margin: '2px 0 0', color: '#0f172a' }}>
+        <h1 className="header-title" style={{ fontSize: '1.25rem', fontWeight: 800, margin: '2px 0 0', color: 'var(--text-primary, #0f172a)' }}>
           {pageTitle}
         </h1>
       </div>
@@ -88,8 +88,8 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOp
       <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         
         {/* Badge Enterprise Dataviz */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#eff6ff', border: '1px solid #bfdbfe', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, color: '#1d4ed8' }}>
-          <ShieldCheck size={14} color="#2563eb" /> Enterprise Edition
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'var(--color-primary-light, #eff6ff)', border: '1px solid var(--border)', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-primary, #2563eb)' }}>
+          <ShieldCheck size={14} color="var(--color-primary, #2563eb)" /> Enterprise Edition
         </div>
 
         {/* Raccourci Command Palette (CTRL + K) */}
@@ -110,7 +110,7 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOp
           }}
           title="Rechercher partout (CTRL + K)"
         >
-          <Search size={14} color="#2563eb" />
+          <Search size={14} color="var(--color-primary, #2563eb)" />
           <span>Recherche...</span>
           <span style={{ fontSize: '0.65rem', background: 'var(--border)', padding: '1px 6px', borderRadius: '4px', fontWeight: 700, color: 'var(--text-muted)' }}>
             ⌘K
@@ -123,20 +123,20 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOp
             display: 'inline-flex',
             alignItems: 'center',
             gap: '8px',
-            background: schoolYear ? '#ecfdf5' : '#f8fafc',
-            border: schoolYear ? '1px solid #a7f3d0' : '1px solid #e2e8f0',
+            background: schoolYear ? 'var(--color-success-light, #ecfdf5)' : 'var(--bg-surface-hover, #f8fafc)',
+            border: schoolYear ? '1px solid var(--border)' : '1px solid var(--border)',
             borderRadius: '20px',
             padding: '6px 14px',
             fontSize: '0.8125rem',
             fontWeight: 500,
-            color: schoolYear ? '#047857' : '#64748b',
+            color: schoolYear ? 'var(--color-success, #047857)' : 'var(--text-muted, #64748b)',
             boxShadow: schoolYear ? '0 2px 6px rgba(16, 185, 129, 0.1)' : 'none',
           }}
           title="Année scolaire active unique configurée dans Paramètres"
         >
           <span style={{ fontSize: '0.75rem' }}>{schoolYear ? '🟢' : '⚪'}</span>
           <span>Année scolaire active :</span>
-          <span style={{ fontWeight: 500, color: schoolYear ? '#065f46' : '#94a3b8' }}>
+          <span style={{ fontWeight: 500, color: schoolYear ? 'var(--color-success, #065f46)' : 'var(--text-muted, #94a3b8)' }}>
             {schoolYear || 'Non configurée'}
           </span>
         </div>

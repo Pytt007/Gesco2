@@ -577,10 +577,10 @@ export const CanteenPaymentView: React.FC = () => {
               )}
             </>
           ) : (
-            <div style={{ background: '#f8fafc', borderRadius: 16, padding: 60, textAlign: 'center', color: '#94a3b8' }}>
+            <div style={{ background: 'var(--bg-surface)', border: '1px dashed var(--border)', borderRadius: 16, padding: '60px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
               <UtensilsCrossed size={48} style={{ marginBottom: 16, opacity: 0.3 }} />
-              <p style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Recherchez un élève inscrit à la cantine</p>
-              <p style={{ margin: '6px 0 0', fontSize: '0.875rem' }}>Tapez son nom, matricule ou classe dans la barre de recherche.</p>
+              <p style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>Recherchez un élève inscrit à la cantine</p>
+              <p style={{ margin: '6px 0 0', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Tapez son nom, matricule ou classe dans la barre de recherche.</p>
             </div>
           )}
         </div>

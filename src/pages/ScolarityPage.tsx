@@ -78,7 +78,7 @@ export default function ScolarityPage({ defaultTab }: { defaultTab?: ScolarityTa
       </div>
 
       {/* ── ONGLETS PILLS MODERNES ─────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 6, padding: '6px', background: '#f1f5f9', borderRadius: 14, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 6, padding: '6px', background: 'var(--bg-surface-hover, #f1f5f9)', border: '1px solid var(--border)', borderRadius: 14, flexWrap: 'wrap' }}>
         {TABS.map((tab) => {
           const active = activeTab === tab.id;
           return (
@@ -89,7 +89,7 @@ export default function ScolarityPage({ defaultTab }: { defaultTab?: ScolarityTa
                 display: 'flex', alignItems: 'center', gap: 7,
                 padding: '9px 18px',
                 background: active ? '#2563eb' : 'transparent',
-                color: active ? '#ffffff' : '#475569',
+                color: active ? '#ffffff' : 'var(--text-secondary, #475569)',
                 border: 'none',
                 borderRadius: 10,
                 fontFamily: 'inherit',

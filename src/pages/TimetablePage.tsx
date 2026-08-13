@@ -279,7 +279,7 @@ export default function TimetablePage() {
       <div className="card" style={{ borderRadius: 14, border: '1px solid #e2e8f0' }}>
         <div className="card-body p-3" style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }}>
           {/* Mode Switcher */}
-          <div style={{ display: 'flex', gap: 6, background: '#f1f5f9', padding: 4, borderRadius: 10 }}>
+          <div style={{ display: 'flex', gap: 6, background: 'var(--bg-surface-hover, #f1f5f9)', border: '1px solid var(--border)', padding: 4, borderRadius: 10 }}>
             <button
               className={`btn btn-sm ${displayMode === 'BY_CLASS' ? 'btn-primary' : 'btn-ghost'}`}
               onClick={() => setDisplayMode('BY_CLASS')}

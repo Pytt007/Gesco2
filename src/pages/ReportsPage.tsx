@@ -263,14 +263,14 @@ export default function ReportsPage() {
       )}
 
       {/* SECTION 2 : ONGLETS CATÉGORIES — PILLS MODERNES */}
-      <div style={{ display: 'flex', gap: 6, padding: '6px', background: '#f1f5f9', borderRadius: 14, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 6, padding: '6px', background: 'var(--bg-surface-hover, #f1f5f9)', border: '1px solid var(--border)', borderRadius: 14, flexWrap: 'wrap' }}>
         <button
           onClick={() => setActiveCategory('ALL')}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             padding: '8px 16px',
             background: activeCategory === 'ALL' ? '#2563eb' : 'transparent',
-            color: activeCategory === 'ALL' ? '#ffffff' : '#475569',
+            color: activeCategory === 'ALL' ? '#ffffff' : 'var(--text-secondary, #475569)',
             border: 'none', borderRadius: 10, fontFamily: 'inherit',
             fontSize: '0.8125rem', fontWeight: 700, cursor: 'pointer',
             boxShadow: activeCategory === 'ALL' ? '0 4px 12px rgba(37,99,235,0.3)' : 'none',
@@ -288,7 +288,7 @@ export default function ReportsPage() {
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '8px 16px',
               background: activeCategory === cat.key ? cat.color || '#2563eb' : 'transparent',
-              color: activeCategory === cat.key ? '#ffffff' : '#475569',
+              color: activeCategory === cat.key ? '#ffffff' : 'var(--text-secondary, #475569)',
               border: 'none', borderRadius: 10, fontFamily: 'inherit',
               fontSize: '0.8125rem', fontWeight: 700, cursor: 'pointer',
               boxShadow: activeCategory === cat.key ? `0 4px 12px ${cat.color || '#2563eb'}55` : 'none',
