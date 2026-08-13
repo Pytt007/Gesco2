@@ -69,10 +69,7 @@ function createError<T>(error: any, fallbackMessage: string): ServiceResponse<T>
 export const OFFICIAL_BOY_AVATAR = 'https://api.dicebear.com/7.x/adventurer/svg?seed=girl&skinColor=8d5524,6c4524,4c3019&hairColor=000000,2c1b18,1a1a1a&backgroundColor=ffffff';
 export const OFFICIAL_GIRL_AVATAR = 'https://api.dicebear.com/7.x/adventurer/svg?seed=boy&skinColor=8d5524,6c4524,4c3019&hairColor=000000,2c1b18,1a1a1a&backgroundColor=ffffff';
 
-// Données initiales vierges
-const INITIAL_MOCK_STUDENTS: Student[] = [];
-
-let localStudentsStore: Student[] = [...INITIAL_MOCK_STUDENTS];
+let localStudentsStore: Student[] = [];
 
 
 // ─────────────────────────────────────────────────────────────────────────────

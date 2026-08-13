@@ -27,29 +27,13 @@ export default function ReportCardsPage() {
   const { addNotification } = useToast();
 
   const [selectedSession, setSelectedSession] = useState<AssessmentSession | null>(null);
-  const [selectedClassroomId, setSelectedClassroomId] = useState<string>('cls-1');
-  const [levelCode, setLevelCode] = useState<string>('CP1');
+  const [selectedClassroomId, setSelectedClassroomId] = useState<string>('');
+  const [levelCode, setLevelCode] = useState<string>('');
   const [isIncompleteModalOpen, setIsIncompleteModalOpen] = useState<boolean>(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
   const [activePreviewDoc, setActivePreviewDoc] = useState<CompiledDocument | null>(null);
 
-  // Session courante ou fallback par défaut pour affichage direct
-  const activeSession = selectedSession || {
-    id: 'sess-default-2026',
-    academicYearId: 'ay-2026',
-    assessmentTypeId: 'MONTHLY',
-    assessmentPeriodId: 'p1',
-    classroomId: selectedClassroomId || 'cls-1',
-    title: 'Composition Mensuelle N°1',
-    status: 'OPEN',
-    locked: false,
-    published: false,
-    createdBy: 'Direction',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  const sessionId = activeSession.id;
+  const sessionId = selectedSession?.id || '';
 
   const {
     validation,
@@ -122,7 +106,7 @@ export default function ReportCardsPage() {
       {/* Sélecteur multi-critères : Année, Classe, Type, Période, Session */}
       <SessionSelector onSessionSelect={handleSessionSelect} selectedSessionId={sessionId} />
 
-      {activeSession && (
+      {selectedSession && (
         <>
           {/* ── CARTES STATISTIQUES KPIS SAAS GRADIENTS ───────────────────────── */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>

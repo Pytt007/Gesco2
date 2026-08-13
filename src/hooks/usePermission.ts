@@ -60,7 +60,7 @@ export function usePermission(): UsePermissionReturn {
     submitApprovalRequest,
   } = usePermissionContext();
 
-  const currentUserId = currentUser?.id || 'demo_user';
+  const currentUserId = currentUser?.id || 'guest';
   const currentUserName = currentUser?.fullName || 'Utilisateur';
 
   // 1. Rôle actif principal

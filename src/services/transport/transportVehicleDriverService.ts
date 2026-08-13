@@ -19,16 +19,6 @@ const driverStore: Map<string, TransportDriver> = new Map();
 export function clearTransportVehiclesStore() { vehicleStore.clear(); }
 export function clearTransportDriversStore()  { driverStore.clear(); }
 
-// ─── Données de démo ──────────────────────────────────────────────────────────
-
-function initDemoVehicles() {
-  // Application 100% vierge
-}
-
-
-function initDemoDrivers() {
-  // Application 100% vierge
-}
 
 
 // ─── Service Véhicules ────────────────────────────────────────────────────────
@@ -36,7 +26,6 @@ function initDemoDrivers() {
 export const transportVehicleService = {
 
   async getAll(): Promise<TransportVehicle[]> {
-    initDemoVehicles();
 
     try {
       if (supabase) {
@@ -55,7 +44,6 @@ export const transportVehicleService = {
   },
 
   async create(input: TransportVehicleInput): Promise<ServiceResponse<TransportVehicle>> {
-    initDemoVehicles();
 
     if (!input.name.trim()) return { success: false, error: 'Le nom du véhicule est obligatoire.' };
     if (!input.licensePlate.trim()) return { success: false, error: "L'immatriculation est obligatoire." };
@@ -121,7 +109,6 @@ export const transportVehicleService = {
 export const transportDriverService = {
 
   async getAll(): Promise<TransportDriver[]> {
-    initDemoDrivers();
 
     try {
       if (supabase) {
@@ -139,7 +126,6 @@ export const transportDriverService = {
   },
 
   async create(input: TransportDriverInput): Promise<ServiceResponse<TransportDriver>> {
-    initDemoDrivers();
 
     if (!input.name.trim()) return { success: false, error: 'Le nom du chauffeur est obligatoire.' };
     if (!input.phone.trim()) return { success: false, error: 'Le numéro de téléphone est obligatoire.' };

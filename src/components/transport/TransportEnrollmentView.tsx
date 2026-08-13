@@ -10,9 +10,17 @@ import {
   Search, User, Bus, CheckCircle2, AlertCircle, Phone,
   DollarSign, Tag, RotateCcw, MapPin, X,
 } from 'lucide-react';
+import { listStudents } from '../../services/students/studentsService';
 
-const DEMO_STUDENTS: any[] = [];
-
+export interface StudentSearchItem {
+  id: string;
+  name: string;
+  matricule: string;
+  className: string;
+  levelCode: any;
+  parentSponsor?: string;
+  parentPhone?: string;
+}
 
 export const TransportEnrollmentView: React.FC = () => {
   const { schoolYear } = useSchoolYear();
@@ -20,8 +28,8 @@ export const TransportEnrollmentView: React.FC = () => {
   const academicYearId = schoolYear || 'ay-2026';
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<typeof DEMO_STUDENTS>([]);
-  const [selectedStudent, setSelectedStudent] = useState<typeof DEMO_STUDENTS[0] | null>(null);
+  const [searchResults, setSearchResults] = useState<StudentSearchItem[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<StudentSearchItem | null>(null);
   const [existingEnrollment, setExistingEnrollment] = useState<any>(null);
   const [lines, setLines] = useState<TransportLine[]>([]);
   const [selectedLineId, setSelectedLineId] = useState<string>('');
@@ -34,13 +42,24 @@ export const TransportEnrollmentView: React.FC = () => {
   const handleSearch = useCallback(async (query: string) => {
     setSearchQuery(query);
     if (!query.trim()) { setSearchResults([]); return; }
-    const q = query.toLowerCase();
-    setSearchResults(DEMO_STUDENTS.filter((s) =>
-      s.name.toLowerCase().includes(q) || s.matricule.toLowerCase().includes(q) || s.className.toLowerCase().includes(q)
-    ));
+    try {
+      const res = await listStudents({ searchQuery: query.trim(), pageSize: 20 });
+      const students = res.data?.students || [];
+      setSearchResults(students.map((s) => ({
+        id: s.id,
+        name: `${s.lastName} ${s.firstName}`,
+        matricule: s.matricule || `MAT-${s.id.slice(0, 6)}`,
+        className: s.className || 'Classe',
+        levelCode: (s.level || 'CP1') as any,
+        parentSponsor: s.parentName,
+        parentPhone: s.parentPhone,
+      })));
+    } catch {
+      setSearchResults([]);
+    }
   }, []);
 
-  const handleSelectStudent = useCallback(async (student: typeof DEMO_STUDENTS[0]) => {
+  const handleSelectStudent = useCallback(async (student: StudentSearchItem) => {
     setSelectedStudent(student);
     setSearchResults([]);
     setSearchQuery('');

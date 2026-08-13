@@ -20,52 +20,19 @@ const levelNamesMap: Record<CanteenLevelCode, string> = {
 
 const defaultLevelOrder: CanteenLevelCode[] = ['PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
 
-// Stockage local mémoire
+// Stockage local m\u00e9moire (r\u00e9silience uniquement — ne contient jamais de donn\u00e9es fix\u00e9es)
 const localCanteenSchedulesStore: Map<string, CanteenFeeSchedule> = new Map();
 
 export function clearCanteenSchedulesStore() {
   localCanteenSchedulesStore.clear();
 }
 
-/** Données par défaut pour l'année 2026-2027 */
-function initDefaultCanteenSchedules(yearId: string = 'ay-2026') {
-  if (localCanteenSchedulesStore.size > 0) return;
-
-  const defaultRates: Record<CanteenLevelCode, number> = {
-    PS: 120000,
-    MS: 120000,
-    GS: 120000,
-    CP1: 130000,
-    CP2: 130000,
-    CE1: 135000,
-    CE2: 135000,
-    CM1: 140000,
-    CM2: 140000,
-  };
-
-  defaultLevelOrder.forEach((lvl) => {
-    const id = `canteen-${yearId}-${lvl.toLowerCase()}`;
-    localCanteenSchedulesStore.set(id, {
-      id,
-      academicYearId: yearId,
-      levelCode: lvl,
-      levelName: levelNamesMap[lvl],
-      annualRate: defaultRates[lvl],
-      periodsCount: 3,
-      totalAmount: defaultRates[lvl],
-      status: 'ACTIVE',
-      createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: '2026-01-01T00:00:00Z',
-    });
-  });
-}
-
 export const canteenFeesService = {
   /**
-   * Récupère tous les tarifs cantine pour une année scolaire
+   * R\u00e9cup\u00e8re tous les tarifs cantine pour une ann\u00e9e scolaire
    */
-  async getSchedulesByYear(academicYearId: string = 'ay-2026'): Promise<CanteenFeeSchedule[]> {
-    initDefaultCanteenSchedules(academicYearId);
+  async getSchedulesByYear(academicYearId: string): Promise<CanteenFeeSchedule[]> {
+    if (!academicYearId) return [];
 
     try {
       if (supabase) {
@@ -75,7 +42,7 @@ export const canteenFeesService = {
           .eq('academic_year_id', academicYearId)
           .eq('status', 'ACTIVE');
 
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           return data
             .map((d: any) => ({
               id: d.id,
@@ -93,13 +60,10 @@ export const canteenFeesService = {
         }
       }
     } catch {
-      // Fallback local
+      // Erreur r\u00e9seau
     }
 
-    const list = Array.from(localCanteenSchedulesStore.values()).filter(
-      (s) => s.academicYearId === academicYearId && s.status === 'ACTIVE'
-    );
-    return list.sort((a, b) => defaultLevelOrder.indexOf(a.levelCode) - defaultLevelOrder.indexOf(b.levelCode));
+    return [];
   },
 
   /**

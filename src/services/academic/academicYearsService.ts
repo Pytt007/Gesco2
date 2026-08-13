@@ -118,15 +118,8 @@ export async function getCurrentAcademicYear(): Promise<ServiceResponse<Academic
       if (y.isCurrent) return createSuccess(y);
     }
 
-    const fallbackCurrent: AcademicYear = {
-      id: 'ay-2026',
-      name: '2026-2027',
-      startDate: '2026-09-15',
-      endDate: '2027-06-30',
-      isCurrent: true,
-      status: 'Active',
-    };
-    return createSuccess(fallbackCurrent);
+    return createError(null, 'Aucune année scolaire courante trouvée. Veuillez en configurer une dans les paramètres.');
+
   } catch (err) {
     return createError(err, 'Erreur lors de la recherche de l\'année scolaire courante.');
   }

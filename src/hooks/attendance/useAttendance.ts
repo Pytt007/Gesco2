@@ -14,8 +14,8 @@ import { downloadExcel } from '../../utils/exportUtils';
 import { useToast } from '../../context/ToastContext';
 import { generateAttendanceDocument } from '../../services/documents/DocumentEngine/index';
 
-export function useAttendance(academicYearId: string = 'ay-2026') {
-  const [selectedClassId, setSelectedClassId] = useState<string>('cls-1');
+export function useAttendance(academicYearId: string = '') {
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   
   const [items, setItems] = useState<AttendanceRecordItem[]>([]);

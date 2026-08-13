@@ -16,56 +16,18 @@ const levelNamesMap: Record<TuitionLevelCode, string> = {
 
 const defaultLevelOrder: TuitionLevelCode[] = ['PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
 
-// Stockage mémoire local de secours
 const localFeeSchedulesStore: Map<string, TuitionFeeSchedule> = new Map();
 
 export function clearFeeSchedulesStore() {
   localFeeSchedulesStore.clear();
 }
 
-// Initialisation de données par défaut pour l'année courante 2026-2027
-function initDefaultSchedules(yearId: string = 'ay-2026') {
-  if (localFeeSchedulesStore.size > 0) return;
-
-  const defaultTariffs: Record<TuitionLevelCode, { reg: number; tui: number }> = {
-    PS: { reg: 50000, tui: 250000 },
-    MS: { reg: 50000, tui: 250000 },
-    GS: { reg: 50000, tui: 250000 },
-    CP1: { reg: 60000, tui: 300000 },
-    CP2: { reg: 60000, tui: 300000 },
-    CE1: { reg: 65000, tui: 320000 },
-    CE2: { reg: 65000, tui: 320000 },
-    CM1: { reg: 70000, tui: 350000 },
-    CM2: { reg: 70000, tui: 350000 },
-  };
-
-  defaultLevelOrder.forEach((lvl, idx) => {
-    const id = `fee-${yearId}-${lvl.toLowerCase()}`;
-    const t = defaultTariffs[lvl];
-    localFeeSchedulesStore.set(id, {
-      id,
-      academicYearId: yearId,
-      levelCode: lvl,
-      levelName: levelNamesMap[lvl],
-      registrationFee: t.reg,
-      tuitionFee: t.tui,
-      totalAnnualFee: t.reg + t.tui,
-      allowFixedDiscount: true,
-      allowPercentDiscount: true,
-      maxDiscountPercent: 30,
-      status: 'ACTIVE',
-      createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: '2026-01-01T00:00:00Z',
-    });
-  });
-}
-
 export const tuitionFeesService = {
   /**
    * Obtient l'ensemble des tarifs par niveau pour une année scolaire donnée
    */
-  async getSchedulesByYear(academicYearId: string = 'ay-2026'): Promise<TuitionFeeSchedule[]> {
-    initDefaultSchedules(academicYearId);
+  async getSchedulesByYear(academicYearId: string): Promise<TuitionFeeSchedule[]> {
+    if (!academicYearId) return [];
 
     try {
       if (supabase) {
@@ -96,14 +58,40 @@ export const tuitionFeesService = {
         }
       }
     } catch {
-      // Fallback local
+      // Erreur réseau — fallback store
     }
 
-    const list = Array.from(localFeeSchedulesStore.values()).filter(
-      (s) => s.academicYearId === academicYearId && s.status === 'ACTIVE'
-    );
+    const localList = Array.from(localFeeSchedulesStore.values())
+      .filter((s) => s.academicYearId === academicYearId && s.status === 'ACTIVE')
+      .sort((a, b) => defaultLevelOrder.indexOf(a.levelCode) - defaultLevelOrder.indexOf(b.levelCode));
 
-    return list.sort((a, b) => defaultLevelOrder.indexOf(a.levelCode) - defaultLevelOrder.indexOf(b.levelCode));
+    if (localList.length > 0) {
+      return localList;
+    }
+
+    // Default schedules if empty for initial setup / mock tests
+    return defaultLevelOrder.map((code) => {
+      const isPrimary = ['CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'].includes(code);
+      const reg = isPrimary ? 50000 : 40000;
+      const tui = isPrimary ? 250000 : 200000;
+      const schedule: TuitionFeeSchedule = {
+        id: `fee-${academicYearId}-${code.toLowerCase()}`,
+        academicYearId,
+        levelCode: code,
+        levelName: levelNamesMap[code],
+        registrationFee: reg,
+        tuitionFee: tui,
+        totalAnnualFee: reg + tui,
+        allowFixedDiscount: true,
+        allowPercentDiscount: true,
+        maxDiscountPercent: 30,
+        status: 'ACTIVE',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      localFeeSchedulesStore.set(schedule.id, schedule);
+      return schedule;
+    });
   },
 
   /**

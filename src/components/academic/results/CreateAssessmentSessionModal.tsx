@@ -36,8 +36,8 @@ export default function CreateAssessmentSessionModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const activeClassId = classroomId || defaultClassroomId || classrooms?.[0]?.id || 'cls-cm2a';
-    if (!title.trim()) return;
+    const activeClassId = classroomId || defaultClassroomId || classrooms?.[0]?.id || '';
+    if (!title.trim() || !activeClassId) return;
 
     setSaving(true);
     const now = new Date();
@@ -45,7 +45,7 @@ export default function CreateAssessmentSessionModal({
 
     const ok = await createSessionAction({
       title: title.trim(),
-      academicYearId: 'ay-2025-2026',
+      academicYearId: schoolYear || '',
       classroomId: activeClassId,
       assessmentTypeId,
       startDate: now.toISOString().split('T')[0],

@@ -1,4 +1,4 @@
-// ─────────────────────────────────────────────────────────────────────────────
+﻿// ─────────────────────────────────────────────────────────────────────────────
 // GESCO — Module Gestion des Élèves (src/pages/StudentsPage.tsx)
 // Design System SaaS Premium : Wizard 4 Étapes, Drawer Fiche Latéral & Table Unifiée
 // ─────────────────────────────────────────────────────────────────────────────
@@ -110,17 +110,17 @@ export default function StudentsPage() {
 
   useEffect(() => {
     if (detailStudent) {
-      studentFinancialEnrollmentService.getEnrollmentsByYear('ay-2026').then((list) => {
+      studentFinancialEnrollmentService.getEnrollmentsByYear(schoolYear || '').then((list) => {
         const found = list.find((e) => e.studentId === detailStudent.id || e.studentName.toLowerCase().includes(detailStudent.lastName.toLowerCase()));
         setStudentScolarData(found || null);
       });
 
-      canteenEnrollmentService.getEnrollmentsByYear('ay-2026').then((list) => {
+      canteenEnrollmentService.getEnrollmentsByYear(schoolYear || '').then((list) => {
         const found = list.find((e) => e.studentId === detailStudent.id);
         setStudentCanteenData(found || null);
       });
 
-      transportEnrollmentService.getEnrollmentsByYear('ay-2026').then((list) => {
+      transportEnrollmentService.getEnrollmentsByYear(schoolYear || '').then((list) => {
         const found = list.find((e) => e.studentId === detailStudent.id);
         setStudentTransportData(found || null);
       });

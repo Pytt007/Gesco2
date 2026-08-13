@@ -1,4 +1,4 @@
-import {
+﻿import {
   CanteenPaymentRecord,
   CanteenReceiptData,
   RecordCanteenPaymentInput,
@@ -48,7 +48,7 @@ export const canteenPaymentService = {
     }
 
     // Récupération de l'inscription
-    const enrollments = await canteenEnrollmentService.getEnrollmentsByYear('ay-2026');
+    const enrollments = await canteenEnrollmentService.getEnrollmentsByYear(yearId || '');
     const enrollment = enrollments.find((e) => e.id === input.enrollmentId);
     if (!enrollment) {
       return { success: false, error: 'Inscription cantine introuvable.' };

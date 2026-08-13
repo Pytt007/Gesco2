@@ -213,9 +213,9 @@ function UIShowcase() {
             </thead>
             <tbody>
               {[
-                { nom: 'KONÉ Aminata', classe: 'CM2 A', statut: 'Actif', solde: '125 000', color: '#dcfce7', statusColor: '#15803d' },
-                { nom: 'TRAORÉ Ibrahim', classe: 'CE1 B', statut: 'Partiel', solde: '45 000', color: '#fef3c7', statusColor: '#92400e' },
-                { nom: 'COULIBALY Fatou', classe: '6ème C', statut: 'En attente', solde: '0', color: '#fee2e2', statusColor: '#b91c1c' },
+                { nom: 'Élève Exemple A', classe: 'CP1 A', statut: 'Actif', solde: '0', color: '#dcfce7', statusColor: '#15803d' },
+                { nom: 'Élève Exemple B', classe: 'CP2 B', statut: 'Partiel', solde: '0', color: '#fef3c7', statusColor: '#92400e' },
+                { nom: 'Élève Exemple C', classe: 'CE1 A', statut: 'En attente', solde: '0', color: '#fee2e2', statusColor: '#b91c1c' },
               ].map((r, i) => (
                 <tr key={i} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.15s' }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; }}
@@ -242,10 +242,10 @@ function UIShowcase() {
       <ComponentSection title="KPI Cards" description="Tuiles de métriques et statistiques">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14 }}>
           {[
-            { label: 'Élèves Inscrits', value: '1 248', delta: '+12%', icon: '🎓', bg: 'linear-gradient(135deg, #6366f1, #4f46e5)', delta_color: '#a5f3fc' },
-            { label: 'Recettes du Mois', value: '4.2M FCFA', delta: '+8.3%', icon: '💰', bg: 'linear-gradient(135deg, #16a34a, #15803d)', delta_color: '#bbf7d0' },
-            { label: 'Taux Présence', value: '96.4%', delta: '+1.2%', icon: '✅', bg: 'linear-gradient(135deg, #0284c7, #0369a1)', delta_color: '#bae6fd' },
-            { label: 'Impayés', value: '12 Élèves', delta: '-3 ce mois', icon: '⚠️', bg: 'linear-gradient(135deg, #ea580c, #c2410c)', delta_color: '#fed7aa' },
+            { label: 'Élèves Inscrits', value: '0', delta: '0%', icon: '🎓', bg: 'linear-gradient(135deg, #6366f1, #4f46e5)', delta_color: '#a5f3fc' },
+            { label: 'Recettes du Mois', value: '0 FCFA', delta: '0%', icon: '💰', bg: 'linear-gradient(135deg, #16a34a, #15803d)', delta_color: '#bbf7d0' },
+            { label: 'Taux Présence', value: '0%', delta: '0%', icon: '✅', bg: 'linear-gradient(135deg, #0284c7, #0369a1)', delta_color: '#bae6fd' },
+            { label: 'Impayés', value: '0', delta: '0', icon: '⚠️', bg: 'linear-gradient(135deg, #ea580c, #c2410c)', delta_color: '#fed7aa' },
           ].map((kpi) => (
             <div key={kpi.label} className="card p-4" style={{ borderRadius: 14, background: kpi.bg, color: '#fff', border: 'none' }}>
               <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>{kpi.icon}</div>
@@ -548,11 +548,11 @@ function PDFPreview() {
     const styles = `font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:8px;`;
     switch (type) {
       case 'RECEIPT':
-        return `<div style="${styles}"><div style="text-align:center;border-bottom:2px solid #16a34a;padding-bottom:16px;margin-bottom:16px;"><h2 style="color:#16a34a;margin:0;">REÇU OFFICIEL DE PAIEMENT</h2><p style="color:#64748b;margin:4px 0;">GESCO ERP Scolaire</p></div><table style="width:100%;font-size:14px;"><tr><td style="padding:6px 0;color:#64748b;">N° Reçu</td><td style="font-weight:bold;">REC-2025-0847</td></tr><tr><td style="padding:6px 0;color:#64748b;">Élève</td><td style="font-weight:bold;">KONÉ Aminata</td></tr><tr><td style="padding:6px 0;color:#64748b;">Classe</td><td>CM2 A — Année 2024-2025</td></tr><tr><td style="padding:6px 0;color:#64748b;">Date</td><td>02/08/2025</td></tr></table><div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:16px;margin-top:16px;text-align:center;"><div style="font-size:24px;font-weight:900;color:#16a34a;">125 000 FCFA</div><div style="color:#64748b;font-size:12px;margin-top:4px;">Paiement par Espèces</div></div></div>`;
+        return `<div style="${styles}"><div style="text-align:center;border-bottom:2px solid #16a34a;padding-bottom:16px;margin-bottom:16px;"><h2 style="color:#16a34a;margin:0;">REÇU OFFICIEL DE PAIEMENT</h2><p style="color:#64748b;margin:4px 0;">GESCO ERP Scolaire</p></div><table style="width:100%;font-size:14px;"><tr><td style="padding:6px 0;color:#64748b;">N° Reçu</td><td style="font-weight:bold;">—</td></tr><tr><td style="padding:6px 0;color:#64748b;">Élève</td><td style="font-weight:bold;">—</td></tr><tr><td style="padding:6px 0;color:#64748b;">Classe</td><td>—</td></tr><tr><td style="padding:6px 0;color:#64748b;">Date</td><td>${new Date().toLocaleDateString('fr-FR')}</td></tr></table><div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:16px;margin-top:16px;text-align:center;"><div style="font-size:24px;font-weight:900;color:#16a34a;">0 FCFA</div><div style="color:#64748b;font-size:12px;margin-top:4px;">Modèle de document vierge</div></div></div>`;
       case 'REPORT_CARD':
-        return `<div style="${styles}"><div style="text-align:center;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;padding:20px;border-radius:8px;margin-bottom:16px;"><h2 style="margin:0;">BULLETIN SCOLAIRE</h2><p style="margin:4px 0;opacity:0.8;">1er Trimestre 2024-2025</p></div><div style="margin-bottom:12px;"><strong>KONÉ Aminata</strong> — CM2 A<br><span style="color:#64748b;font-size:12px;">Matricule : MAT-2024-1042</span></div><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:#f8fafc;"><th style="padding:8px;text-align:left;border:1px solid #e2e8f0;">Matière</th><th style="padding:8px;border:1px solid #e2e8f0;">Note/20</th><th style="padding:8px;border:1px solid #e2e8f0;">Appréciation</th></tr></thead><tbody>${[['Français','16.5','Très Bien'],['Mathématiques','17.0','Excellent'],['Sciences','15.0','Bien'],['Histoire-Géo','14.5','Bien']].map(([m,n,a])=>`<tr><td style="padding:8px;border:1px solid #e2e8f0;">${m}</td><td style="padding:8px;border:1px solid #e2e8f0;text-align:center;font-weight:bold;">${n}</td><td style="padding:8px;border:1px solid #e2e8f0;color:#16a34a;">${a}</td></tr>`).join('')}</tbody></table><div style="background:#eff6ff;padding:12px;border-radius:8px;margin-top:12px;text-align:center;font-size:18px;font-weight:900;color:#2563eb;">Moyenne Générale : 15.75/20</div></div>`;
+        return `<div style="${styles}"><div style="text-align:center;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;padding:20px;border-radius:8px;margin-bottom:16px;"><h2 style="margin:0;">BULLETIN SCOLAIRE</h2><p style="margin:4px 0;opacity:0.8;">Modèle Vierge</p></div><div style="margin-bottom:12px;"><strong>Élève</strong> — Classe<br><span style="color:#64748b;font-size:12px;">Matricule : —</span></div><div style="text-align:center;padding:20px;color:#64748b;">Aucune évaluation enregistrée.</div></div>`;
       default:
-        return `<div style="${styles}text-align:center;"><h2 style="color:#0f172a;">📄 ${type}</h2><p style="color:#64748b;">Modèle en cours de développement dans le Document Engine.</p><p style="color:#64748b;">Données fictives intégrées automatiquement pour les tests.</p></div>`;
+        return `<div style="${styles}text-align:center;"><h2 style="color:#0f172a;">📄 ${type}</h2><p style="color:#64748b;">Modèle de document officiel.</p></div>`;
     }
   };
 

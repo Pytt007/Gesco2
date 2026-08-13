@@ -19,12 +19,12 @@ export default function ApprovalsTab() {
   const { approvalRequests, processApprovalRequest, submitApprovalRequest } = usePermissionContext();
 
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>('PENDING');
-  const [showDemoRequestModal, setShowDemoRequestModal] = useState(false);
+  const [showNewRequestModal, setShowNewRequestModal] = useState(false);
 
-  const [demoReqForm, setDemoReqForm] = useState({
+  const [reqForm, setReqForm] = useState({
     actionType: 'EDIT_PUBLISHED_GRADES' as ApprovalActionType,
-    label: 'Modification des notes publiées de 6ème A',
-    details: 'Correction d\'une erreur de saisie en Mathématiques (Note passée de 08 à 14/20 pour l\'élève KONÉ Aminata)',
+    label: '',
+    details: '',
   });
 
   const adminId = currentUser?.id || 'admin';
@@ -46,20 +46,22 @@ export default function ApprovalsTab() {
     addNotification('error', 'Demande d\'approbation refusée.');
   };
 
-  const handleCreateDemoReq = (e: React.FormEvent) => {
+  const handleCreateRequest = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!reqForm.label.trim() || !reqForm.details.trim()) return;
     submitApprovalRequest(
       {
-        actionType: demoReqForm.actionType,
-        label: demoReqForm.label,
+        actionType: reqForm.actionType,
+        label: reqForm.label.trim(),
         requesterId: adminId,
         requesterName: adminName,
-        details: demoReqForm.details,
+        details: reqForm.details.trim(),
       },
       adminId,
       adminName
     );
-    setShowDemoRequestModal(false);
+    setReqForm({ actionType: 'EDIT_PUBLISHED_GRADES', label: '', details: '' });
+    setShowNewRequestModal(false);
     addNotification('success', 'Nouvelle demande d\'approbation soumise.');
   };
 
@@ -86,10 +88,10 @@ export default function ApprovalsTab() {
 
         <button
           className="btn btn-sm btn-primary"
-          onClick={() => setShowDemoRequestModal(true)}
+          onClick={() => setShowNewRequestModal(true)}
           style={{ borderRadius: 10, padding: '8px 14px', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700 }}
         >
-          <Send size={15} /> Simuler une Demande
+          <Send size={15} /> Nouvelle Demande
         </button>
       </div>
 
@@ -179,22 +181,22 @@ export default function ApprovalsTab() {
         )}
       </div>
 
-      {/* Modal Simuler Demande */}
-      {showDemoRequestModal && (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowDemoRequestModal(false)}>
+      {/* Modal Nouvelle Demande */}
+      {showNewRequestModal && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowNewRequestModal(false)}>
           <div className="modal" style={{ maxWidth: 440, borderRadius: 16 }}>
             <div className="modal-header">
               <h3>Nouvelle Demande d'Approbation</h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setShowDemoRequestModal(false)}>✕</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setShowNewRequestModal(false)}>✕</button>
             </div>
-            <form onSubmit={handleCreateDemoReq}>
+            <form onSubmit={handleCreateRequest}>
               <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div className="form-group">
                   <label className="form-label">Type d'Action Sensible *</label>
                   <select
                     className="form-select"
-                    value={demoReqForm.actionType}
-                    onChange={(e) => setDemoReqForm({ ...demoReqForm, actionType: e.target.value as ApprovalActionType })}
+                    value={reqForm.actionType}
+                    onChange={(e) => setReqForm({ ...reqForm, actionType: e.target.value as ApprovalActionType })}
                   >
                     <option value="EDIT_PUBLISHED_GRADES">Modification de notes publiées</option>
                     <option value="VALIDATE_BULLETINS">Validation globale des bulletins</option>
@@ -206,8 +208,9 @@ export default function ApprovalsTab() {
                   <label className="form-label">Titre de la demande *</label>
                   <input
                     className="form-input"
-                    value={demoReqForm.label}
-                    onChange={(e) => setDemoReqForm({ ...demoReqForm, label: e.target.value })}
+                    value={reqForm.label}
+                    onChange={(e) => setReqForm({ ...reqForm, label: e.target.value })}
+                    placeholder="Ex: Rectification note trimestrielle"
                     required
                   />
                 </div>
@@ -216,14 +219,15 @@ export default function ApprovalsTab() {
                   <textarea
                     className="form-input"
                     rows={3}
-                    value={demoReqForm.details}
-                    onChange={(e) => setDemoReqForm({ ...demoReqForm, details: e.target.value })}
+                    value={reqForm.details}
+                    onChange={(e) => setReqForm({ ...reqForm, details: e.target.value })}
+                    placeholder="Préciser les motifs et les informations justificatives"
                     required
                   />
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowDemoRequestModal(false)}>Annuler</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowNewRequestModal(false)}>Annuler</button>
                 <button type="submit" className="btn btn-primary">Soumettre</button>
               </div>
             </form>

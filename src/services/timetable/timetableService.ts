@@ -12,13 +12,9 @@ import {
 } from './types';
 import { ServiceResponse } from '../academic/academicYearsService';
 import { supabase } from '../common/supabaseClient';
-
-// ─── Données initiales (Vierge par défaut) ───────────────────────────────────
-
-const MOCK_CLASSES: ClassItem[] = [];
-const MOCK_TEACHERS: TeacherItem[] = [];
-const MOCK_SUBJECTS: SubjectItem[] = [];
-
+import { getClassrooms, getClassroom } from '../academic/classroomsService';
+import { listStaff } from '../staff/staffService';
+import { getSubjects } from '../academic/catalog/subjectsService';
 
 // ─── Stockage Local ─────────────────────────────────────────────────────────
 
@@ -35,12 +31,6 @@ export function normalizeDayKey(day: string): DayOfWeek {
   if (u === 'SAMEDI' || u === 'SATURDAY') return 'SATURDAY';
   return 'MONDAY';
 }
-
-function initDemoSchedule() {
-  // Application 100% vierge
-}
-
-
 
 // Helper pour convertir "HH:mm" en minutes depuis minuit
 function timeToMinutes(timeStr: string): number {
@@ -61,15 +51,51 @@ function intervalsOverlap(start1: string, end1: string, start2: string, end2: st
 
 export const timetableService = {
 
-  getClasses(): ClassItem[] { return MOCK_CLASSES; },
-  getTeachers(): TeacherItem[] { return MOCK_TEACHERS; },
-  getSubjects(): SubjectItem[] { return MOCK_SUBJECTS; },
+  getClasses(): ClassItem[] {
+    return [];
+  },
+
+  getTeachers(): TeacherItem[] {
+    return [];
+  },
+
+  getSubjects(): SubjectItem[] {
+    return [];
+  },
+
+  async fetchClasses(): Promise<ClassItem[]> {
+    try {
+      const res = await getClassrooms({ pageSize: 500 });
+      return (res.data || []).map((c) => ({ id: c.id, name: c.name, level: c.levelCode || 'Général' }));
+    } catch {
+      return [];
+    }
+  },
+
+  async fetchTeachers(): Promise<TeacherItem[]> {
+    try {
+      const res = await listStaff({ pageSize: 500 });
+      return (res.data?.staffMembers || [])
+        .filter((s) => s.role === 'Enseignant' || (s as any).role === 'TEACHER')
+        .map((s) => ({ id: s.id, name: `${s.firstName} ${s.lastName}`, specialty: s.jobTitle || 'Enseignant', phone: s.phonePrimary }));
+    } catch {
+      return [];
+    }
+  },
+
+  async fetchSubjects(): Promise<SubjectItem[]> {
+    try {
+      const res = await getSubjects();
+      return (res.data || []).map((s) => ({ id: s.id, name: s.name, color: '#2563eb' }));
+    } catch {
+      return [];
+    }
+  },
 
   /**
    * Récupère l'emploi du temps par classe
    */
   async getScheduleByClass(classId: string, academicYearId: string = 'ay-2026'): Promise<ScheduleSlotRecord[]> {
-    initDemoSchedule();
     return Array.from(scheduleStore.values()).filter(
       (s) => s.classId === classId && s.academicYearId === academicYearId
     );
@@ -79,7 +105,6 @@ export const timetableService = {
    * Récupère l'emploi du temps par enseignant
    */
   async getScheduleByTeacher(teacherId: string, academicYearId: string = 'ay-2026'): Promise<ScheduleSlotRecord[]> {
-    initDemoSchedule();
     return Array.from(scheduleStore.values()).filter(
       (s) => s.teacherId === teacherId && s.academicYearId === academicYearId
     );
@@ -89,8 +114,6 @@ export const timetableService = {
    * Ajoute un créneau de cours avec contrôles de conflit stricts
    */
   async addSlot(input: ScheduleSlotInput): Promise<ServiceResponse<ScheduleSlotRecord>> {
-    initDemoSchedule();
-
     const startMins = timeToMinutes(input.startTime);
     const endMins = timeToMinutes(input.endTime);
 
@@ -132,26 +155,39 @@ export const timetableService = {
       };
     }
 
-    // Extraction métadonnées
-    const cls = MOCK_CLASSES.find((c) => c.id === input.classId);
-    const sbj = MOCK_SUBJECTS.find((s) => s.id === input.subjectId);
-    const tch = MOCK_TEACHERS.find((t) => t.id === input.teacherId);
+    // Extraction métadonnées dynamiques
+    let className = 'Classe';
+    try {
+      const clsRes = await getClassroom(input.classId);
+      if (clsRes.success && clsRes.data) className = clsRes.data.name;
+    } catch { /* Fallback */ }
 
-    if (!cls || !sbj || !tch) {
-      return { success: false, error: 'Classe, matière ou enseignant introuvable.' };
-    }
+    let teacherName = 'Enseignant';
+    try {
+      const staffRes = await listStaff({ pageSize: 500 });
+      const foundTeacher = staffRes.data?.staffMembers?.find((s) => s.id === input.teacherId);
+      if (foundTeacher) teacherName = `${foundTeacher.firstName} ${foundTeacher.lastName}`;
+    } catch { /* Fallback */ }
+
+    let subjectName = 'Matière';
+    let subjectColor = '#2563eb';
+    try {
+      const subRes = await getSubjects();
+      const foundSub = subRes.data?.find((s) => s.id === input.subjectId);
+      if (foundSub) subjectName = foundSub.name;
+    } catch { /* Fallback */ }
 
     const id = `slot-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const record: ScheduleSlotRecord = {
       id,
       academicYearId: input.academicYearId,
       classId: input.classId,
-      className: cls.name,
+      className,
       subjectId: input.subjectId,
-      subjectName: sbj.name,
-      subjectColor: sbj.color,
+      subjectName,
+      subjectColor,
       teacherId: input.teacherId,
-      teacherName: tch.name,
+      teacherName,
       room: input.room?.trim() || undefined,
       dayOfWeek: normalizedDay,
       startTime: input.startTime,
@@ -168,7 +204,6 @@ export const timetableService = {
    * Modifier un créneau
    */
   async updateSlot(id: string, input: ScheduleSlotInput): Promise<ServiceResponse<ScheduleSlotRecord>> {
-    initDemoSchedule();
     const existing = scheduleStore.get(id);
     if (!existing) return { success: false, error: 'Créneau introuvable.' };
 
@@ -201,19 +236,9 @@ export const timetableService = {
       return { success: false, error: `Conflit d'enseignant : ${teacherConflict.teacherName} est déjà affecté à ${teacherConflict.className}.` };
     }
 
-    const cls = MOCK_CLASSES.find((c) => c.id === input.classId);
-    const sbj = MOCK_SUBJECTS.find((s) => s.id === input.subjectId);
-    const tch = MOCK_TEACHERS.find((t) => t.id === input.teacherId);
-
-    if (!cls || !sbj || !tch) return { success: false, error: 'Information manquante.' };
-
     existing.classId = input.classId;
-    existing.className = cls.name;
     existing.subjectId = input.subjectId;
-    existing.subjectName = sbj.name;
-    existing.subjectColor = sbj.color;
     existing.teacherId = input.teacherId;
-    existing.teacherName = tch.name;
     existing.room = input.room?.trim() || undefined;
     existing.dayOfWeek = input.dayOfWeek;
     existing.startTime = input.startTime;
@@ -228,7 +253,6 @@ export const timetableService = {
    * Supprimer un créneau
    */
   async deleteSlot(id: string): Promise<ServiceResponse<boolean>> {
-    initDemoSchedule();
     if (!scheduleStore.has(id)) return { success: false, error: 'Créneau introuvable.' };
     scheduleStore.delete(id);
     return { success: true, data: true, message: 'Créneau supprimé.' };
@@ -242,8 +266,6 @@ export const timetableService = {
     targetClassId: string,
     academicYearId: string = 'ay-2026'
   ): Promise<ServiceResponse<number>> {
-    initDemoSchedule();
-
     if (sourceClassId === targetClassId) {
       return { success: false, error: 'La classe source et la classe cible doivent être différentes.' };
     }
@@ -255,9 +277,6 @@ export const timetableService = {
     if (sourceSlots.length === 0) {
       return { success: false, error: 'Aucun cours dans la classe source à copier.' };
     }
-
-    const targetClass = MOCK_CLASSES.find((c) => c.id === targetClassId);
-    if (!targetClass) return { success: false, error: 'Classe cible introuvable.' };
 
     let copiedCount = 0;
     const errors: string[] = [];
@@ -288,7 +307,7 @@ export const timetableService = {
     return {
       success: true,
       data: copiedCount,
-      message: `${copiedCount} créneau(x) copié(s) avec succès vers la classe ${targetClass.name}.` +
+      message: `${copiedCount} créneau(x) copié(s) avec succès.` +
         (errors.length > 0 ? ` (${errors.length} conflit(s) ignoré(s))` : ''),
     };
   },

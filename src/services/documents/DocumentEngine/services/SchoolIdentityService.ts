@@ -25,22 +25,22 @@ export interface SchoolIdentityData {
 }
 
 const DEFAULT_IDENTITY: SchoolIdentityData = {
-  name: 'ÉTABLISSEMENT EXCELLENCE GESCO',
+  name: 'Mon Établissement Scolaire',
   logoUrl: undefined,
-  address: 'Avenue de l\'Éducation, Quartier Résidentiel',
-  phone: '+225 07 00 00 00 00',
-  email: 'contact@gesco-ecole.ci',
-  city: 'Abidjan',
-  country: 'Côte d\'Ivoire',
-  website: 'www.gesco.ci',
-  motto: 'Discipline — Excellence — Succès',
+  address: '',
+  phone: '',
+  email: '',
+  city: '',
+  country: '',
+  website: '',
+  motto: '',
   currency: 'FCFA',
   themePrimaryColor: '#132644',
-  themeAccentColor: '#f59e0b',
-  principalName: 'M. le Directeur Général',
+  themeAccentColor: '#2563eb',
+  principalName: '',
   stampUrl: undefined,
   signatureUrl: undefined,
-  currentSchoolYear: '2026-2027',
+  currentSchoolYear: '',
 };
 
 class SchoolIdentityService {

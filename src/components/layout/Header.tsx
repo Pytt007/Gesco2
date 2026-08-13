@@ -123,20 +123,22 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOp
             display: 'inline-flex',
             alignItems: 'center',
             gap: '8px',
-            background: '#ecfdf5',
-            border: '1px solid #a7f3d0',
+            background: schoolYear ? '#ecfdf5' : '#f8fafc',
+            border: schoolYear ? '1px solid #a7f3d0' : '1px solid #e2e8f0',
             borderRadius: '20px',
             padding: '6px 14px',
             fontSize: '0.8125rem',
-            fontWeight: 700,
-            color: '#047857',
-            boxShadow: '0 2px 6px rgba(16, 185, 129, 0.1)',
+            fontWeight: 500,
+            color: schoolYear ? '#047857' : '#64748b',
+            boxShadow: schoolYear ? '0 2px 6px rgba(16, 185, 129, 0.1)' : 'none',
           }}
           title="Année scolaire active unique configurée dans Paramètres"
         >
-          <span style={{ fontSize: '0.75rem' }}>🟢</span>
+          <span style={{ fontSize: '0.75rem' }}>{schoolYear ? '🟢' : '⚪'}</span>
           <span>Année scolaire active :</span>
-          <span style={{ fontWeight: 900, color: '#065f46' }}>{schoolYear}</span>
+          <span style={{ fontWeight: 500, color: schoolYear ? '#065f46' : '#94a3b8' }}>
+            {schoolYear || 'Non configurée'}
+          </span>
         </div>
 
         {/* Bouton Mode Sombre / Clair */}

@@ -17,18 +17,38 @@ import { useToast } from '../../context/ToastContext';
 export function useTimetable(academicYearId: string = 'ay-2026') {
   const [displayMode, setDisplayMode] = useState<TimetableDisplayMode>('BY_CLASS');
   
-  const classes = timetableService.getClasses();
-  const teachers = timetableService.getTeachers();
-  const subjects = timetableService.getSubjects();
+  const [classes, setClasses] = useState<ClassItem[]>([]);
+  const [teachers, setTeachers] = useState<TeacherItem[]>([]);
+  const [subjects, setSubjects] = useState<SubjectItem[]>([]);
 
-  const [selectedClassId, setSelectedClassId] = useState<string>(classes[0]?.id || '');
-  const [selectedTeacherId, setSelectedTeacherId] = useState<string>(teachers[0]?.id || '');
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
 
   const [slots, setSlots] = useState<ScheduleSlotRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { showToast } = useToast();
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadMeta() {
+      const [clsList, tchList, sbjList] = await Promise.all([
+        timetableService.fetchClasses(),
+        timetableService.fetchTeachers(),
+        timetableService.fetchSubjects(),
+      ]);
+      if (isMounted) {
+        setClasses(clsList);
+        setTeachers(tchList);
+        setSubjects(sbjList);
+        if (clsList.length > 0 && !selectedClassId) setSelectedClassId(clsList[0].id);
+        if (tchList.length > 0 && !selectedTeacherId) setSelectedTeacherId(tchList[0].id);
+      }
+    }
+    loadMeta();
+    return () => { isMounted = false; };
+  }, [academicYearId]);
 
   const fetchSlots = useCallback(async () => {
     setLoading(true);

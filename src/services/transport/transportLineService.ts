@@ -36,13 +36,6 @@ export function updateLineEnrollmentCount(lineId: string, delta: number) {
   }
 }
 
-// ─── Données de démo ──────────────────────────────────────────────────────────
-
-function initDemoLines(yearId: string) {
-  // Application 100% vierge
-}
-
-
 // ─── Service Lignes ───────────────────────────────────────────────────────────
 
 export const transportLineService = {
@@ -51,7 +44,6 @@ export const transportLineService = {
    * Récupère toutes les lignes pour une année scolaire
    */
   async getLinesByYear(academicYearId: string = 'ay-2026'): Promise<TransportLine[]> {
-    initDemoLines(academicYearId);
 
     try {
       if (supabase) {

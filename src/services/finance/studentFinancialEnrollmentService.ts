@@ -8,6 +8,7 @@ import {
 import { tuitionFeesService } from './tuitionFeesService';
 import { ServiceResponse } from '../academic/academicYearsService';
 import { getStudentById } from '../students/studentsService';
+import { getClassroom } from '../academic/classroomsService';
 import { supabase } from '../common/supabaseClient';
 
 const localFinancialEnrollmentsStore: Map<string, StudentFinancialEnrollment> = new Map();
@@ -15,12 +16,6 @@ const localFinancialEnrollmentsStore: Map<string, StudentFinancialEnrollment> = 
 export function clearFinancialEnrollmentsStore() {
   localFinancialEnrollmentsStore.clear();
 }
-
-/** Catalogue vierge par défaut */
-const mockStudentsCatalog: Record<string, { name: string; matricule: string; photoUrl?: string }> = {};
-
-/** Classe factice par défaut */
-const mockClassroomsCatalog: Record<string, { name: string; levelCode: TuitionLevelCode }> = {};
 
 
 /**
@@ -159,8 +154,15 @@ export const studentFinancialEnrollmentService = {
     }
 
     // 3. Résolution des informations de classe et niveau
-    const classInfo = mockClassroomsCatalog[input.classroomId] || { name: 'Classe Standard', levelCode: 'CP1' };
-    const levelCode = input.levelCode || classInfo.levelCode;
+    let className = 'Classe';
+    let levelCode: TuitionLevelCode = input.levelCode || 'CP1';
+    try {
+      const clsRes = await getClassroom(input.classroomId);
+      if (clsRes.success && clsRes.data) {
+        className = clsRes.data.name;
+        levelCode = input.levelCode || (clsRes.data.levelCode as TuitionLevelCode) || 'CP1';
+      }
+    } catch { /* Fallback */ }
 
     // 4. Récupération automatique des tarifs selon l'année scolaire et le niveau
     const yearTariffs = await tuitionFeesService.getSchedulesByYear(input.academicYearId);
@@ -202,16 +204,13 @@ export const studentFinancialEnrollmentService = {
     let studentName = `ÉLÈVE ${input.studentId}`;
     let matricule = `MAT-2026-${Math.floor(100 + Math.random() * 900)}`;
 
-    if (mockStudentsCatalog[input.studentId]) {
-      studentName = mockStudentsCatalog[input.studentId].name;
-      matricule = mockStudentsCatalog[input.studentId].matricule;
-    } else {
+    try {
       const studentRes = await getStudentById(input.studentId);
       if (studentRes.success && studentRes.data) {
         studentName = `${studentRes.data.lastName} ${studentRes.data.firstName}`;
         matricule = studentRes.data.matricule;
       }
-    }
+    } catch { /* Fallback */ }
 
     const id = `fin-${input.studentId}-${input.academicYearId}`;
 
@@ -222,7 +221,7 @@ export const studentFinancialEnrollmentService = {
       matricule,
       academicYearId: input.academicYearId,
       classroomId: input.classroomId,
-      className: classInfo.name,
+      className,
       levelCode,
       registrationFee,
       tuitionFee,

@@ -16,38 +16,11 @@ export function clearCanteenEnrollmentsStore() {
   localCanteenEnrollmentsStore.clear();
 }
 
-/** Données de démonstration — Vierge par défaut */
-function initDemoCanteenEnrollments() {
-  // Application 100% vierge
-}
-
-
-/**
- * Génère les périodes de paiement réparties uniformément
- */
-export function generateDefaultPeriods(
-  netAmountDue: number,
-  periodsCount: number = 3
-): CanteenPeriod[] {
-  const base = Math.floor(netAmountDue / periodsCount);
-  const remainder = netAmountDue - base * periodsCount;
-
-  return Array.from({ length: periodsCount }, (_, i) => ({
-    number: i + 1,
-    label: `Période ${i + 1}`,
-    amountDue: i === 0 ? base + remainder : base,
-    amountPaid: 0,
-    status: 'PENDING' as const,
-    dueDate: `2026-${String(10 + i).padStart(2, '0')}-01`,
-  }));
-}
-
 export const canteenEnrollmentService = {
   /**
    * Récupère toutes les inscriptions cantine pour une année scolaire
    */
   async getEnrollmentsByYear(academicYearId: string = 'ay-2026'): Promise<CanteenEnrollment[]> {
-    initDemoCanteenEnrollments();
 
     try {
       if (supabase) {

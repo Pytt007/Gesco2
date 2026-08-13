@@ -28,7 +28,7 @@ export async function fetchSchoolYearSetting(): Promise<SchoolYearSettings> {
     // Fallback to default
   }
 
-  return { id: 'active_school_year', currentSchoolYear: '2024-2025' };
+  return { id: 'active_school_year', currentSchoolYear: '' };
 }
 
 export async function persistSchoolYearSetting(

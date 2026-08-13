@@ -12,26 +12,11 @@ import {
 } from './types';
 import { ServiceResponse } from '../academic/academicYearsService';
 import { supabase } from '../common/supabaseClient';
-
-// ─── Élèves de démonstration (Vierge par défaut) ─────────────────────────────
-
-const MOCK_CLASS_STUDENTS: Record<string, { id: string; matricule: string; firstName: string; lastName: string; photoUrl?: string }[]> = {};
-
-const CLASS_NAMES: Record<string, string> = {
-  'cls-1': 'CP1 A',
-  'cls-2': 'CE1 A',
-  'cls-3': 'CE2 B',
-  'cls-4': 'CM2 A',
-  'cls-5': '6ème A',
-};
+import { getClassroom } from '../academic/classroomsService';
 
 // ─── Stockage Local (Feuilles de présence) ────────────────────────────────────
 
 const attendanceStore: Map<string, AttendanceSheet> = new Map(); // Clef : `classId_date`
-
-function initDemoAttendance() {
-  // Désactivé — application 100% vierge
-}
 
 // ─── Service ─────────────────────────────────────────────────────────────────
 
@@ -43,7 +28,7 @@ export const attendanceService = {
   async getAttendanceSheet(
     classId: string,
     date: string,
-    academicYearId: string = '2024-2025'
+    academicYearId: string = 'ay-2026'
   ): Promise<AttendanceSheet> {
     const key = `${classId}_${date}`;
 
@@ -52,7 +37,7 @@ export const attendanceService = {
     }
 
     // Récupération des vrais élèves de la classe depuis Supabase
-    let roster: any[] = MOCK_CLASS_STUDENTS[classId] || [];
+    let roster: any[] = [];
     try {
       const { data: rows, error } = await supabase
         .from('students')
@@ -68,7 +53,13 @@ export const attendanceService = {
       }
     } catch { /* Fallback roster vide */ }
 
-    const className = CLASS_NAMES[classId] || 'Classe';
+    let className = 'Classe';
+    try {
+      const clsRes = await getClassroom(classId);
+      if (clsRes.success && clsRes.data) {
+        className = clsRes.data.name;
+      }
+    } catch { /* Fallback */ }
 
     const defaultItems: AttendanceRecordItem[] = roster.map((st) => ({
       studentId: st.id,
@@ -98,14 +89,18 @@ export const attendanceService = {
    * Enregistre ou met à jour la feuille de présence (Une seule feuille par classe et jour)
    */
   async saveAttendanceSheet(input: AttendanceSheetInput): Promise<ServiceResponse<AttendanceSheet>> {
-    initDemoAttendance();
-
     if (!input.classId || !input.date) {
       return { success: false, error: 'Classe et date obligatoires.' };
     }
 
     const key = `${input.classId}_${input.date}`;
-    const className = CLASS_NAMES[input.classId] || 'Classe';
+    let className = 'Classe';
+    try {
+      const clsRes = await getClassroom(input.classId);
+      if (clsRes.success && clsRes.data) {
+        className = clsRes.data.name;
+      }
+    } catch { /* Fallback */ }
 
     const sheet: AttendanceSheet = {
       id: attendanceStore.has(key) ? attendanceStore.get(key)!.id : `sheet-${Date.now()}`,
@@ -167,7 +162,6 @@ export const attendanceService = {
    * Récupère l'historique des feuilles de présence avec filtres
    */
   async getAttendanceHistory(filter: AttendanceHistoryFilter = {}): Promise<AttendanceSheet[]> {
-    initDemoAttendance();
     let sheets = Array.from(attendanceStore.values());
 
     if (filter.academicYearId) {

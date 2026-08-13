@@ -17,7 +17,7 @@ interface SchoolYearContextValue {
 const SchoolYearContext = createContext<SchoolYearContextValue | null>(null);
 
 export function SchoolYearProvider({ children }: { children: ReactNode }) {
-  const [schoolYear, setSchoolYearState] = useState<string>('2024-2025');
+  const [schoolYear, setSchoolYearState] = useState<string>('');
   const [settingsId, setSettingsId] = useState<string | null>(null);
   const [schoolYearsItems, setSchoolYearsItems] = useState<SchoolYearItem[]>([]);
 
@@ -27,6 +27,8 @@ export function SchoolYearProvider({ children }: { children: ReactNode }) {
     const active = list.find((y) => y.isActive);
     if (active) {
       setSchoolYearState(active.label);
+    } else if (list.length === 0) {
+      setSchoolYearState('');
     }
   }, []);
 
@@ -47,6 +49,7 @@ export function SchoolYearProvider({ children }: { children: ReactNode }) {
         setSchoolYearsItems(customEvt.detail);
         const active = customEvt.detail.find((y) => y.isActive);
         if (active) setSchoolYearState(active.label);
+        else if (customEvt.detail.length === 0) setSchoolYearState('');
       } else {
         loadYearsList();
       }
@@ -70,7 +73,7 @@ export function SchoolYearProvider({ children }: { children: ReactNode }) {
 
   const availableYearLabels = schoolYearsItems.length > 0
     ? schoolYearsItems.map((y) => y.label)
-    : [schoolYear];
+    : (schoolYear ? [schoolYear] : []);
 
   return (
     <SchoolYearContext.Provider value={{ schoolYear, schoolYears: availableYearLabels, setSchoolYear }}>

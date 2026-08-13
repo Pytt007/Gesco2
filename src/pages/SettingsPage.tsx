@@ -545,6 +545,19 @@ export default function SettingsPage() {
                   </tr>
                 </thead>
                 <tbody>
+                  {schoolYears.length === 0 && (
+                    <tr>
+                      <td colSpan={5} style={{ textAlign: 'center', padding: '3.5rem 1rem', color: 'var(--text-muted)' }}>
+                        <Calendar size={40} style={{ margin: '0 auto 0.75rem', opacity: 0.4 }} />
+                        <div style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
+                          Aucune année scolaire enregistrée
+                        </div>
+                        <p style={{ fontSize: '0.8125rem', marginTop: 4, color: 'var(--text-muted)' }}>
+                          Cliquez sur le bouton « Nouvelle Année Scolaire » ci-dessus pour configurer votre première année d'exercice.
+                        </p>
+                      </td>
+                    </tr>
+                  )}
                   {schoolYears.map((year) => (
                     <tr key={year.id}>
                       <td style={{ fontWeight: 700 }}>{year.label}</td>
@@ -641,16 +654,7 @@ export default function SettingsPage() {
                                 } else if (res?.error) {
                                   addNotification('error', res.error);
                                 } else {
-                                  const isConfirmed = await confirm({
-                                    title: "Suppression définitive",
-                                    message: `Cette année scolaire ${year.label} ne contient aucune donnée. Voulez-vous la supprimer définitivement ?`,
-                                    confirmText: 'Oui, supprimer définitivement',
-                                    cancelText: 'Annuler',
-                                    variant: 'danger',
-                                  });
-                                  if (isConfirmed) {
-                                    addNotification('success', `Année ${year.label} supprimée avec succès.`);
-                                  }
+                                  addNotification('success', `Année ${year.label} supprimée.`);
                                 }
                               }}
                             >
@@ -753,14 +757,48 @@ export default function SettingsPage() {
       {/* 3. TRIMESTRES / SEMESTRES */}
       {activeTab === 'terms' && (
         <div className="card">
-          <div className="card-header">
-            <h3 style={{ fontSize: '0.9375rem' }}>Découpage des Périodes Académiques</h3>
+          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ fontSize: '0.9375rem', margin: 0 }}>Découpage des Périodes Académiques</h3>
+            {isAdmin && (
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                onClick={() => {
+                  const nextSeq = termsForm.length + 1;
+                  setTermsForm([
+                    ...termsForm,
+                    {
+                      id: `term-${Date.now()}`,
+                      name: `${nextSeq}${nextSeq === 1 ? 'er' : 'ème'} Trimestre`,
+                      sequenceOrder: nextSeq,
+                      startDate: '',
+                      endDate: '',
+                      isClosed: false,
+                    },
+                  ]);
+                }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+              >
+                <Plus size={14} /> Ajouter une Période
+              </button>
+            )}
           </div>
           <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {termsForm.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
+                <Clock size={40} style={{ margin: '0 auto 0.75rem', opacity: 0.4 }} />
+                <div style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
+                  Aucune période académique configurée
+                </div>
+                <p style={{ fontSize: '0.8125rem', marginTop: 4 }}>
+                  Cliquez sur « Ajouter une Période » pour définir vos trimestres ou semestres.
+                </p>
+              </div>
+            )}
             {termsForm.map((term, index) => (
               <div key={term.id} style={{
                 display: 'grid',
-                gridTemplateColumns: '60px 1fr 1fr 1fr 120px',
+                gridTemplateColumns: '50px 1fr 1fr 1fr 100px 40px',
                 gap: '0.75rem',
                 alignItems: 'center',
                 padding: '0.75rem',
@@ -768,7 +806,7 @@ export default function SettingsPage() {
                 borderRadius: 'var(--radius-md)',
                 background: 'var(--bg-surface)',
               }}>
-                <div style={{ fontWeight: 800, textAlign: 'center' }}>#{term.sequenceOrder}</div>
+                <div style={{ fontWeight: 500, textAlign: 'center' }}>#{term.sequenceOrder}</div>
                 <div>
                   <label className="form-label" style={{ fontSize: '0.7rem' }}>Intitulé</label>
                   <input
@@ -780,6 +818,7 @@ export default function SettingsPage() {
                       setTermsForm(copy);
                     }}
                     disabled={!isAdmin}
+                    placeholder="ex: 1er Trimestre"
                   />
                 </div>
                 <div>
@@ -816,6 +855,22 @@ export default function SettingsPage() {
                     {term.isClosed ? 'Clôturé' : 'En cours'}
                   </span>
                 </div>
+                {isAdmin && (
+                  <div style={{ paddingTop: 16 }}>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm text-danger"
+                      onClick={() => {
+                        const updated = termsForm.filter((_, i) => i !== index).map((t, i) => ({ ...t, sequenceOrder: i + 1 }));
+                        setTermsForm(updated);
+                      }}
+                      title="Supprimer cette période"
+                      style={{ padding: '6px' }}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

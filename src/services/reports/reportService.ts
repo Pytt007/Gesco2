@@ -104,7 +104,7 @@ export const reportService = {
    * Générateur de Rapport Automatique
    */
   async generateReport(reportId: string, filter: ReportFilterState): Promise<GeneratedReportContent> {
-    const yearId = filter.academicYearId || 'ay-2026';
+    const yearId = filter.academicYearId || '';
     const def = ALL_REPORTS.find((r) => r.id === reportId) || ALL_REPORTS[0];
 
     // Chargement des données selon le rapport demandé
@@ -308,15 +308,11 @@ export const reportService = {
           generatedAt: new Date().toLocaleString('fr-FR'),
           academicYear: yearId,
           summaryCards: [
-            { label: 'Statut du rapport', value: 'Généré avec succès', color: '#16a34a' },
+            { label: 'Statut du rapport', value: 'Prêt', color: '#16a34a' },
             { label: 'Catégorie', value: def.category, color: '#2563eb' },
           ],
           headers: ['N°', 'Désignation', 'Classe / Service', 'Statut', 'Remarques'],
-          rows: [
-            ['01', `${def.title} - Élément 1`, 'Toutes classes', 'Conforme', 'Rapport officiel GESCO'],
-            ['02', `${def.title} - Élément 2`, 'Toutes classes', 'Conforme', 'Données actualisées'],
-            ['03', `${def.title} - Élément 3`, 'Toutes classes', 'Conforme', 'Vérifié par la direction'],
-          ],
+          rows: [],
         };
       }
     }

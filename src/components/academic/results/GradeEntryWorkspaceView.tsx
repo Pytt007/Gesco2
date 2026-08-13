@@ -64,63 +64,7 @@ export const GradeEntryWorkspaceView: React.FC<GradeEntryWorkspaceViewProps> = (
       }));
     }
 
-    // Échantillon de secours par défaut si aucun élève chargé
-    return [
-      {
-        studentId: 'st-001',
-        matricule: 'MAT-2026-001',
-        firstName: 'Jean',
-        lastName: 'KOUASSI',
-        scores: {
-          math: { score: 16, absenceStatus: 'PRESENT' },
-          fr: { score: 14, absenceStatus: 'PRESENT' },
-          hist_geo: { score: 15, absenceStatus: 'PRESENT' },
-          sciences: { score: 17, absenceStatus: 'PRESENT' },
-          eps: { score: 18, absenceStatus: 'PRESENT' },
-        },
-        total: 80,
-        average: 16,
-        appreciation: 'Très bon travail',
-        status: 'COMPLETED',
-        decision: 'PASSE',
-      },
-      {
-        studentId: 'st-002',
-        matricule: 'MAT-2026-002',
-        firstName: 'Marie',
-        lastName: 'KONAN',
-        scores: {
-          math: { score: 14, absenceStatus: 'PRESENT' },
-          fr: { score: 12, absenceStatus: 'PRESENT' },
-          hist_geo: { score: 10, absenceStatus: 'PRESENT' },
-          sciences: { score: 13, absenceStatus: 'PRESENT' },
-          eps: { score: 14, absenceStatus: 'PRESENT' },
-        },
-        total: 63,
-        average: 12.6,
-        appreciation: 'Satisfaisant',
-        status: 'IN_PROGRESS',
-        decision: 'PASSE',
-      },
-      {
-        studentId: 'st-003',
-        matricule: 'MAT-2026-003',
-        firstName: 'Awa',
-        lastName: 'DIABATÉ',
-        scores: {
-          math: { score: null, absenceStatus: 'EXCUSED_ABSENT' },
-          fr: { score: 10, absenceStatus: 'PRESENT' },
-          hist_geo: { score: 11, absenceStatus: 'PRESENT' },
-          sciences: { score: 12, absenceStatus: 'PRESENT' },
-          eps: { score: 15, absenceStatus: 'PRESENT' },
-        },
-        total: 48,
-        average: 9.6,
-        appreciation: 'Absente justifiée en Math',
-        status: 'IN_PROGRESS',
-        decision: 'REDOUBLE',
-      },
-    ];
+    return [];
   }, [results]);
 
   // Calcul du nombre de notes saisies et moyennes provisoires pour le Footer

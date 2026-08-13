@@ -22,7 +22,7 @@ function createError<T>(error: any, fallbackMessage: string): ServiceResponse<T>
   return { success: false, error: errMsg };
 }
 
-/** Cache local des sessions d'évaluation pour la résilience et le fallback en mode hors ligne/mock */
+/** Cache local des sessions d'évaluation pour la résilience et le mode hors ligne */
 const localSessionsCache: Map<string, AssessmentSession> = new Map();
 
 /**
@@ -77,10 +77,6 @@ export async function searchSessions(
     dbList.forEach((s) => sessionMap.set(s.id, s));
     localSessionsCache.forEach((s, id) => sessionMap.set(id, s));
 
-    if (sessionMap.size === 0) {
-      const defaults = getDefaultSessions();
-      defaults.forEach((s) => sessionMap.set(s.id, s));
-    }
 
     let rawList: AssessmentSession[] = Array.from(sessionMap.values());
 
@@ -497,39 +493,4 @@ function mapRowToSession(r: any): AssessmentSession {
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
-}
-
-function getDefaultSessions(): AssessmentSession[] {
-  return [
-    {
-      id: 'sess-demo-01',
-      academicYearId: 'ay-2026',
-      assessmentTypeId: 'MONTHLY',
-      classroomId: 'cls-1',
-      title: 'Composition Mensuelle N°1',
-      description: 'Première évaluation mensuelle de l\'année',
-      startDate: '2026-10-01',
-      endDate: '2026-10-05',
-      status: 'OPEN',
-      locked: false,
-      published: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: 'sess-demo-02',
-      academicYearId: 'ay-2026',
-      assessmentTypeId: 'IEP',
-      classroomId: 'cls-1',
-      title: 'Composition IEP Trimestre 1',
-      description: 'Évaluation d\'inspection du T1',
-      startDate: '2026-11-15',
-      endDate: '2026-11-20',
-      status: 'DRAFT',
-      locked: false,
-      published: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-  ];
 }

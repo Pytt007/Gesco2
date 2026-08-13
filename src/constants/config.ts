@@ -2,9 +2,7 @@
 // GESCO — Constantes de Configuration Globale
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const SCHOOL_YEARS = [
-  '2022-2023', '2023-2024', '2024-2025', '2025-2026', '2026-2027', '2027-2028',
-];
+export const SCHOOL_YEARS: string[] = [];
 
 export const GRADES = [
   'Garderie', 'Petite Section', 'Moyenne Section', 'Grande Section',

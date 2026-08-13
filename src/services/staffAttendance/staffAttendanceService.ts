@@ -7,25 +7,16 @@ import {
   StaffAttendanceSheetInput,
   StaffAttendanceItem,
   StaffAttendanceStats,
-  StaffAttendanceHistoryFilter,
+  AttendanceHistoryFilter as StaffAttendanceHistoryFilter,
   StaffAttendanceStatus,
 } from './types';
 import { ServiceResponse } from '../academic/academicYearsService';
 import { supabase } from '../common/supabaseClient';
-
-// ─── Membres du personnel de démonstration (Vierge par défaut) ───────────────
-
-const DEMO_STAFF_ROSTER: { id: string; matricule: string; firstName: string; lastName: string; role: string; phone: string; photoUrl?: string }[] = [];
+import { listStaff } from '../staff/staffService';
 
 // ─── Stockage Local (Feuilles de présence personnel) ─────────────────────────
 
 const staffAttendanceStore: Map<string, StaffAttendanceSheet> = new Map(); // Clef : `date`
-
-function initDemoData() {
-  // Application 100% vierge
-}
-
-
 
 // ─── Service ─────────────────────────────────────────────────────────────────
 
@@ -35,34 +26,35 @@ export const staffAttendanceService = {
    * Récupère la liste des rôles / fonctions disponibles
    */
   getRoles(): string[] {
-    const roles = new Set(DEMO_STAFF_ROSTER.map((s) => s.role));
-    return Array.from(roles);
+    return ['Enseignant', 'Directeur', 'Comptable', 'Secrétaire', 'Surveillant', 'Chauffeur', 'Cuisinier', 'Agent d\'entretien'];
   },
 
   /**
    * Récupère la feuille de présence du personnel pour une date donnée.
-   * Par défaut : tout le monde est marqué "Présent".
+   * Par défaut : tout le personnel actif est marqué "Présent".
    */
   async getStaffAttendanceSheet(
     date: string,
     academicYearId: string = 'ay-2026'
   ): Promise<StaffAttendanceSheet> {
-    initDemoData();
-
     if (staffAttendanceStore.has(date)) {
       return staffAttendanceStore.get(date)!;
     }
 
-    // Initialisation automatique par défaut (Tout le personnel à "PRESENT")
-    const defaultItems: StaffAttendanceItem[] = DEMO_STAFF_ROSTER.map((st) => ({
-      staffId: st.id,
-      matricule: st.matricule,
-      firstName: st.firstName,
-      lastName: st.lastName,
-      role: st.role,
-      phone: st.phone,
-      status: 'PRESENT',
-    }));
+    let defaultItems: StaffAttendanceItem[] = [];
+    try {
+      const staffRes = await listStaff({ pageSize: 500 });
+      const staffList = staffRes.data?.staffMembers || [];
+      defaultItems = staffList.map((st) => ({
+        staffId: st.id,
+        matricule: st.employeeNumber || `EMP-${st.id.slice(0, 6)}`,
+        firstName: st.firstName,
+        lastName: st.lastName,
+        role: st.role || 'Personnel',
+        phone: st.phonePrimary || '',
+        status: 'PRESENT',
+      }));
+    } catch { /* Fallback */ }
 
     const newSheet: StaffAttendanceSheet = {
       id: `sheet-staff-${date}`,
@@ -81,8 +73,6 @@ export const staffAttendanceService = {
    * Enregistre ou met à jour la feuille de présence du personnel (Règle d'unicité par date)
    */
   async saveStaffAttendanceSheet(input: StaffAttendanceSheetInput): Promise<ServiceResponse<StaffAttendanceSheet>> {
-    initDemoData();
-
     if (!input.date) {
       return { success: false, error: 'La date est obligatoire.' };
     }
@@ -109,7 +99,6 @@ export const staffAttendanceService = {
    * Récupère l'historique de présence avec filtres
    */
   async getStaffAttendanceHistory(filter: StaffAttendanceHistoryFilter = {}): Promise<StaffAttendanceSheet[]> {
-    initDemoData();
     let sheets = Array.from(staffAttendanceStore.values());
 
     if (filter.date) {

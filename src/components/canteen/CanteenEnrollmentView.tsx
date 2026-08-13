@@ -10,11 +10,19 @@ import {
   Search, User, UtensilsCrossed, CheckCircle2, AlertCircle,
   Phone, DollarSign, Tag, RotateCcw, X,
 } from 'lucide-react';
+import { listStudents } from '../../services/students/studentsService';
 
 const LEVEL_ORDER: CanteenLevelCode[] = ['PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
 
-const DEMO_STUDENTS: any[] = [];
-
+export interface CanteenStudentSearchItem {
+  id: string;
+  name: string;
+  matricule: string;
+  className: string;
+  levelCode: CanteenLevelCode;
+  parentSponsor?: string;
+  parentPhone?: string;
+}
 
 export const CanteenEnrollmentView: React.FC = () => {
   const { schoolYear } = useSchoolYear();
@@ -22,8 +30,8 @@ export const CanteenEnrollmentView: React.FC = () => {
   const academicYearId = schoolYear || 'ay-2026';
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<typeof DEMO_STUDENTS>([]);
-  const [selectedStudent, setSelectedStudent] = useState<typeof DEMO_STUDENTS[0] | null>(null);
+  const [searchResults, setSearchResults] = useState<CanteenStudentSearchItem[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<CanteenStudentSearchItem | null>(null);
   const [existingEnrollment, setExistingEnrollment] = useState<CanteenEnrollment | null>(null);
   const [schedule, setSchedule] = useState<{ annualRate: number; periodsCount: number } | null>(null);
 
@@ -35,17 +43,24 @@ export const CanteenEnrollmentView: React.FC = () => {
   const handleSearch = useCallback(async (query: string) => {
     setSearchQuery(query);
     if (!query.trim()) { setSearchResults([]); return; }
-    const q = query.toLowerCase();
-    const results = DEMO_STUDENTS.filter(
-      (s) =>
-        s.name.toLowerCase().includes(q) ||
-        s.matricule.toLowerCase().includes(q) ||
-        s.className.toLowerCase().includes(q)
-    );
-    setSearchResults(results);
+    try {
+      const res = await listStudents({ searchQuery: query.trim(), pageSize: 20 });
+      const students = res.data?.students || [];
+      setSearchResults(students.map((s) => ({
+        id: s.id,
+        name: `${s.lastName} ${s.firstName}`,
+        matricule: s.matricule || `MAT-${s.id.slice(0, 6)}`,
+        className: s.className || 'Classe',
+        levelCode: (s.level || 'CP1') as CanteenLevelCode,
+        parentSponsor: s.parentName,
+        parentPhone: s.parentPhone,
+      })));
+    } catch {
+      setSearchResults([]);
+    }
   }, []);
 
-  const handleSelectStudent = useCallback(async (student: typeof DEMO_STUDENTS[0]) => {
+  const handleSelectStudent = useCallback(async (student: CanteenStudentSearchItem) => {
     setSelectedStudent(student);
     setSearchResults([]);
     setSearchQuery('');

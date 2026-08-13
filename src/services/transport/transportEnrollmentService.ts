@@ -18,11 +18,6 @@ const enrollmentStore: Map<string, TransportEnrollment> = new Map();
 
 export function clearTransportEnrollmentStore() { enrollmentStore.clear(); }
 
-// ─── Données de démo ──────────────────────────────────────────────────────────
-
-function initDemoEnrollments() {
-  // Application 100% vierge
-}
 
 
 // ─── Génération des périodes ──────────────────────────────────────────────────
@@ -45,7 +40,6 @@ export function generateTransportPeriods(netAmount: number, count: number): Tran
 export const transportEnrollmentService = {
 
   async getEnrollmentsByYear(academicYearId: string = 'ay-2026'): Promise<TransportEnrollment[]> {
-    initDemoEnrollments();
 
     try {
       if (supabase) {
@@ -126,7 +120,6 @@ export const transportEnrollmentService = {
    * Inscrire un élève au transport
    */
   async createEnrollment(input: TransportEnrollmentInput): Promise<ServiceResponse<TransportEnrollment>> {
-    initDemoEnrollments();
 
     if (!input.studentId || !input.academicYearId) {
       return { success: false, error: 'Élève et année scolaire requis.' };

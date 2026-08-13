@@ -14,7 +14,7 @@ import { downloadExcel } from '../../utils/exportUtils';
 import { useToast } from '../../context/ToastContext';
 import { documentEngineEnterprise } from '../../services/documents/DocumentEngine/index';
 
-export function useReports(initialYearId: string = 'ay-2026') {
+export function useReports(initialYearId: string = '') {
   const [reports, setReports] = useState<ReportDefinition[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   
@@ -25,10 +25,10 @@ export function useReports(initialYearId: string = 'ay-2026') {
   // Filtres de génération
   const [filters, setFilters] = useState<ReportFilterState>({
     academicYearId: initialYearId,
-    classId: 'cls-1',
-    levelCode: 'CP1',
-    period: 'Trimestre 1',
-    assessmentType: 'Composition Mensuelle',
+    classId: '',
+    levelCode: '',
+    period: '',
+    assessmentType: '',
   });
 
   // Modal aperçu / génération

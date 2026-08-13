@@ -1,4 +1,4 @@
-import {
+﻿import {
   TuitionPaymentRecord,
   RecordPaymentInput,
   ReceiptData,
@@ -84,7 +84,7 @@ export const tuitionPaymentService = {
 
     // 2. Chargement du dossier financier de l'élève
     // ✅ INT-005 P1 : Utiliser l'année scolaire depuis l'input, sinon fallback
-    const academicYearId = input.academicYearId || 'ay-2026';
+    const academicYearId = input.academicYearId || '';
     const enrollments = await studentFinancialEnrollmentService.getEnrollmentsByYear(academicYearId);
     const enrollment = enrollments.find((e) => e.id === input.enrollmentId);
 
@@ -321,7 +321,7 @@ export const tuitionPaymentService = {
     localPaymentsStore.set(paymentId, payment);
 
     // 2. Ajustement en retour du solde du dossier financier
-    const enrollments = await studentFinancialEnrollmentService.getEnrollmentsByYear('ay-2026');
+    const enrollments = await studentFinancialEnrollmentService.getEnrollmentsByYear(yearId || '');
     const enrollment = enrollments.find((e) => e.id === payment.enrollmentId);
 
     if (enrollment) {

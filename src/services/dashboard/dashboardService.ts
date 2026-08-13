@@ -1,4 +1,4 @@
-/**
+﻿/**
  * GESCO — Service Master Dashboard (src/services/dashboard/dashboardService.ts)
  * Couche d'accès et d'agrégation globale des indicateurs, alertes, activités et recherche globale
  */
@@ -124,55 +124,81 @@ export interface GlobalSearchResult {
 
 // ─── Données Statiques / Fallback ───────────────────────────────────────────
 
-const STATIC_CALENDAR_EVENTS: CalendarEventMaster[] = [
-  { id: 'evt-01', title: 'Compositions du 1er Trimestre', date: '2026-11-15', type: 'EXAM', label: 'Examens', color: '#dc2626' },
-  { id: 'evt-02', title: 'Réunion des Parents d\'Élèves', date: '2026-10-24', type: 'MEETING', label: 'Réunions', color: '#2563eb' },
-  { id: 'evt-03', title: 'Congés de Toussaint', date: '2026-10-31', type: 'HOLIDAY', label: 'Vacances', color: '#d97706' },
-  { id: 'evt-04', title: 'Rentrée des Classes 2026-2027', date: '2026-09-08', type: 'BACK_TO_SCHOOL', label: 'Rentrée', color: '#16a34a' },
-];
+const STATIC_CALENDAR_EVENTS: CalendarEventMaster[] = [];
 
 const FALLBACK_ACTIVITIES: ActivityItem[] = [];
 
 
 // ─── Export Rétro-Compatibilité ──────────────────────────────────────────────
 
-export async function getMainKPIs(schoolYear: string = 'ay-2026'): Promise<MainKPIs> {
+export async function getMainKPIs(schoolYear: string): Promise<MainKPIs> {
   const master = await dashboardService.getMasterKPIs(schoolYear);
+  let girlsCount = 0;
+  let boysCount = 0;
+  let teachersCount = 0;
+
+  try {
+    const studentsRes = await listStudents({ schoolYear, pageSize: 1000 });
+    const students = studentsRes.data?.students || [];
+    girlsCount = students.filter((s) => s.gender === 'F' || s.gender === 'FEMALE').length;
+    boysCount = students.filter((s) => s.gender === 'M' || s.gender === 'MALE').length;
+  } catch { /* Silent */ }
+
+  try {
+    const staffRes = await listStaff({ pageSize: 500 });
+    const staff = staffRes.data?.staffMembers || [];
+    teachersCount = staff.filter((s) => s.role === 'Enseignant' || (s as any).role === 'TEACHER').length;
+  } catch { /* Silent */ }
+
   return {
     totalStudents: master.totalStudents,
-    girlsCount: Math.round(master.totalStudents * 0.52),
-    boysCount: Math.round(master.totalStudents * 0.48),
+    girlsCount,
+    boysCount,
     classesCount: master.totalClasses,
-    teachersCount: 18,
+    teachersCount,
     staffCount: master.totalStaff,
-    todayAttendances: master.totalStudents - 3,
-    todayAbsences: 3,
+    todayAttendances: 0,
+    todayAbsences: 0,
   };
 }
 
-export async function getFinancialKPIs(schoolYear: string = 'ay-2026'): Promise<FinancialKPIs> {
+export async function getFinancialKPIs(schoolYear: string): Promise<FinancialKPIs> {
   const master = await dashboardService.getMasterKPIs(schoolYear);
+  let payrollAmount = 0;
+
+  try {
+    const staffRes = await listStaff({ pageSize: 500 });
+    const staff = staffRes.data?.staffMembers || [];
+    payrollAmount = staff.reduce((sum, s) => sum + ((s as any).baseSalary || 0), 0);
+  } catch { /* Silent */ }
+
   return {
     expectedAmount: master.collectedAmount + master.remainingAmount,
     collectedAmount: master.collectedAmount,
     remainingAmount: master.remainingAmount,
     monthlyExpenses: master.monthlyExpenses,
-    payrollAmount: 3500000,
+    payrollAmount,
     netProfit: master.collectedAmount - master.monthlyExpenses,
     collectionRatePercent: master.recoveryRatePercent,
   };
 }
 
-export async function getFinancialCharts(schoolYear: string = '2024-2025'): Promise<FinancialChartData> {
-  const mult = schoolYear === '2022-2023' ? 0.72 : schoolYear === '2023-2024' ? 0.86 : schoolYear === '2025-2026' ? 1.14 : 1.0;
-  const chartSeries = [
-    { mois: 'Sept', Revenus: Math.round(8500000 * mult), Dépenses: Math.round(3200000 * mult) },
-    { mois: 'Oct', Revenus: Math.round(6200000 * mult), Dépenses: Math.round(2800000 * mult) },
-    { mois: 'Nov', Revenus: Math.round(5400000 * mult), Dépenses: Math.round(3100000 * mult) },
-    { mois: 'Déc', Revenus: Math.round(4800000 * mult), Dépenses: Math.round(2900000 * mult) },
-    { mois: 'Janv', Revenus: Math.round(7100000 * mult), Dépenses: Math.round(3400000 * mult) },
-    { mois: 'Fév', Revenus: Math.round(5900000 * mult), Dépenses: Math.round(2950000 * mult) },
-  ];
+export async function getFinancialCharts(schoolYear: string): Promise<FinancialChartData> {
+  const months = ['Sept', 'Oct', 'Nov', 'Déc', 'Janv', 'Fév', 'Mars', 'Avr', 'Mai', 'Juin'];
+  let expenses: any[] = [];
+  try {
+    expenses = await expenseService.getExpenses({ schoolYearId: schoolYear });
+  } catch { /* Silent */ }
+
+  const chartSeries = months.map((mois, index) => {
+    const monthNum = index < 4 ? index + 9 : index - 3;
+    const monthStr = monthNum < 10 ? `0${monthNum}` : `${monthNum}`;
+    const expForMonth = expenses
+      .filter((e) => e.date && e.date.includes(`-${monthStr}-`) && e.status !== 'CANCELLED')
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
+    return { mois, Revenus: 0, Dépenses: expForMonth };
+  });
+
   return {
     chartSeries,
     monthlyRevenues: chartSeries.map((s) => ({ mois: s.mois, montant: s.Revenus, periodLabel: s.mois, amount: s.Revenus, value: s.Revenus })),
@@ -181,7 +207,7 @@ export async function getFinancialCharts(schoolYear: string = '2024-2025'): Prom
   };
 }
 
-export async function getAlerts(schoolYear: string = '2024-2025'): Promise<DashboardAlertItem[]> {
+export async function getAlerts(schoolYear: string): Promise<DashboardAlertItem[]> {
   const masterAlerts = await dashboardService.getDashboardAlerts(schoolYear);
   return masterAlerts.map((a) => ({
     id: a.id,
@@ -195,25 +221,37 @@ export async function getAlerts(schoolYear: string = '2024-2025'): Promise<Dashb
 }
 
 export async function getRecentActivities(schoolYear?: string, limit: number = 10): Promise<ActivityItem[]> {
-  return dashboardService.getRecentActivities();
+  return dashboardService.getRecentActivities(schoolYear || '');
 }
 
 export async function getCalendarEvents(schoolYear?: string): Promise<CalendarEventMaster[]> {
-  return STATIC_CALENDAR_EVENTS;
+  return dashboardService.getCalendarEvents();
 }
 
-export async function getStudentStatistics(schoolYear: string = '2024-2025') {
-  const mult = schoolYear === '2022-2023' ? 0.72 : schoolYear === '2023-2024' ? 0.86 : schoolYear === '2025-2026' ? 1.14 : 1.0;
-  return {
-    genderRatio: { girls: 52, boys: 48 },
-    countByLevel: {
-      CP1: Math.round(30 * mult),
-      CE1: Math.round(28 * mult),
-      CE2: Math.round(25 * mult),
-      CM1: Math.round(32 * mult),
-      CM2: Math.round(27 * mult),
-    },
-  };
+export async function getStudentStatistics(schoolYear: string) {
+  try {
+    const studentsRes = await listStudents({ schoolYear, pageSize: 1000 });
+    const students = studentsRes.data?.students || [];
+    const total = students.length;
+    const girls = students.filter((s) => s.gender === 'F' || s.gender === 'FEMALE').length;
+    const boys = students.filter((s) => s.gender === 'M' || s.gender === 'MALE').length;
+
+    const countByLevel: Record<string, number> = {};
+    students.forEach((s) => {
+      const lvl = s.level || (s as any).grade || 'Classe';
+      countByLevel[lvl] = (countByLevel[lvl] || 0) + 1;
+    });
+
+    return {
+      genderRatio: {
+        girls: total > 0 ? Math.round((girls / total) * 100) : 0,
+        boys: total > 0 ? Math.round((boys / total) * 100) : 0,
+      },
+      countByLevel,
+    };
+  } catch {
+    return { genderRatio: { girls: 0, boys: 0 }, countByLevel: {} };
+  }
 }
 
 // ─── Service Master Dashboard ────────────────────────────────────────────────
@@ -223,7 +261,7 @@ export const dashboardService = {
   /**
    * Calcule dynamiquement tous les indicateurs principaux du Dashboard
    */
-  async getMasterKPIs(academicYearId: string = '2024-2025'): Promise<DashboardKPIsMaster> {
+  async getMasterKPIs(academicYearId: string): Promise<DashboardKPIsMaster> {
     try {
       const scolarEnrollments = await studentFinancialEnrollmentService.getEnrollmentsByYear(academicYearId);
       const collectedAmount = scolarEnrollments.reduce((s, e) => s + (e.totalPaid || 0), 0);
@@ -282,7 +320,7 @@ export const dashboardService = {
   /**
    * Génère les alertes du système de façon strictement conditionnelle
    */
-  async getDashboardAlerts(academicYearId: string = 'ay-2026'): Promise<AlertMasterItem[]> {
+  async getDashboardAlerts(academicYearId: string): Promise<AlertMasterItem[]> {
     const alerts: AlertMasterItem[] = [];
 
     // 🔴 1. Élèves avec impayés
@@ -378,24 +416,26 @@ export const dashboardService = {
   /**
    * Activités récentes 100% dynamiques générées depuis les entités réelles
    */
-  async getRecentActivities(): Promise<ActivityItem[]> {
+  async getRecentActivities(academicYearId: string = ''): Promise<ActivityItem[]> {
     const activities: ActivityItem[] = [];
 
     try {
       // 1. Paiements de scolarité récents
-      const scolarList = await studentFinancialEnrollmentService.getEnrollmentsByYear('ay-2026');
-      const paidEnrolls = scolarList.filter((e) => e.totalPaid > 0);
-      paidEnrolls.slice(0, 4).forEach((e, idx) => {
-        activities.push({
-          id: `act-pay-${e.id}`,
-          type: 'PAYMENT',
-          title: 'Paiement scolarité enregistré',
-          description: `${e.studentName} (${e.className}) — ${e.totalPaid.toLocaleString('fr-FR')} FCFA`,
-          timestamp: `Il y a ${10 + idx * 15} min`,
-          badgeColor: '#16a34a',
-          iconName: 'CreditCard',
+      if (academicYearId) {
+        const scolarList = await studentFinancialEnrollmentService.getEnrollmentsByYear(academicYearId);
+        const paidEnrolls = scolarList.filter((e) => e.totalPaid > 0);
+        paidEnrolls.slice(0, 4).forEach((e, idx) => {
+          activities.push({
+            id: `act-pay-${e.id}`,
+            type: 'PAYMENT',
+            title: 'Paiement scolarité enregistré',
+            description: `${e.studentName} (${e.className}) — ${e.totalPaid.toLocaleString('fr-FR')} FCFA`,
+            timestamp: `Il y a ${10 + idx * 15} min`,
+            badgeColor: '#16a34a',
+            iconName: 'CreditCard',
+          });
         });
-      });
+      }
 
       // 2. Inscriptions d'élèves récentes
       const studentsRes = await listStudents({ pageSize: 3 });
@@ -414,7 +454,7 @@ export const dashboardService = {
       }
 
       // 3. Dépenses récentes
-      const expenses = await expenseService.getExpenses({ schoolYearId: 'ay-2026' });
+      const expenses = await expenseService.getExpenses({ schoolYearId: academicYearId || '' });
       if (expenses.length > 0) {
         expenses.slice(0, 3).forEach((exp, idx) => {
           activities.push({
@@ -447,7 +487,7 @@ export const dashboardService = {
     } catch { /* Fallback */ }
 
     if (activities.length === 0) {
-      return FALLBACK_ACTIVITIES;
+      return [];
     }
 
     return activities.slice(0, 10);
@@ -457,13 +497,30 @@ export const dashboardService = {
    * Événements du calendrier
    */
   async getCalendarEvents(): Promise<CalendarEventMaster[]> {
-    return STATIC_CALENDAR_EVENTS;
+    try {
+      const { data, error } = await supabase
+        .from('calendar_events')
+        .select('*')
+        .order('start_date', { ascending: true })
+        .limit(50);
+      if (!error && data) {
+        return data.map((e: any) => ({
+          id: e.id,
+          title: e.title || '',
+          date: e.start_date || e.date || '',
+          type: e.type || 'EVENT',
+          label: e.label || e.title || '',
+          color: e.color || '#2563eb',
+        }));
+      }
+    } catch { /* Silent */ }
+    return [];
   },
 
   /**
    * Recherche globale multi-domaines (Élève, Parent, Classe, Personnel, Paiement, Bulletin)
    */
-  async globalSearch(query: string): Promise<GlobalSearchResult[]> {
+  async globalSearch(query: string, academicYearId: string = ''): Promise<GlobalSearchResult[]> {
     const q = query.toLowerCase().trim();
     if (!q) return [];
 

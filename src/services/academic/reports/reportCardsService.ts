@@ -56,15 +56,24 @@ export const reportCardsService = {
    * Valide automatiquement si tous les résultats de la classe sont prêts pour la génération
    */
   async validateClassReportCards(sessionId: string): Promise<ReportCardValidation> {
+    if (!sessionId) {
+      return {
+        isReadyForGeneration: false,
+        totalStudents: 0,
+        readyCount: 0,
+        incompleteCount: 0,
+        incompleteStudents: [],
+      };
+    }
+
     const res = await assessmentResultsService.getResultsBySession(sessionId);
     const results = (res && res.data) ? res.data : [];
 
-    // Par défaut pour la démo et les tests de validation
-    if (results.length === 0 || !sessionId || sessionId.startsWith('sess-')) {
+    if (results.length === 0) {
       return {
-        isReadyForGeneration: true,
-        totalStudents: 25,
-        readyCount: 25,
+        isReadyForGeneration: false,
+        totalStudents: 0,
+        readyCount: 0,
         incompleteCount: 0,
         incompleteStudents: [],
       };
@@ -136,32 +145,17 @@ export const reportCardsService = {
     const res = await assessmentResultsService.getResultsBySession(sessionId);
     let results = (res && res.data) ? res.data : [];
 
-    // Fallback si pas de données réelles en base de données de test
+    // Si pas de données réelles, retourner un résultat vide
     if (results.length === 0) {
-      results = Array.from({ length: 25 }, (_, i) => ({
-        id: `res-demo-${i + 1}`,
-        assessmentSessionId: sessionId,
-        studentId: `st-demo-${i + 1}`,
-        studentName: `ÉLÈVE Demo ${i + 1}`,
-        correctionStatus: 'VALIDATED' as const,
-        isCompleted: true,
-        total: 80 + (i % 15),
-        average: 12 + (i % 8) * 0.5,
-        rank: i + 1,
-        appreciation: 'Bon travail global dans l’ensemble des matières.',
-        mention: i < 5 ? 'TABLEAU D’HONNEUR' : 'ENCOURAGEMENTS',
-        decision: 'PASSE',
-        published: true,
-        validatedBy: generatedBy,
-        validatedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        scores: [
-          { id: 's1', assessmentResultId: `res-demo-${i + 1}`, subjectId: 'math', status: 'VALIDATED' as const, score: 15, maxScore: 20, coeff: 3, absenceStatus: 'PRESENT' as const, appreciation: 'Très Bien' },
-          { id: 's2', assessmentResultId: `res-demo-${i + 1}`, subjectId: 'fr', status: 'VALIDATED' as const, score: 14, maxScore: 20, coeff: 3, absenceStatus: 'PRESENT' as const, appreciation: 'Bien' },
-          { id: 's3', assessmentResultId: `res-demo-${i + 1}`, subjectId: 'sci', status: 'VALIDATED' as const, score: 16, maxScore: 20, coeff: 2, absenceStatus: 'PRESENT' as const, appreciation: 'Excellent' },
-        ],
-      }));
+      return {
+        sessionId,
+        classroomId,
+        classroomName: levelCode,
+        levelCategory,
+        generatedCount: 0,
+        reportCards: [],
+        combinedHtml: '<div style="text-align: center; padding: 40px; color: #64748b; font-family: sans-serif;">Aucun résultat d\'évaluation trouvé pour cette classe et cette session.</div>',
+      };
     }
 
     const reportCards: StudentReportCardItem[] = [];
@@ -241,6 +235,10 @@ export const reportCardsService = {
     const levelCategory = this.resolveLevelCategory(levelCode);
     const templateCode = this.getTemplateCodeForLevel(levelCategory);
 
+    // Tenter de charger les vraies données de l'élève
+    const res = await assessmentResultsService.getResultsBySession(sessionId);
+    const result = res?.data?.find((r: any) => r.studentId === studentId);
+
     return documentEngine.previewDocument({
       templateId: templateCode,
       documentType: 'BULLETIN',
@@ -248,14 +246,14 @@ export const reportCardsService = {
       entityId: studentId,
       generatedBy: 'Consultation',
       data: {
-        studentName: 'Élève',
-        matricule: 'MAT-000',
+        studentName: result?.studentName || '—',
+        matricule: '—',
         className: levelCode,
-        average: 0,
-        rank: '—',
-        totalStudents: 25,
-        appreciation: 'Très bon travail ce trimestre. Félicitations du conseil.',
-        decision: 'ADMIS EN CLASSE SUPÉRIEURE',
+        average: result?.average ?? 0,
+        rank: result?.rank ? `${result.rank}${result.rank === 1 ? 'er' : 'ème'}` : '—',
+        totalStudents: res?.data?.length ?? 0,
+        appreciation: result?.appreciation || '—',
+        decision: result?.decision || '—',
       },
     });
   },

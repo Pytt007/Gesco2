@@ -9,6 +9,8 @@ import {
 import { useSchoolYear } from '../context/SchoolYearContext';
 import { useAcademicYears } from '../hooks/academic';
 
+import { supabase } from '../services/common/supabaseClient';
+
 export interface AuditLogEntry {
   id: string;
   timestamp: string;
@@ -21,19 +23,60 @@ export interface AuditLogEntry {
   details: string;
 }
 
-const MOCK_AUDIT_LOGS: AuditLogEntry[] = [];
-
 
 export default function AuditHistoryPage() {
   const { schoolYear } = useSchoolYear();
   const { academicYears } = useAcademicYears();
-  const [selectedYearId, setSelectedYearId] = useState<string>(schoolYear || 'ay-2026');
+  const [selectedYearId, setSelectedYearId] = useState<string>(schoolYear || '');
   const [searchTerm, setSearchTerm] = useState('');
   const [moduleFilter, setModuleFilter] = useState<string>('ALL');
   const [severityFilter, setSeverityFilter] = useState<string>('ALL');
+  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    async function loadAuditLogs() {
+      setLoading(true);
+      try {
+        if (supabase) {
+          const { data, error } = await supabase
+            .from('audit_logs')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(100);
+
+          if (!error && data) {
+            const mapped: AuditLogEntry[] = data.map((d: any) => ({
+              id: d.id,
+              timestamp: d.created_at ? new Date(d.created_at).toLocaleString('fr-FR') : new Date().toLocaleString('fr-FR'),
+              user: d.user_name || d.user_email || d.user_id || 'Administrateur',
+              role: d.role || 'Admin',
+              action: d.action || 'Action',
+              module: (d.module || 'SYSTEM').toUpperCase() as any,
+              ipAddress: d.ip_address || '',
+              severity: (d.severity || 'INFO').toUpperCase() as any,
+              details: d.details || d.description || '',
+            }));
+            if (isMounted) setLogs(mapped);
+          } else {
+            if (isMounted) setLogs([]);
+          }
+        } else {
+          if (isMounted) setLogs([]);
+        }
+      } catch {
+        if (isMounted) setLogs([]);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    loadAuditLogs();
+    return () => { isMounted = false; };
+  }, [selectedYearId]);
 
   const filteredLogs = useMemo(() => {
-    return MOCK_AUDIT_LOGS.filter((log) => {
+    return logs.filter((log) => {
       const matchesSearch =
         log.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
         log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -42,7 +85,7 @@ export default function AuditHistoryPage() {
       const matchesSeverity = severityFilter === 'ALL' || log.severity === severityFilter;
       return matchesSearch && matchesModule && matchesSeverity;
     });
-  }, [searchTerm, moduleFilter, severityFilter]);
+  }, [logs, searchTerm, moduleFilter, severityFilter]);
 
   const handleExportExcel = () => {
     const dataToExport = filteredLogs.map((log) => ({
@@ -103,7 +146,7 @@ export default function AuditHistoryPage() {
         </div>
       </div>
 
-      {/* ── 2. CARTES KPI EXÉCUTIVES HAUTE LISIBILITÉ ───────────────────────── */}
+      {/* ── 2. CARTES KPI EXÉCUTIVES HAUTE LISIBILITÉ DYNAMIQUES ───────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
         <div className="card shadow-sm card-hover" style={{ borderRadius: 14, background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', color: '#ffffff', padding: '1.25rem', border: 'none', boxShadow: '0 8px 20px -4px rgba(37,99,235,0.3)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -111,9 +154,9 @@ export default function AuditHistoryPage() {
             <History size={18} color="#ffffff" />
           </div>
           <p style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 700, color: '#ffffff' }}>Total Événements</p>
-          <h2 style={{ margin: '4px 0 0', fontSize: '1.875rem', fontWeight: 900, color: '#ffffff' }}>2,840</h2>
+          <h2 style={{ margin: '4px 0 0', fontSize: '1.875rem', fontWeight: 900, color: '#ffffff' }}>{logs.length.toLocaleString('fr-FR')}</h2>
           <span style={{ fontSize: '0.725rem', color: '#ffffff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, opacity: 0.9 }}>
-            <CheckCircle2 size={14} /> 100% Horodatés ISO
+            <CheckCircle2 size={14} /> Événements enregistrés
           </span>
         </div>
 
@@ -122,10 +165,10 @@ export default function AuditHistoryPage() {
             <span style={{ fontSize: '0.7rem', fontWeight: 800, padding: '2px 8px', borderRadius: 10, background: 'rgba(255,255,255,0.25)', color: '#ffffff' }}>Accès</span>
             <ShieldCheck size={18} color="#ffffff" />
           </div>
-          <p style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 700, color: '#ffffff' }}>Sessions Utilisateurs</p>
-          <h2 style={{ margin: '4px 0 0', fontSize: '1.875rem', fontWeight: 900, color: '#ffffff' }}>1,420</h2>
+          <p style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 700, color: '#ffffff' }}>Utilisateurs Actifs</p>
+          <h2 style={{ margin: '4px 0 0', fontSize: '1.875rem', fontWeight: 900, color: '#ffffff' }}>{new Set(logs.map((l) => l.user)).size}</h2>
           <span style={{ fontSize: '0.725rem', color: '#ffffff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, opacity: 0.9 }}>
-            <ArrowUpRight size={14} /> Connexions sécurisées SSL
+            <ArrowUpRight size={14} /> Utilisateurs distincts
           </span>
         </div>
 
@@ -134,10 +177,10 @@ export default function AuditHistoryPage() {
             <span style={{ fontSize: '0.7rem', fontWeight: 800, padding: '2px 8px', borderRadius: 10, background: 'rgba(255,255,255,0.25)', color: '#ffffff' }}>Sensible</span>
             <Lock size={18} color="#ffffff" />
           </div>
-          <p style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 700, color: '#ffffff' }}>Modifications Critiques</p>
-          <h2 style={{ margin: '4px 0 0', fontSize: '1.875rem', fontWeight: 900, color: '#ffffff' }}>184</h2>
+          <p style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 700, color: '#ffffff' }}>Actions Sensibles / Alertes</p>
+          <h2 style={{ margin: '4px 0 0', fontSize: '1.875rem', fontWeight: 900, color: '#ffffff' }}>{logs.filter((l) => l.severity === 'DANGER' || l.severity === 'WARNING').length}</h2>
           <span style={{ fontSize: '0.725rem', color: '#ffffff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, opacity: 0.9 }}>
-            <ShieldCheck size={14} /> Validation double facteur
+            <ShieldCheck size={14} /> Alertes et avertissements
           </span>
         </div>
 
@@ -146,10 +189,10 @@ export default function AuditHistoryPage() {
             <span style={{ fontSize: '0.7rem', fontWeight: 800, padding: '2px 8px', borderRadius: 10, background: 'rgba(255,255,255,0.25)', color: '#ffffff' }}>Alerte</span>
             <AlertTriangle size={18} color="#ffffff" />
           </div>
-          <p style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 700, color: '#ffffff' }}>Tentatives Interdites</p>
-          <h2 style={{ margin: '4px 0 0', fontSize: '1.875rem', fontWeight: 900, color: '#ffffff' }}>0</h2>
+          <p style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 700, color: '#ffffff' }}>Événements Critiques</p>
+          <h2 style={{ margin: '4px 0 0', fontSize: '1.875rem', fontWeight: 900, color: '#ffffff' }}>{logs.filter((l) => l.severity === 'DANGER').length}</h2>
           <span style={{ fontSize: '0.725rem', color: '#ffffff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, opacity: 0.9 }}>
-            <CheckCircle2 size={14} /> Aucune anomalie détectée
+            <CheckCircle2 size={14} /> {logs.filter((l) => l.severity === 'DANGER').length === 0 ? 'Aucune anomalie détectée' : 'Anomalies détectées'}
           </span>
         </div>
       </div>

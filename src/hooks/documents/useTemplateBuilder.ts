@@ -99,9 +99,9 @@ export function useTemplateBuilder(templateId?: string, documentType: DocumentTy
   );
 
   const refreshPreview = useCallback(
-    async (sampleData: Record<string, any> = {}) => {
+    async (previewData: Record<string, any> = {}) => {
       if (!templateId) return;
-      const preview = await templateBuilder.buildPreview(templateId, sampleData);
+      const preview = await templateBuilder.buildPreview(templateId, previewData);
       setHtmlPreview(preview);
     },
     [templateId]

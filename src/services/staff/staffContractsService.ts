@@ -250,16 +250,7 @@ export async function getCurrentContract(staffId: string): Promise<ServiceRespon
       }
     }
 
-    const dummy: StaffContract = {
-      id: crypto.randomUUID(),
-      staffId,
-      contractType: 'CDI',
-      startDate: '2025-09-01',
-      baseSalary: 250000,
-      workScheduleType: 'Temps Plein',
-      status: 'ACTIF',
-    };
-    return createSuccess(dummy);
+    return createSuccess(null);
   } catch (err) {
     return createError(err, 'Erreur lors de la recherche du contrat courant.');
   }

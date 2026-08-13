@@ -8,36 +8,27 @@ import { supabase } from '../common/supabaseClient';
 import { SchoolInfo, SchoolYearItem, AcademicTerm, GeneralConfig } from '../../types';
 
 const DEFAULT_SCHOOL_INFO: SchoolInfo = {
-  name: 'GESCO — Complexe Scolaire d\'Excellence',
-  logoUrl: '/logo-dark.png',
-  address: 'Avenue de l\'Éducation, Quartier Résidentiel',
-  phone: '+225 07 00 00 00 00',
-  email: 'contact@gesco-ecole.ci',
-  city: 'Abidjan',
-  country: 'Côte d\'Ivoire',
+  name: '',
+  logoUrl: '',
+  address: '',
+  phone: '',
+  email: '',
+  city: '',
+  country: '',
   currency: 'FCFA',
   language: 'Français (FR)',
 };
 
-const DEFAULT_SCHOOL_YEARS: SchoolYearItem[] = [
-  { id: 'sy-2022', label: '2022-2023', startDate: '2022-09-15', endDate: '2023-06-30', isActive: false, isClosed: true },
-  { id: 'sy-2023', label: '2023-2024', startDate: '2023-09-15', endDate: '2024-06-30', isActive: false, isClosed: true },
-  { id: 'sy-2024', label: '2024-2025', startDate: '2024-09-15', endDate: '2025-06-30', isActive: true,  isClosed: false },
-  { id: 'sy-2025', label: '2025-2026', startDate: '2025-09-15', endDate: '2026-06-30', isActive: false, isClosed: false },
-];
+const DEFAULT_SCHOOL_YEARS: SchoolYearItem[] = [];
 
-const DEFAULT_TERMS: AcademicTerm[] = [
-  { id: 'term-1', name: '1er Trimestre', sequenceOrder: 1, startDate: '2024-09-15', endDate: '2024-12-20', isClosed: true },
-  { id: 'term-2', name: '2ème Trimestre', sequenceOrder: 2, startDate: '2025-01-06', endDate: '2025-04-11', isClosed: false },
-  { id: 'term-3', name: '3ème Trimestre', sequenceOrder: 3, startDate: '2025-04-28', endDate: '2025-06-30', isClosed: false },
-];
+const DEFAULT_TERMS: AcademicTerm[] = [];
 
 const DEFAULT_GENERAL_CONFIG: GeneralConfig = {
-  numberingPrefixStudent: 'MAT-STU-',
-  numberingPrefixStaff: 'MAT-STF-',
+  numberingPrefixStudent: 'MAT-',
+  numberingPrefixStaff: 'ENS-',
   timezone: 'GMT+0 (Abidjan / Dakar)',
   dateFormat: 'DD/MM/YYYY',
-  enableEmailAlerts: true,
+  enableEmailAlerts: false,
   enableSmsAlerts: false,
 };
 
@@ -46,6 +37,10 @@ export async function fetchSchoolInfo(): Promise<SchoolInfo> {
   try {
     const cached = localStorage.getItem('gesco_school_info');
     let localInfo = cached ? JSON.parse(cached) : null;
+    if (localInfo?.name === "GESCO — Complexe Scolaire d'Excellence") {
+      localStorage.removeItem('gesco_school_info');
+      localInfo = null;
+    }
 
     const { data, error } = await supabase
       .from('school_settings')
@@ -87,7 +82,14 @@ export async function fetchSchoolYearsList(): Promise<SchoolYearItem[]> {
     const cached = localStorage.getItem('gesco_school_years');
     if (cached) {
       const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed)) {
+        const hasLegacyMock = parsed.some((y: any) => y.id === 'sy-2022' || y.id === 'sy-2023' || y.id === 'sy-2024');
+        if (hasLegacyMock) {
+          localStorage.removeItem('gesco_school_years');
+        } else if (parsed.length > 0) {
+          return parsed;
+        }
+      }
     }
 
     const { data, error } = await supabase
@@ -155,7 +157,14 @@ export async function fetchAcademicTermsList(): Promise<AcademicTerm[]> {
     const cached = localStorage.getItem('gesco_academic_terms');
     if (cached) {
       const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed)) {
+        const hasLegacyMock = parsed.some((t: any) => t.id === 'term-1' || t.name === '1er Trimestre');
+        if (hasLegacyMock) {
+          localStorage.removeItem('gesco_academic_terms');
+        } else if (parsed.length > 0) {
+          return parsed;
+        }
+      }
     }
 
     const { data, error } = await supabase

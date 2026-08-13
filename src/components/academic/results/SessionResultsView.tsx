@@ -40,14 +40,9 @@ export const SessionResultsView: React.FC<SessionResultsViewProps> = ({
 
   const isPreschool = session.title.toLowerCase().includes('préscolaire') || session.assessmentTypeId === 'PRESCHOOL_EVAL';
 
-  // Liste unifiée des résultats affichés (réels ou fallback de démonstration)
+  // Liste des résultats réels affichés
   const displayResults = useMemo(() => {
-    if (results && results.length > 0) return results;
-    return [
-      { id: '1', studentId: 'st-1', studentName: 'KOUASSI Jean', average: 16.5, appreciation: 'Très Bon Travail', decision: 'PASSE' },
-      { id: '2', studentId: 'st-2', studentName: 'KONAN Marie', average: 14.0, appreciation: 'Satisfaisant', decision: 'PASSE' },
-      { id: '3', studentId: 'st-3', studentName: 'DIABATÉ Awa', average: 9.5, appreciation: 'Insuffisant', decision: 'REDOUBLE' },
-    ] as any[];
+    return results || [];
   }, [results]);
 
   // Calcul des statistiques globales de la classe dynamiquement basées sur displayResults

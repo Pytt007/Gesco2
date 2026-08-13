@@ -3,14 +3,13 @@ import { useReports } from '../hooks/reports/useReports';
 import { REPORT_CATEGORIES, ReportCategory, ReportDefinition } from '../services/reports/types';
 import { useAcademicYears } from '../hooks/academic';
 import { useSchoolYear } from '../context/SchoolYearContext';
+import { useClassrooms } from '../hooks/academic/useClassrooms';
 import {
   Search, Star, FileText, Download, Printer, Filter, X,
   Calendar, Users, BookOpen, Clock, CheckCircle2, ChevronRight,
   TrendingUp, RefreshCw, Award, Sparkles, SlidersHorizontal,
   FileBarChart, LayoutGrid,
 } from 'lucide-react';
-
-const MOCK_CLASSES: { id: string; name: string }[] = [];
 
 const FILTER_LEVELS = ['Tous', 'Maternelle', 'Primaire', 'Collège'];
 const FILTER_PERIODS = ['Trimestre 1', 'Trimestre 2', 'Trimestre 3', 'Semestre 1', 'Semestre 2'];
@@ -20,6 +19,7 @@ const FILTER_EVAL_TYPES = ['Composition Mensuelle', 'Devoir Surveillé', 'Examen
 export default function ReportsPage() {
   const { schoolYear } = useSchoolYear();
   const { academicYears } = useAcademicYears();
+  const { classrooms } = useClassrooms();
   const [selectedYearId, setSelectedYearId] = useState<string>(schoolYear || 'ay-2026');
 
   const {
@@ -144,7 +144,8 @@ export default function ReportsPage() {
                 onChange={(e) => setFilters({ ...filters, classId: e.target.value })}
                 style={{ height: '42px', borderRadius: '10px', fontWeight: 600, border: '1px solid #cbd5e1', fontSize: '0.875rem', width: '100%' }}
               >
-                {MOCK_CLASSES.map((c) => (
+                <option value="">Toutes les classes</option>
+                {classrooms.map((c) => (
                   <option key={c.id} value={c.id}>Classe {c.name}</option>
                 ))}
               </select>

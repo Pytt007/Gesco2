@@ -5,6 +5,7 @@
 
 import { supabase } from '../common/supabaseClient';
 import { ServiceResponse, Parent, getParentById } from './parentsService';
+import { getStudentById } from '../students/studentsService';
 
 export type RelationshipType =
   | 'Père'
@@ -207,24 +208,29 @@ export async function getChildren(parentId: string): Promise<ServiceResponse<Lin
   try {
     const localChildren: LinkedStudentInfo[] = [];
 
-    const demoStudents: Record<string, { name: string; firstName: string; lastName: string; matricule: string; grade: string }> = {};
-
-
     for (const rel of localRelationshipsCache.values()) {
       if (rel.parentId === parentId) {
-        const demo = demoStudents[rel.studentId] || {
-          firstName: 'Enfant',
-          lastName: 'GESCO',
-          matricule: `MAT-${rel.studentId.slice(0, 6)}`,
-          grade: 'CP1 A',
-        };
+        let firstName = 'Élève';
+        let lastName = '';
+        let matricule = `MAT-${rel.studentId.slice(0, 6)}`;
+        let grade = 'Classe';
+
+        try {
+          const stRes = await getStudentById(rel.studentId);
+          if (stRes.success && stRes.data) {
+            firstName = stRes.data.firstName;
+            lastName = stRes.data.lastName;
+            matricule = stRes.data.matricule || matricule;
+            grade = stRes.data.className || stRes.data.level || grade;
+          }
+        } catch { /* Fallback */ }
 
         localChildren.push({
           studentId: rel.studentId,
-          firstName: demo.firstName,
-          lastName: demo.lastName,
-          matricule: demo.matricule,
-          grade: demo.grade,
+          firstName,
+          lastName,
+          matricule,
+          grade,
           academicYear: '2026-2027',
           relationshipType: rel.relationshipType,
           isPrimary: rel.isPrimary,
@@ -283,23 +289,12 @@ export async function updateRelationship(
 ): Promise<ServiceResponse<StudentParentRelationship>> {
   try {
     const rel = localRelationshipsCache.get(relationshipId);
-    if (rel) {
-      const updated = { ...rel, ...updates, updatedAt: new Date().toISOString() };
-      localRelationshipsCache.set(relationshipId, updated);
-      return createSuccess(updated, 'Relation mise à jour.');
+    if (!rel) {
+      return createError(null, 'Relation introuvable.');
     }
-    const dummy: StudentParentRelationship = {
-      id: relationshipId,
-      studentId: updates.studentId || 'stu-101',
-      parentId: updates.parentId || 'par-1',
-      relationshipType: updates.relationshipType || 'Tuteur Légal',
-      isPrimary: updates.isPrimary ?? false,
-      isPayer: updates.isPayer ?? true,
-      isEmergencyContact: updates.isEmergencyContact ?? true,
-      isFinancialEmergencyContact: true,
-      canPickUpStudent: true,
-    };
-    return createSuccess(dummy, 'Relation mise à jour.');
+    const updated = { ...rel, ...updates, updatedAt: new Date().toISOString() };
+    localRelationshipsCache.set(relationshipId, updated);
+    return createSuccess(updated, 'Relation mise à jour.');
   } catch (err) {
     return createError(err, 'Erreur de mise à jour.');
   }
