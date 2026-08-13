@@ -294,7 +294,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
     <div className="gesco-page-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', paddingBottom: '2rem' }}>
       
       {/* ── HEADER PREMIUM DASHBOARD ────────────────────────────────────────── */}
-      <div className="card shadow-sm p-4" style={{ borderRadius: '16px', background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)', border: '1px solid var(--border-color, #e2e8f0)' }}>
+      <div className="card shadow-sm p-4" style={{ borderRadius: '16px', background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -303,17 +303,17 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main, #0f172a)' }}>
+                <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>
                   Bonjour, {userName} 👋
                 </h1>
                 <span className="badge badge-neutral" style={{ fontSize: '0.75rem' }}>{roleLabel}</span>
               </div>
-              <div style={{ margin: '4px 0 2px', fontSize: '0.9375rem', fontWeight: 700, color: '#0f172a' }}>
+              <div style={{ margin: '4px 0 2px', fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-primary, #0f172a)' }}>
                 {schoolInfo?.name || 'GESCO — Complexe Scolaire d\'Excellence'}
               </div>
               <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--text-muted, #64748b)' }}>
                 <Calendar size={13} style={{ display: 'inline', marginRight: 4, marginBottom: 2 }} />
-                {dateStr} · Année scolaire active : <strong style={{ color: '#4f46e5' }}>{schoolYear}</strong>
+                {dateStr} · Année scolaire active : <strong style={{ color: '#4f46e5' }}>{schoolYear || 'Non configurée'}</strong>
               </p>
             </div>
           </div>
@@ -339,8 +339,8 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
 
               {/* Résultat Autocomplété */}
               {searchResults.length > 0 && (
-                <div style={{ position: 'absolute', top: 46, left: 0, right: 0, zIndex: 100, background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, boxShadow: 'var(--shadow-lg)', overflow: 'hidden' }}>
-                  <div style={{ padding: '8px 12px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>
+                <div style={{ position: 'absolute', top: 46, left: 0, right: 0, zIndex: 100, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, boxShadow: 'var(--shadow-lg)', overflow: 'hidden' }}>
+                  <div style={{ padding: '8px 12px', background: 'var(--bg-surface-hover)', borderBottom: '1px solid var(--border)', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>
                     Résultats ({searchResults.length})
                   </div>
                   {searchResults.map((res) => (
@@ -348,11 +348,11 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
                       key={res.id}
                       onClick={() => { clearSearch(); handleNavigate(res.targetView); }}
                       className="btn btn-ghost w-100 text-start"
-                      style={{ borderRadius: 0, padding: '10px 14px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                      style={{ borderRadius: 0, padding: '10px 14px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                     >
                       <div>
-                        <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#0f172a' }}>{res.title}</div>
-                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{res.subtitle}</div>
+                        <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)' }}>{res.title}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{res.subtitle}</div>
                       </div>
                       <span className="badge badge-info" style={{ fontSize: '0.7rem' }}>{res.category}</span>
                     </button>
@@ -366,34 +366,30 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
               <RefreshCw size={14} className={loading ? 'spin' : ''} />
             </button>
 
-
-
           </div>
         </div>
       </div>
 
-
-
       {/* ── HEADER & BADGE ANNÉE SCOLAIRE ─────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-        <h1 style={{ fontSize: '1.65rem', fontWeight: 800, color: '#1e293b', margin: 0, fontFamily: "'Outfit', sans-serif" }}>
+        <h1 style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-primary, #1e293b)', margin: 0, fontFamily: "'Outfit', sans-serif" }}>
           Dashboard
         </h1>
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          background: '#ffffff',
-          border: '1px solid #e2e8f0',
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border)',
           borderRadius: '10px',
           padding: '6px 14px',
           fontSize: '0.85rem',
           fontWeight: 600,
-          color: '#475569',
+          color: 'var(--text-secondary)',
           boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
         }}>
-          <Calendar size={16} color="#2563eb" />
-          <span>Année Scolaire <strong style={{ color: '#0f172a' }}>{schoolYear}</strong></span>
+          <Calendar size={16} color="var(--color-primary, #2563eb)" />
+          <span>Année Scolaire <strong style={{ color: 'var(--text-primary)' }}>{schoolYear || 'Non configurée'}</strong></span>
         </div>
       </div>
 
@@ -555,8 +551,8 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
       {/* ── WIDGET 2 : ACTIONS RAPIDES MÉTIERS ─────────────────────────────── */}
       {isWidgetVisible('w-quick-actions') && quickActions.length > 0 && (
         <div>
-          <h6 style={{ margin: '0 0 0.75rem 0', fontWeight: 700, fontSize: '0.875rem', color: '#334155', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Sparkles size={16} color="#4f46e5" /> Actions Rapides & Raccourcis Métiers
+          <h6 style={{ margin: '0 0 0.75rem 0', fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary, #334155)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Sparkles size={16} color="var(--color-primary, #4f46e5)" /> Actions Rapides &amp; Raccourcis Métiers
           </h6>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
             {quickActions.map((qa) => (
@@ -565,8 +561,8 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
                 onClick={() => handleNavigate(qa.targetView)}
                 className="btn btn-outline text-start p-3 card-hover"
                 style={{
-                  background: '#ffffff',
-                  border: '1px solid var(--border-color)',
+                  background: 'var(--bg-surface, #ffffff)',
+                  border: '1px solid var(--border)',
                   borderRadius: '12px',
                   display: 'flex',
                   alignItems: 'center',
@@ -576,7 +572,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
                 <div style={{ width: 36, height: 36, borderRadius: '10px', background: qa.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: qa.color, flexShrink: 0 }}>
                   {qa.icon}
                 </div>
-                <span style={{ fontWeight: 700, fontSize: '0.8125rem', color: '#0f172a' }}>
+                <span style={{ fontWeight: 700, fontSize: '0.8125rem', color: 'var(--text-primary, #0f172a)' }}>
                   {qa.label}
                 </span>
               </button>

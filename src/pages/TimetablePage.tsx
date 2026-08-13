@@ -340,31 +340,31 @@ export default function TimetablePage() {
       </div>
 
       {/* TITRE ET INFORMATIONS CONTEXTUELLES */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 12, padding: '12px 18px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--color-primary-light, rgba(37,99,235,0.15))', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Clock size={20} color="#2563eb" />
-          <h5 style={{ margin: 0, fontWeight: 700, color: '#1e3a5f', fontSize: '1rem' }}>
+          <Clock size={20} color="var(--color-primary, #2563eb)" />
+          <h5 style={{ margin: 0, fontWeight: 700, color: 'var(--text-primary, #1e3a5f)', fontSize: '1rem' }}>
             {displayMode === 'BY_CLASS'
               ? `Planning de la classe ${selectedClass?.name || ''}`
               : `Planning individuel de M./Mme ${selectedTeacher?.name || ''}`}
           </h5>
         </div>
-        <span style={{ fontSize: '0.8125rem', color: '#1d4ed8', fontWeight: 600 }}>
+        <span style={{ fontSize: '0.8125rem', color: 'var(--color-primary, #1d4ed8)', fontWeight: 600 }}>
           {slots.length} cours programmé{slots.length > 1 ? 's' : ''} cette semaine
         </span>
       </div>
 
       {/* GRILLE D'EMPLOI DU TEMPS */}
-      <div className="card" style={{ borderRadius: 14, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+      <div className="card" style={{ borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden' }}>
         <div className="table-responsive">
           <table className="table table-bordered mb-0" style={{ tableLayout: 'fixed', minWidth: 800 }}>
             <thead>
-              <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                <th style={{ width: 110, padding: '12px', textAlign: 'center', fontSize: '0.8125rem', color: '#475569', fontWeight: 700 }}>
+              <tr style={{ background: 'var(--bg-surface-hover, #f8fafc)', borderBottom: '2px solid var(--border)' }}>
+                <th style={{ width: 110, padding: '12px', textAlign: 'center', fontSize: '0.8125rem', color: 'var(--text-secondary, #475569)', fontWeight: 700 }}>
                   Horaire
                 </th>
                 {DAYS_OF_WEEK.map((day) => (
-                  <th key={day.key} style={{ padding: '12px', textAlign: 'center', fontSize: '0.875rem', color: '#1e293b', fontWeight: 700 }}>
+                  <th key={day.key} style={{ padding: '12px', textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-primary, #1e293b)', fontWeight: 700 }}>
                     {day.label}
                   </th>
                 ))}
@@ -374,7 +374,7 @@ export default function TimetablePage() {
               {STANDARD_TIME_SLOTS.map((slotTime, slotIdx) => (
                 <tr key={slotTime.id}>
                   {/* Colonne Horaire */}
-                  <td style={{ background: '#f8fafc', textAlign: 'center', verticalAlign: 'middle', padding: '8px', fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>
+                  <td style={{ background: 'var(--bg-surface-hover, #f8fafc)', textAlign: 'center', verticalAlign: 'middle', padding: '8px', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary, #64748b)', borderColor: 'var(--border)' }}>
                     {slotTime.label}
                   </td>
 

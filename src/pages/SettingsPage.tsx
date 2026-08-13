@@ -346,16 +346,16 @@ export default function SettingsPage() {
 
       {/* 1. INFORMATIONS ÉTABLISSEMENT */}
       {activeTab === 'school' && (
-        <form onSubmit={handleSaveInfo} className="card shadow-sm" style={{ borderRadius: 16, border: '1px solid #e2e8f0' }}>
-          <div className="card-header" style={{ padding: '18px 24px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>Informations Générales &amp; Identité Visuelle</h3>
+        <form onSubmit={handleSaveInfo} className="card shadow-sm" style={{ borderRadius: 16, border: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+          <div className="card-header" style={{ padding: '18px 24px', background: 'var(--bg-surface-hover)', borderBottom: '1px solid var(--border)' }}>
+            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>Informations Générales &amp; Identité Visuelle</h3>
           </div>
           <div className="card-body" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             
             {/* WIDGET UPLOAD LOGO ÉTABLISSEMENT */}
             <div style={{
-              background: '#f8fafc',
-              border: '1px dashed #cbd5e1',
+              background: 'var(--bg-surface-hover, #f8fafc)',
+              border: '1px dashed var(--border)',
               borderRadius: 14,
               padding: '20px 24px',
               display: 'flex',
@@ -369,8 +369,8 @@ export default function SettingsPage() {
                   width: 72,
                   height: 72,
                   borderRadius: 14,
-                  background: '#ffffff',
-                  border: '2px solid #e2e8f0',
+                  background: 'var(--bg-surface, #ffffff)',
+                  border: '2px solid var(--border)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -388,10 +388,10 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <h4 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 800, color: '#0f172a' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>
                     Logo Officiel de l'Établissement
                   </h4>
-                  <p style={{ margin: '3px 0 0', fontSize: '0.78125rem', color: '#64748b', maxWidth: 450 }}>
+                  <p style={{ margin: '3px 0 0', fontSize: '0.78125rem', color: 'var(--text-muted, #64748b)', maxWidth: 450 }}>
                     Ce logo apparaîtra automatiquement sur l'en-tête de vos bulletins de notes, reçus de paiement et documents imprimables officiels.
                   </p>
                 </div>

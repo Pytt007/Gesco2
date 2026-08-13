@@ -193,8 +193,8 @@ export const SessionsHubView: React.FC<SessionsHubViewProps> = ({
         className="card shadow-sm"
         style={{
           borderRadius: 16,
-          border: '1px solid #e2e8f0',
-          background: '#ffffff',
+          border: '1px solid var(--border)',
+          background: 'var(--bg-surface)',
           padding: '14px 20px',
           display: 'flex',
           justifyContent: 'space-between',
@@ -219,7 +219,7 @@ export const SessionsHubView: React.FC<SessionsHubViewProps> = ({
         </div>
 
         {/* Boutons d'onglets de filtre par statut */}
-        <div style={{ display: 'flex', gap: 6, background: '#f1f5f9', padding: 4, borderRadius: 10 }}>
+        <div style={{ display: 'flex', gap: 6, background: 'var(--bg-surface-hover, #f1f5f9)', border: '1px solid var(--border)', padding: 4, borderRadius: 10 }}>
           <button
             type="button"
             className="btn btn-sm"
@@ -230,9 +230,9 @@ export const SessionsHubView: React.FC<SessionsHubViewProps> = ({
               fontWeight: 700,
               padding: '6px 14px',
               border: 'none',
-              background: filterStatus === 'all' ? '#ffffff' : 'transparent',
-              color: filterStatus === 'all' ? '#0f172a' : '#64748b',
-              boxShadow: filterStatus === 'all' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+              background: filterStatus === 'all' ? 'var(--color-primary, #2563eb)' : 'transparent',
+              color: filterStatus === 'all' ? '#ffffff' : 'var(--text-secondary, #64748b)',
+              boxShadow: filterStatus === 'all' ? '0 2px 4px rgba(0,0,0,0.15)' : 'none',
             }}
           >
             Toutes les sessions
@@ -248,9 +248,9 @@ export const SessionsHubView: React.FC<SessionsHubViewProps> = ({
               fontWeight: 700,
               padding: '6px 14px',
               border: 'none',
-              background: filterStatus === 'open' ? '#ffffff' : 'transparent',
-              color: filterStatus === 'open' ? '#16a34a' : '#64748b',
-              boxShadow: filterStatus === 'open' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+              background: filterStatus === 'open' ? 'var(--color-success, #16a34a)' : 'transparent',
+              color: filterStatus === 'open' ? '#ffffff' : 'var(--text-secondary, #64748b)',
+              boxShadow: filterStatus === 'open' ? '0 2px 4px rgba(0,0,0,0.15)' : 'none',
             }}
           >
             🟢 Ouvertes
@@ -266,12 +266,12 @@ export const SessionsHubView: React.FC<SessionsHubViewProps> = ({
               fontWeight: 700,
               padding: '6px 14px',
               border: 'none',
-              background: filterStatus === 'locked' ? '#ffffff' : 'transparent',
-              color: filterStatus === 'locked' ? '#dc2626' : '#64748b',
-              boxShadow: filterStatus === 'locked' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+              background: filterStatus === 'locked' ? '#dc2626' : 'transparent',
+              color: filterStatus === 'locked' ? '#ffffff' : 'var(--text-secondary, #64748b)',
+              boxShadow: filterStatus === 'locked' ? '0 2px 4px rgba(0,0,0,0.15)' : 'none',
             }}
           >
-            🔴 Verrouillées
+            🔒 Verrouillées
           </button>
         </div>
       </div>

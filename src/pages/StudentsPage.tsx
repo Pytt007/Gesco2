@@ -1,4 +1,4 @@
-﻿// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // GESCO — Module Gestion des Élèves (src/pages/StudentsPage.tsx)
 // Design System SaaS Premium : Wizard 4 Étapes, Drawer Fiche Latéral & Table Unifiée
 // ─────────────────────────────────────────────────────────────────────────────
@@ -454,8 +454,8 @@ export default function StudentsPage() {
         </div>
 
         {/* PAGINATION UNIFIÉE */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', fontSize: '0.8125rem' }}>
-          <span style={{ color: '#64748b' }}>Page {page} sur {totalPages || 1} ({totalCount} élèves au total)</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--bg-surface-hover, #f8fafc)', borderTop: '1px solid var(--border)', fontSize: '0.8125rem' }}>
+          <span style={{ color: 'var(--text-secondary, #64748b)' }}>Page {page} sur {totalPages || 1} ({totalCount} élèves au total)</span>
           <div style={{ display: 'flex', gap: '6px' }}>
             <button className="btn btn-outline btn-sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
               <ChevronLeft size={14} /> Précédent
