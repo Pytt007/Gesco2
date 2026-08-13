@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Eye, EyeOff, ShieldCheck, Sparkles, User, KeyRound, ArrowRight, GraduationCap } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -25,20 +25,6 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(username.trim(), password.trim());
-    } catch (err: any) {
-      setError(err.message || 'Identifiant ou mot de passe incorrect.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleQuickLogin = async (user: string, pass: string) => {
-    setUsername(user);
-    setPassword(pass);
-    setError('');
-    setLoading(true);
-    try {
-      await login(user, pass);
     } catch (err: any) {
       setError(err.message || 'Identifiant ou mot de passe incorrect.');
     } finally {
@@ -238,68 +224,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          {/* BOUTONS D'ACCÈS RAPIDE DÉMO */}
-          <div style={{ marginTop: '1.75rem', paddingTop: '1.25rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600, display: 'block', marginBottom: '10px', textAlign: 'center' }}>
-              ⚡ ACCÈS RAPIDE DÉMO PAR RÔLE
-            </span>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('admin', 'admin123')}
-                style={{
-                  padding: '8px',
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '10px',
-                  color: '#ffffff',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                }}
-              >
-                👔 Direction
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('compta', 'compta123')}
-                style={{
-                  padding: '8px',
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '10px',
-                  color: '#ffffff',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                }}
-              >
-                💰 Finance
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('prof_cp1', 'prof123')}
-                style={{
-                  padding: '8px',
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '10px',
-                  color: '#ffffff',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                }}
-              >
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
-                  <GraduationCap size={14} /> Enseignant
-                </span>
-              </button>
-            </div>
-          </div>
 
         </div>
       </div>
