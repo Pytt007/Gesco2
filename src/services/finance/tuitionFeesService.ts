@@ -3,6 +3,7 @@ import { ServiceResponse } from '../academic/academicYearsService';
 import { supabase } from '../common/supabaseClient';
 
 const levelNamesMap: Record<TuitionLevelCode, string> = {
+  GARDERIE: 'Garderie',
   PS: 'Petite Section (PS)',
   MS: 'Moyenne Section (MS)',
   GS: 'Grande Section (GS)',
@@ -14,7 +15,7 @@ const levelNamesMap: Record<TuitionLevelCode, string> = {
   CM2: 'Cours Moyen 2 (CM2)',
 };
 
-const defaultLevelOrder: TuitionLevelCode[] = ['PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
+const defaultLevelOrder: TuitionLevelCode[] = ['GARDERIE', 'PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
 
 const localFeeSchedulesStore: Map<string, TuitionFeeSchedule> = new Map();
 
@@ -71,36 +72,7 @@ export const tuitionFeesService = {
       .filter((s) => s.academicYearId === academicYearId && s.status === 'ACTIVE')
       .sort((a, b) => defaultLevelOrder.indexOf(a.levelCode) - defaultLevelOrder.indexOf(b.levelCode));
 
-    if (localList.length > 0) {
-      return localList;
-    }
-
-    // Default schedules if empty for initial setup
-    const defaults = defaultLevelOrder.map((code) => {
-      const isPrimary = ['CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'].includes(code);
-      const reg = isPrimary ? 50000 : 40000;
-      const tui = isPrimary ? 250000 : 200000;
-      const schedule: TuitionFeeSchedule = {
-        id: `fee-${academicYearId}-${code.toLowerCase()}`,
-        academicYearId,
-        levelCode: code,
-        levelName: levelNamesMap[code],
-        registrationFee: reg,
-        tuitionFee: tui,
-        totalAnnualFee: reg + tui,
-        allowFixedDiscount: true,
-        allowPercentDiscount: true,
-        maxDiscountPercent: 30,
-        status: 'ACTIVE',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      localFeeSchedulesStore.set(schedule.id, schedule);
-      return schedule;
-    });
-
-    await persistFeeSchedulesToSupabase();
-    return defaults;
+    return localList;
   },
 
   /**

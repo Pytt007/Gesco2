@@ -2,7 +2,7 @@
  * Types pour le module de Gestion Financière et Scolarité GESCO
  */
 
-export type TuitionLevelCode = 'PS' | 'MS' | 'GS' | 'CP1' | 'CP2' | 'CE1' | 'CE2' | 'CM1' | 'CM2';
+export type TuitionLevelCode = 'GARDERIE' | 'PS' | 'MS' | 'GS' | 'CP1' | 'CP2' | 'CE1' | 'CE2' | 'CM1' | 'CM2';
 
 export interface TuitionFeeSchedule {
   id: string;

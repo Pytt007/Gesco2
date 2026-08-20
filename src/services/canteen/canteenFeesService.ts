@@ -7,6 +7,7 @@ import { ServiceResponse } from '../academic/academicYearsService';
 import { supabase } from '../common/supabaseClient';
 
 const levelNamesMap: Record<CanteenLevelCode, string> = {
+  GARDERIE: 'Garderie',
   PS: 'Petite Section (PS)',
   MS: 'Moyenne Section (MS)',
   GS: 'Grande Section (GS)',
@@ -18,7 +19,7 @@ const levelNamesMap: Record<CanteenLevelCode, string> = {
   CM2: 'Cours Moyen 2 (CM2)',
 };
 
-const defaultLevelOrder: CanteenLevelCode[] = ['PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
+const defaultLevelOrder: CanteenLevelCode[] = ['GARDERIE', 'PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
 
 // Stockage local mémoire et synchro Supabase
 const localCanteenSchedulesStore: Map<string, CanteenFeeSchedule> = new Map();

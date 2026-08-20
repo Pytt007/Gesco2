@@ -5,9 +5,10 @@ import { CanteenFeeSchedule, CanteenLevelCode } from '../../services/canteen/typ
 import { Plus, Copy, Edit2, Archive, Calendar, AlertCircle, CheckCircle2, UtensilsCrossed, BarChart3 } from 'lucide-react';
 import { useAcademicYears } from '../../hooks/academic';
 
-const LEVEL_ORDER: CanteenLevelCode[] = ['PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
+const LEVEL_ORDER: CanteenLevelCode[] = ['GARDERIE', 'PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
 
 const LEVEL_NAMES: Record<CanteenLevelCode, string> = {
+  GARDERIE: 'Garderie',
   PS: 'Petite Section (PS)', MS: 'Moyenne Section (MS)', GS: 'Grande Section (GS)',
   CP1: 'CP1', CP2: 'CP2', CE1: 'CE1', CE2: 'CE2', CM1: 'CM1', CM2: 'CM2',
 };
@@ -21,7 +22,7 @@ interface CanteenFeeModalProps {
 }
 
 const CanteenFeeModal: React.FC<CanteenFeeModalProps> = ({ isOpen, onClose, onSave, initialData, existingLevels }) => {
-  const [levelCode, setLevelCode] = useState<CanteenLevelCode>(initialData?.levelCode || 'CP1');
+  const [levelCode, setLevelCode] = useState<CanteenLevelCode>(initialData?.levelCode || 'GARDERIE');
   const [annualRate, setAnnualRate] = useState<string>(initialData ? String(initialData.annualRate) : '');
   const [periodsCount, setPeriodsCount] = useState<number>(initialData?.periodsCount || 3);
   const [saving, setSaving] = useState(false);
@@ -29,7 +30,8 @@ const CanteenFeeModal: React.FC<CanteenFeeModalProps> = ({ isOpen, onClose, onSa
 
   React.useEffect(() => {
     if (isOpen) {
-      setLevelCode(initialData?.levelCode || 'CP1');
+      const defaultLvl = initialData?.levelCode || availableLevels[0] || 'GARDERIE';
+      setLevelCode(defaultLvl);
       setAnnualRate(initialData ? String(initialData.annualRate) : '');
       setPeriodsCount(initialData?.periodsCount || 3);
       setError(null);

@@ -18,6 +18,7 @@ interface TuitionFeeModalProps {
 }
 
 const levelOptions: { code: TuitionLevelCode; label: string }[] = [
+  { code: 'GARDERIE', label: 'Garderie' },
   { code: 'PS', label: 'PS - Petite Section' },
   { code: 'MS', label: 'MS - Moyenne Section' },
   { code: 'GS', label: 'GS - Grande Section' },
@@ -36,9 +37,9 @@ export const TuitionFeeModal: React.FC<TuitionFeeModalProps> = ({
   initialData,
   existingLevels = [],
 }) => {
-  const [levelCode, setLevelCode] = useState<TuitionLevelCode>('CP1');
-  const [registrationFee, setRegistrationFee] = useState<string>('60000');
-  const [tuitionFee, setTuitionFee] = useState<string>('300000');
+  const [levelCode, setLevelCode] = useState<TuitionLevelCode>('GARDERIE');
+  const [registrationFee, setRegistrationFee] = useState<string>('');
+  const [tuitionFee, setTuitionFee] = useState<string>('');
   const [allowFixedDiscount, setAllowFixedDiscount] = useState<boolean>(true);
   const [allowPercentDiscount, setAllowPercentDiscount] = useState<boolean>(true);
   const [maxDiscountPercent, setMaxDiscountPercent] = useState<string>('30');
@@ -54,9 +55,10 @@ export const TuitionFeeModal: React.FC<TuitionFeeModalProps> = ({
       setAllowPercentDiscount(initialData.allowPercentDiscount);
       setMaxDiscountPercent((initialData.maxDiscountPercent || 30).toString());
     } else {
-      setLevelCode('CP1');
-      setRegistrationFee('60000');
-      setTuitionFee('300000');
+      const availableLevel = levelOptions.find((l) => !existingLevels.includes(l.code))?.code || 'GARDERIE';
+      setLevelCode(availableLevel);
+      setRegistrationFee('');
+      setTuitionFee('');
       setAllowFixedDiscount(true);
       setAllowPercentDiscount(true);
       setMaxDiscountPercent('30');

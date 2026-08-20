@@ -2,7 +2,7 @@
  * Types pour le module Cantine GESCO
  */
 
-export type CanteenLevelCode = 'PS' | 'MS' | 'GS' | 'CP1' | 'CP2' | 'CE1' | 'CE2' | 'CM1' | 'CM2';
+export type CanteenLevelCode = 'GARDERIE' | 'PS' | 'MS' | 'GS' | 'CP1' | 'CP2' | 'CE1' | 'CE2' | 'CM1' | 'CM2';
 
 export type CanteenDiscountType = 'NONE' | 'FIXED' | 'PERCENTAGE';
 

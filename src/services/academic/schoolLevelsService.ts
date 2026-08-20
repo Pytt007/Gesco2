@@ -65,6 +65,7 @@ export async function getLevels(): Promise<ServiceResponse<SchoolLevel[]>> {
     }
 
     const defaultLevels: SchoolLevel[] = [
+      { id: 'lvl-garderie', cycleId: 'cyc-1', code: 'GARDERIE', name: 'Garderie', shortName: 'Garderie', sortOrder: 0, isActive: true },
       { id: 'lvl-ps', cycleId: 'cyc-1', code: 'PS', name: 'Petite Section', shortName: 'PS', sortOrder: 1, isActive: true },
       { id: 'lvl-ms', cycleId: 'cyc-1', code: 'MS', name: 'Moyenne Section', shortName: 'MS', sortOrder: 2, isActive: true },
       { id: 'lvl-gs', cycleId: 'cyc-1', code: 'GS', name: 'Grande Section', shortName: 'GS', sortOrder: 3, isActive: true },
