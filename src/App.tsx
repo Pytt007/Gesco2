@@ -169,6 +169,18 @@ function AppContent() {
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('gesco-theme') === 'dark';
   });
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    return localStorage.getItem('gesco_sidebar_collapsed') === 'true';
+  });
+  const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState<boolean>(false);
+
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('gesco_sidebar_collapsed', String(next));
+      return next;
+    });
+  };
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
@@ -297,19 +309,6 @@ function AppContent() {
 
       default:                 return <DashboardPage onNavigate={setCurrentView} />;
     }
-  };
-
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
-    return localStorage.getItem('gesco_sidebar_collapsed') === 'true';
-  });
-  const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState<boolean>(false);
-
-  const toggleSidebarCollapse = () => {
-    setIsSidebarCollapsed((prev) => {
-      const next = !prev;
-      localStorage.setItem('gesco_sidebar_collapsed', String(next));
-      return next;
-    });
   };
 
   return (
