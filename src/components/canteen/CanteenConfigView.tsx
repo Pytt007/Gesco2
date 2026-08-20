@@ -319,9 +319,6 @@ export const CanteenConfigView: React.FC = () => {
                 schedules.map((s) => (
                   <tr key={s.id}>
                     <td style={{ padding: '13px 16px' }}>
-                      <span className="badge bg-light text-dark fw-bold me-2" style={{ padding: '5px 9px', borderRadius: 6, border: '1px solid #cbd5e1' }}>
-                        {s.levelCode}
-                      </span>
                       <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1e293b' }}>{s.levelName}</span>
                     </td>
                     <td style={{ padding: '13px 16px', textAlign: 'right', fontSize: '0.875rem', fontWeight: 500 }}>

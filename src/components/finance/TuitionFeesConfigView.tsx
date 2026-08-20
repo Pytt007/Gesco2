@@ -209,9 +209,6 @@ export const TuitionFeesConfigView: React.FC = () => {
                 schedules.map((sch) => (
                   <tr key={sch.id}>
                     <td style={{ padding: '14px 16px' }}>
-                      <span className="badge bg-light text-dark fw-bold me-2" style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                        {sch.levelCode}
-                      </span>
                       <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1e293b' }}>
                         {sch.levelName}
                       </span>
