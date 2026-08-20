@@ -12,7 +12,7 @@ import {
   Bus, ClipboardList, TrendingDown, FileBarChart, BarChart2, History,
   Settings, BookOpen, LogOut, Calendar, ChevronDown, ChevronRight,
   Star, Command, PanelLeftClose, PanelLeft, DollarSign, Building2,
-  BarChart3, ClipboardCheck, BookMarked, ShieldCheck, Wallet, FileText,
+  BarChart3, ClipboardCheck, BookMarked, ShieldCheck, Wallet, FileText, X,
 } from 'lucide-react';
 import { ROLE_LABELS } from '../../constants/permissions';
 import { useSettings } from '../../hooks/useSettings';
@@ -81,17 +81,41 @@ interface SidebarProps {
   currentView: string;
   onNavigate: (view: string) => void;
   onOpenCommandPalette?: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
+  isMobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
-export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette }: SidebarProps) {
+export default function Sidebar({
+  currentView,
+  onNavigate,
+  onOpenCommandPalette,
+  isCollapsed: controlledIsCollapsed,
+  onToggleCollapse,
+  isMobileOpen = false,
+  onCloseMobile,
+}: SidebarProps) {
   const { currentUser, logout, canAccess } = useAuth();
   const { schoolYear } = useSchoolYear();
   const { schoolInfo } = useSettings();
 
-  // État repli Sidebar
-  const [isCollapsed, setIsCollapsed] = useState(() => {
+  // État repli Sidebar (interne ou contrôlé)
+  const [internalCollapsed, setInternalCollapsed] = useState(() => {
     return localStorage.getItem('gesco_sidebar_collapsed') === 'true';
   });
+
+  const isCollapsed = controlledIsCollapsed !== undefined ? controlledIsCollapsed : internalCollapsed;
+
+  const toggleCollapse = () => {
+    if (onToggleCollapse) {
+      onToggleCollapse();
+    } else {
+      const next = !internalCollapsed;
+      setInternalCollapsed(next);
+      localStorage.setItem('gesco_sidebar_collapsed', String(next));
+    }
+  };
 
   // État groupes repliables
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(() => {
@@ -107,12 +131,6 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
       return saved ? JSON.parse(saved) : ['STUDENTS', 'FINANCE_PAYMENTS', 'NOTES'];
     } catch { return ['STUDENTS', 'FINANCE_PAYMENTS', 'NOTES']; }
   });
-
-  const toggleCollapse = () => {
-    const next = !isCollapsed;
-    setIsCollapsed(next);
-    localStorage.setItem('gesco_sidebar_collapsed', String(next));
-  };
 
   const toggleGroup = (key: string) => {
     setCollapsedGroups((prev) => {
@@ -131,62 +149,80 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
     });
   };
 
+  const handleNavClick = (viewId: string) => {
+    onNavigate(viewId);
+    if (onCloseMobile) onCloseMobile();
+  };
+
   const visibleItems = ALL_NAV_ITEMS.filter((item) => canAccess(item.id));
   const pinnedItems = visibleItems.filter((item) => pinnedViews.includes(item.id));
 
   return (
-    <nav
-      className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}
-      aria-label="Navigation principale"
-      style={{
-        width: isCollapsed ? '72px' : '256px',
-        transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100vh',
-        overflow: 'hidden',
-      }}
-    >
-      {/* ── BANDEAU SUPÉRIEUR (LOGO & PROFIL) ─────────────────────────────── */}
-      <div style={{
-        background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)',
-        color: '#ffffff',
-        padding: isCollapsed ? '1rem 0.5rem' : '1.25rem 1.25rem 1rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.875rem',
-        boxShadow: '0 4px 14px rgba(29, 78, 216, 0.3)',
-        flexShrink: 0,
-      }}>
-        {/* Ligne 1: Logo & Toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: isCollapsed ? 'center' : 'space-between' }}>
-          <img
-            src={schoolInfo?.logoUrl || '/gesco_logo.png'}
-            alt={schoolInfo?.name || 'GESCO ERP'}
-            style={{ width: 38, height: 38, borderRadius: '10px', objectFit: 'contain', background: '#ffffff', padding: '2px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', flexShrink: 0 }}
-          />
+    <>
+      {/* Backdrop sombre sur mobile */}
+      {isMobileOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={onCloseMobile}
+          aria-hidden="true"
+        />
+      )}
 
-          {!isCollapsed && (
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={toggleCollapse}
-              title="Réduire"
-              style={{ color: '#ffffff', padding: '5px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px' }}
-            >
-              <PanelLeftClose size={16} />
-            </button>
-          )}
-          {isCollapsed && (
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={toggleCollapse}
-              title="Déplier"
-              style={{ color: '#ffffff', padding: '5px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px', marginTop: 8 }}
-            >
-              <PanelLeft size={16} />
-            </button>
-          )}
-        </div>
+      <nav
+        className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}
+        aria-label="Navigation principale"
+      >
+        {/* ── BANDEAU SUPÉRIEUR (LOGO & PROFIL) ─────────────────────────────── */}
+        <div style={{
+          background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)',
+          color: '#ffffff',
+          padding: isCollapsed ? '1rem 0.5rem' : '1.25rem 1.25rem 1rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.875rem',
+          boxShadow: '0 4px 14px rgba(29, 78, 216, 0.3)',
+          flexShrink: 0,
+        }}>
+          {/* Ligne 1: Logo & Toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: isCollapsed ? 'center' : 'space-between' }}>
+            <img
+              src={schoolInfo?.logoUrl || '/gesco_logo.png'}
+              alt={schoolInfo?.name || 'GESCO ERP'}
+              style={{ width: 38, height: 38, borderRadius: '10px', objectFit: 'contain', background: '#ffffff', padding: '2px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', flexShrink: 0 }}
+            />
+
+            {/* Bouton fermer sur mobile */}
+            {isMobileOpen && (
+              <button
+                className="btn btn-ghost btn-sm mobile-close-btn"
+                onClick={onCloseMobile}
+                style={{ color: '#ffffff', padding: '5px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px' }}
+              >
+                <X size={18} />
+              </button>
+            )}
+
+            {!isCollapsed && !isMobileOpen && (
+              <button
+                className="btn btn-ghost btn-sm desktop-toggle-btn"
+                onClick={toggleCollapse}
+                title="Réduire"
+                style={{ color: '#ffffff', padding: '5px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px' }}
+              >
+                <PanelLeftClose size={16} />
+              </button>
+            )}
+            {isCollapsed && !isMobileOpen && (
+              <button
+                className="btn btn-ghost btn-sm desktop-toggle-btn"
+                onClick={toggleCollapse}
+                title="Déplier"
+                style={{ color: '#ffffff', padding: '5px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px' }}
+              >
+                <PanelLeft size={16} />
+              </button>
+            )}
+          </div>
 
         {/* Nom établissement */}
         {!isCollapsed && (
@@ -249,7 +285,7 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
         {canAccess('DASHBOARD') && (
           <button
             className={`sidebar-item${currentView === 'DASHBOARD' ? ' active' : ''}`}
-            onClick={() => onNavigate('DASHBOARD')}
+            onClick={() => handleNavClick('DASHBOARD')}
             style={{ margin: '0.25rem 0.625rem', borderRadius: '8px' }}
             title={isCollapsed ? 'Tableau de bord' : undefined}
           >
@@ -271,7 +307,7 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
               <button
                 key={`pin-${item.id}`}
                 className={`sidebar-item${currentView === item.id ? ' active' : ''}`}
-                onClick={() => onNavigate(item.id)}
+                onClick={() => handleNavClick(item.id)}
                 style={{ margin: '0.0625rem 0.625rem', borderRadius: '8px', justifyContent: 'space-between' }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -325,7 +361,7 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
                   <button
                     key={item.id}
                     className={`sidebar-item${currentView === item.id ? ' active' : ''}`}
-                    onClick={() => onNavigate(item.id)}
+                    onClick={() => handleNavClick(item.id)}
                     style={{ margin: '0.0625rem 0.625rem', borderRadius: '8px', justifyContent: 'space-between' }}
                     title={isCollapsed ? item.label : undefined}
                   >
@@ -363,7 +399,7 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
         <div className="sidebar-footer" style={{ padding: '0.75rem 0.5rem', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
           <div
             className="sidebar-user"
-            onClick={() => onNavigate('SETTINGS')}
+            onClick={() => handleNavClick('SETTINGS')}
             title={isCollapsed ? 'Paramètres' : 'Paramètres du compte'}
             style={{ padding: '0.5rem', borderRadius: '8px', cursor: 'pointer' }}
           >
@@ -392,10 +428,9 @@ export default function Sidebar({ currentView, onNavigate, onOpenCommandPalette 
             <LogOut size={15} style={{ flexShrink: 0, color: '#fca5a5' }} />
             {!isCollapsed && <span style={{ color: '#fca5a5', fontSize: '0.8125rem' }}>Déconnexion</span>}
           </button>
-
-
         </div>
       )}
     </nav>
+    </>
   );
 }

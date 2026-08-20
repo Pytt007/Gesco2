@@ -16,61 +16,51 @@ export function clearCanteenEnrollmentsStore() {
   localCanteenEnrollmentsStore.clear();
 }
 
+async function syncEnrollmentsFromSupabase(): Promise<CanteenEnrollment[]> {
+  try {
+    const { data: settingsRow } = await supabase
+      .from('school_settings')
+      .select('data')
+      .eq('id', 'canteen_enrollments_data')
+      .maybeSingle();
+
+    if (settingsRow?.data && Array.isArray(settingsRow.data)) {
+      localCanteenEnrollmentsStore.clear();
+      for (const item of settingsRow.data) {
+        localCanteenEnrollmentsStore.set(item.id, item);
+      }
+      return settingsRow.data;
+    }
+  } catch (err) {
+    console.warn('[canteenEnrollmentService] Supabase sync error:', err);
+  }
+  return Array.from(localCanteenEnrollmentsStore.values());
+}
+
+async function persistEnrollmentsToSupabase() {
+  try {
+    const list = Array.from(localCanteenEnrollmentsStore.values());
+    await supabase
+      .from('school_settings')
+      .upsert({
+        id: 'canteen_enrollments_data',
+        data: list,
+        updated_at: new Date().toISOString(),
+      });
+  } catch (err) {
+    console.warn('[canteenEnrollmentService] Supabase persist error:', err);
+  }
+}
+
 export const canteenEnrollmentService = {
   /**
    * Récupère toutes les inscriptions cantine pour une année scolaire
    */
   async getEnrollmentsByYear(academicYearId: string = 'ay-2026'): Promise<CanteenEnrollment[]> {
-
-    try {
-      if (supabase) {
-        const { data, error } = await supabase
-          .from('canteen_enrollments')
-          .select('*, canteen_periods(*)')
-          .eq('academic_year_id', academicYearId);
-
-        if (!error && data && data.length > 0) {
-          return data.map((d: any) => ({
-            id: d.id,
-            studentId: d.student_id,
-            studentName: d.student_name,
-            matricule: d.matricule,
-            photoUrl: d.photo_url,
-            className: d.class_name,
-            levelCode: d.level_code as CanteenLevelCode,
-            parentSponsor: d.parent_sponsor,
-            parentPhone: d.parent_phone,
-            academicYearId: d.academic_year_id,
-            annualRate: Number(d.annual_rate || 0),
-            periodsCount: Number(d.periods_count || 3),
-            discountType: d.discount_type as CanteenDiscountType,
-            discountValue: Number(d.discount_value || 0),
-            discountAmount: Number(d.discount_amount || 0),
-            netAmountDue: Number(d.net_amount_due || 0),
-            totalPaid: Number(d.total_paid || 0),
-            remainingBalance: Number(d.remaining_balance || 0),
-            periods: Array.isArray(d.canteen_periods)
-              ? d.canteen_periods.map((p: any) => ({
-                  number: p.period_number,
-                  label: p.period_label || `Période ${p.period_number}`,
-                  amountDue: Number(p.amount_due || 0),
-                  amountPaid: Number(p.amount_paid || 0),
-                  status: p.status || 'PENDING',
-                  dueDate: p.due_date,
-                }))
-              : [],
-            subscriptionStatus: d.subscription_status as CanteenSubscriptionStatus,
-            createdAt: d.created_at,
-            updatedAt: d.updated_at,
-          }));
-        }
-      }
-    } catch {
-      // Fallback local
-    }
+    await syncEnrollmentsFromSupabase();
 
     return Array.from(localCanteenEnrollmentsStore.values()).filter(
-      (e) => e.academicYearId === academicYearId
+      (e) => !academicYearId || e.academicYearId === academicYearId
     );
   },
 
@@ -92,6 +82,8 @@ export const canteenEnrollmentService = {
     if (!input.studentId || !input.academicYearId) {
       return { success: false, error: 'Élève et année scolaire requis.' };
     }
+
+    await syncEnrollmentsFromSupabase();
 
     // Empêcher double inscription
     const existing = await this.getEnrollmentByStudent(input.studentId, input.academicYearId);
@@ -154,13 +146,16 @@ export const canteenEnrollmentService = {
     };
 
     localCanteenEnrollmentsStore.set(id, record);
+    await persistEnrollmentsToSupabase();
+
     return { success: true, data: record, message: 'Inscription cantine enregistrée avec succès.' };
   },
 
   /**
    * Met à jour le solde après un paiement
    */
-  applyPayment(enrollmentId: string, amount: number, periodNumber?: number): boolean {
+  async applyPayment(enrollmentId: string, amount: number, periodNumber?: number): Promise<boolean> {
+    await syncEnrollmentsFromSupabase();
     const enrollment = localCanteenEnrollmentsStore.get(enrollmentId);
     if (!enrollment) return false;
 
@@ -191,6 +186,7 @@ export const canteenEnrollmentService = {
 
     enrollment.updatedAt = new Date().toISOString();
     localCanteenEnrollmentsStore.set(enrollmentId, enrollment);
+    await persistEnrollmentsToSupabase();
     return true;
   },
 

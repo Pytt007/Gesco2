@@ -24,6 +24,7 @@ import {
   Filter, SlidersHorizontal, AlertCircle, Edit2, RotateCcw, Trash2,
   Users, AlertTriangle, CreditCard
 } from 'lucide-react';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { GRADES } from '../constants/config';
 
 const STATUS_BADGE: Record<string, React.ReactNode> = {
@@ -67,6 +68,12 @@ export default function StudentsPage() {
     setPage,
     refresh
   } = useStudents({ schoolYear });
+
+  // Synchronisation temps réel automatique
+  useRealtimeSync({
+    tables: ['students', 'school_settings'],
+    onDataChange: () => refresh(),
+  });
 
   const [gradeFilter, setGradeFilter] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -301,9 +308,9 @@ export default function StudentsPage() {
       {/* ── BARRE D'ACTIONS & FILTRES UNIFIÉE ─────────────────────────────── */}
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
           
-          <div style={{ display: 'flex', gap: '10px', flex: 1, minWidth: 260 }}>
+          <div style={{ display: 'flex', gap: '10px', flex: 1, flexWrap: 'wrap', minWidth: 'min(100%, 280px)' }}>
             {/* Recherche Ultra-Moderne */}
-            <div className="search-bar-wrapper" style={{ flex: 1 }}>
+            <div className="search-bar-wrapper" style={{ flex: 1, minWidth: 'min(100%, 220px)' }}>
               <Search size={16} className="search-bar-icon" />
               <input
                 type="text"
@@ -322,7 +329,7 @@ export default function StudentsPage() {
             {/* Filtre Classe */}
             <select
               className="form-select"
-              style={{ minWidth: 160, height: 38, borderRadius: 10, fontSize: '0.875rem' }}
+              style={{ minWidth: 140, flex: '1 1 140px', height: 38, borderRadius: 10, fontSize: '0.875rem' }}
               value={gradeFilter}
               onChange={(e) => setGradeFilter(e.target.value)}
             >
@@ -335,7 +342,7 @@ export default function StudentsPage() {
             {/* Filtre Statut */}
             <select
               className="form-select"
-              style={{ minWidth: 150, height: 38, borderRadius: 10, fontSize: '0.875rem' }}
+              style={{ minWidth: 130, flex: '1 1 130px', height: 38, borderRadius: 10, fontSize: '0.875rem' }}
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
@@ -346,7 +353,7 @@ export default function StudentsPage() {
             </select>
           </div>
 
-          <button className="btn btn-outline btn-sm" onClick={refresh} title="Actualiser" disabled={loading}>
+          <button className="btn btn-outline btn-sm" onClick={refresh} title="Actualiser" disabled={loading} style={{ whiteSpace: 'nowrap' }}>
             <RefreshCw size={14} className={loading ? 'spin' : ''} /> Actualiser
           </button>
       </div>

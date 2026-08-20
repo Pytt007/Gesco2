@@ -178,7 +178,7 @@ export default function AttendancePage() {
       </div>
 
       {/* ── ONGLETS NATIONAUX DE NAVIGATION ─────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: '8px', borderBottom: '2px solid #e2e8f0', paddingBottom: '8px' }}>
+      <div className="tab-pills-bar" style={{ display: 'flex', gap: '8px', borderBottom: '2px solid #e2e8f0', paddingBottom: '8px', overflowX: 'auto' }}>
         <button
           className={`btn btn-sm ${activeTab === 'APPEL' ? 'btn-primary' : 'btn-outline-secondary'}`}
           onClick={() => setActiveTab('APPEL')}

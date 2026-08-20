@@ -1,13 +1,8 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// GESCO — Header Header & Breadcrumb (src/components/layout/Header.tsx)
-// Fil d'Ariane dynamique, Sélecteur d'Année, Raccourci Command Palette & Mode Sombre
-// ─────────────────────────────────────────────────────────────────────────────
-
-import React, { useState } from 'react';
+import React from 'react';
 import { useSchoolYear } from '../../context/SchoolYearContext';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../hooks/useSettings';
-import { CalendarRange, Moon, Sun, ChevronDown, ChevronRight, Search, Command, Sparkles, ShieldCheck, Building2 } from 'lucide-react';
+import { Menu, Moon, Sun, ChevronRight, Search, ShieldCheck } from 'lucide-react';
 import { VIEW_LABELS } from '../../constants/routes';
 
 interface HeaderProps {
@@ -15,6 +10,7 @@ interface HeaderProps {
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
   onOpenCommandPalette?: () => void;
+  onToggleMobileMenu?: () => void;
 }
 
 // Mappage du Groupe Métier pour le Fil d'Ariane
@@ -56,7 +52,13 @@ const BREADCRUMB_GROUPS: Record<string, string> = {
   DEV_PORTAL:         '⚡ Dev',
 };
 
-export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOpenCommandPalette }: HeaderProps) {
+export default function Header({
+  currentView,
+  isDarkMode,
+  onToggleDarkMode,
+  onOpenCommandPalette,
+  onToggleMobileMenu,
+}: HeaderProps) {
   const { schoolYear } = useSchoolYear();
   const { currentUser } = useAuth();
   const { schoolInfo } = useSettings();
@@ -66,36 +68,49 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOp
   const schoolName = schoolInfo?.name || 'Établissement GESCO';
 
   return (
-    <header className="header" style={{ padding: '0.875rem 2rem', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
+    <header className="header">
       
-      {/* ── FIL D'ARIANE (BREADCRUMB DATAVIZ) ────────────────────────────────── */}
-      <div>
-        <nav aria-label="Fil d'ariane" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78125rem', color: 'var(--text-muted)' }}>
-          <span style={{ fontWeight: 700, color: '#1d4ed8' }}>
-            {schoolName}
-          </span>
-          <ChevronRight size={12} />
-          <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{groupLabel}</span>
-          <ChevronRight size={12} />
-          <span style={{ fontWeight: 700, color: '#2563eb' }}>{pageTitle}</span>
-        </nav>
-        <h1 className="header-title" style={{ fontSize: '1.25rem', fontWeight: 800, margin: '2px 0 0', color: 'var(--text-primary, #0f172a)' }}>
-          {pageTitle}
-        </h1>
+      {/* ── GAUCHE: BOUTON MENU MOBILE + FIL D'ARIANE ──────────────────────── */}
+      <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+        {onToggleMobileMenu && (
+          <button
+            className="btn btn-ghost btn-sm mobile-menu-toggle"
+            onClick={onToggleMobileMenu}
+            aria-label="Ouvrir le menu"
+            style={{ padding: '7px', borderRadius: '10px' }}
+          >
+            <Menu size={20} />
+          </button>
+        )}
+
+        <div style={{ minWidth: 0 }}>
+          <nav aria-label="Fil d'ariane" className="header-breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78125rem', color: 'var(--text-muted)' }}>
+            <span className="breadcrumb-school-name" style={{ fontWeight: 700, color: '#1d4ed8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {schoolName}
+            </span>
+            <ChevronRight size={12} style={{ flexShrink: 0 }} />
+            <span style={{ fontWeight: 600, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{groupLabel}</span>
+            <ChevronRight size={12} style={{ flexShrink: 0 }} />
+            <span style={{ fontWeight: 700, color: '#2563eb', whiteSpace: 'nowrap' }}>{pageTitle}</span>
+          </nav>
+          <h1 className="header-title" style={{ fontSize: '1.25rem', fontWeight: 800, margin: '2px 0 0', color: 'var(--text-primary, #0f172a)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {pageTitle}
+          </h1>
+        </div>
       </div>
 
-      {/* ── ACTIONS DROITE (RECHERCHE CTRL+K, ANNÉE, ENTERPRISE BADGE, THEME) ── */}
-      <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      {/* ── DROITE: ACTIONS (RECHERCHE CTRL+K, ANNÉE, ENTERPRISE, THEME) ────── */}
+      <div className="header-actions">
         
         {/* Badge Enterprise Dataviz */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'var(--color-primary-light, #eff6ff)', border: '1px solid var(--border)', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-primary, #2563eb)' }}>
+        <div className="header-badge-enterprise" style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'var(--color-primary-light, #eff6ff)', border: '1px solid var(--border)', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-primary, #2563eb)' }}>
           <ShieldCheck size={14} color="var(--color-primary, #2563eb)" /> Enterprise Edition
         </div>
 
         {/* Raccourci Command Palette (CTRL + K) */}
         <button
           onClick={onOpenCommandPalette}
-          className="btn btn-ghost btn-sm"
+          className="btn btn-ghost btn-sm header-search-btn"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -111,22 +126,23 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOp
           title="Rechercher partout (CTRL + K)"
         >
           <Search size={14} color="var(--color-primary, #2563eb)" />
-          <span>Recherche...</span>
-          <span style={{ fontSize: '0.65rem', background: 'var(--border)', padding: '1px 6px', borderRadius: '4px', fontWeight: 700, color: 'var(--text-muted)' }}>
+          <span className="search-btn-text">Recherche...</span>
+          <span className="search-btn-shortcut" style={{ fontSize: '0.65rem', background: 'var(--border)', padding: '1px 6px', borderRadius: '4px', fontWeight: 700, color: 'var(--text-muted)' }}>
             ⌘K
           </span>
         </button>
 
         {/* Badge Année Scolaire Active (Lecture seule) */}
         <div
+          className="header-badge-year"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '6px',
             background: schoolYear ? 'var(--color-success-light, #ecfdf5)' : 'var(--bg-surface-hover, #f8fafc)',
-            border: schoolYear ? '1px solid var(--border)' : '1px solid var(--border)',
+            border: '1px solid var(--border)',
             borderRadius: '20px',
-            padding: '6px 14px',
+            padding: '5px 12px',
             fontSize: '0.8125rem',
             fontWeight: 500,
             color: schoolYear ? 'var(--color-success, #047857)' : 'var(--text-muted, #64748b)',
@@ -135,8 +151,8 @@ export default function Header({ currentView, isDarkMode, onToggleDarkMode, onOp
           title="Année scolaire active unique configurée dans Paramètres"
         >
           <span style={{ fontSize: '0.75rem' }}>{schoolYear ? '🟢' : '⚪'}</span>
-          <span>Année scolaire active :</span>
-          <span style={{ fontWeight: 500, color: schoolYear ? 'var(--color-success, #065f46)' : 'var(--text-muted, #94a3b8)' }}>
+          <span className="badge-year-prefix">Année :</span>
+          <span style={{ fontWeight: 700, color: schoolYear ? 'var(--color-success, #065f46)' : 'var(--text-muted, #94a3b8)' }}>
             {schoolYear || 'Non configurée'}
           </span>
         </div>

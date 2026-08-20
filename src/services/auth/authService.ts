@@ -238,7 +238,8 @@ function saveLocalUserAccounts(accounts: UserAccount[]): void {
   } catch {}
 }
 
-export async function fetchUserAccounts(): Promise<UserAccount[]> {
+// Synchronisation robuste des comptes utilisateurs via Supabase
+async function syncAccountsFromSupabase(): Promise<UserAccount[]> {
   try {
     const { data: profiles, error } = await supabase
       .from('profiles')
@@ -246,7 +247,7 @@ export async function fetchUserAccounts(): Promise<UserAccount[]> {
       .order('created_at', { ascending: true });
 
     if (!error && profiles && profiles.length > 0) {
-      return profiles
+      const mapped = profiles
         .filter((p) => !deletedUserIds.has(p.id))
         .map((p) => ({
           id: p.id,
@@ -258,12 +259,43 @@ export async function fetchUserAccounts(): Promise<UserAccount[]> {
           createdAt: new Date().toISOString(),
           isOwner: p.role === 'ADMIN_GENERALE' || p.role === 'DIRECTEUR',
         }));
+      saveLocalUserAccounts(mapped);
+      return mapped;
     }
-  } catch {
-    // Mode local
+
+    const { data: settingsRow } = await supabase
+      .from('school_settings')
+      .select('data')
+      .eq('id', 'custom_user_accounts')
+      .maybeSingle();
+
+    if (settingsRow?.data && Array.isArray(settingsRow.data)) {
+      saveLocalUserAccounts(settingsRow.data);
+      return settingsRow.data;
+    }
+  } catch (err) {
+    console.warn('[authService] Account sync warning:', err);
   }
 
   return getLocalUserAccounts().filter((u) => !deletedUserIds.has(u.id));
+}
+
+async function persistAccountsToSupabase(accounts: UserAccount[]) {
+  try {
+    await supabase
+      .from('school_settings')
+      .upsert({
+        id: 'custom_user_accounts',
+        data: accounts,
+        updated_at: new Date().toISOString(),
+      });
+  } catch (e) {
+    console.warn('[authService] persistAccountsToSupabase warning:', e);
+  }
+}
+
+export async function fetchUserAccounts(): Promise<UserAccount[]> {
+  return syncAccountsFromSupabase();
 }
 
 export async function createAccount(
@@ -284,14 +316,15 @@ export async function createAccount(
     isOwner: role === 'ADMIN_GENERALE' || role === 'DIRECTEUR',
   };
 
-  const currentList = getLocalUserAccounts();
+  const currentList = await syncAccountsFromSupabase();
   const updated = [...currentList, newUser];
   saveLocalUserAccounts(updated);
+  await persistAccountsToSupabase(updated);
 
   try {
     const email = usernameToEmail(username);
     await supabase.auth.signUp({ email, password, options: { data: { username, role, full_name: fullName } } });
-    await supabase.from('profiles').insert([{ id: newId, username, full_name: fullName, role }]);
+    await supabase.from('profiles').upsert([{ id: newId, username, full_name: fullName, role }]);
   } catch {
     // Mode local
   }
@@ -301,15 +334,14 @@ export async function createAccount(
 
 export async function deleteAccount(userId: string): Promise<{ error?: string }> {
   deletedUserIds.add(userId);
-  const currentList = getLocalUserAccounts();
+  const currentList = await syncAccountsFromSupabase();
   const updated = currentList.filter((u) => u.id !== userId);
   saveLocalUserAccounts(updated);
+  await persistAccountsToSupabase(updated);
 
   try {
     await supabase.from('profiles').delete().eq('id', userId);
-  } catch {
-    // Mode local
-  }
+  } catch {}
 
   return {};
 }
@@ -317,21 +349,18 @@ export async function deleteAccount(userId: string): Promise<{ error?: string }>
 export async function updateUserPassword(newPassword: string): Promise<{ error?: string }> {
   try {
     await supabase.auth.updateUser({ password: newPassword });
-  } catch {
-    // Mode local
-  }
+  } catch {}
   return {};
 }
 
 export async function updateAccountRole(userId: string, role: UserRole): Promise<{ error?: string }> {
-  const currentList = getLocalUserAccounts();
+  const currentList = await syncAccountsFromSupabase();
   const updated = currentList.map((u) => (u.id === userId ? { ...u, role } : u));
   saveLocalUserAccounts(updated);
+  await persistAccountsToSupabase(updated);
 
   try {
     await supabase.from('profiles').update({ role }).eq('id', userId);
-  } catch {
-    // Mode local
-  }
+  } catch {}
   return {};
 }

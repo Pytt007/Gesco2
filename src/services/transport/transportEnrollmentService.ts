@@ -12,13 +12,47 @@ import { transportLineService, updateLineEnrollmentCount } from './transportLine
 import { ServiceResponse } from '../academic/academicYearsService';
 import { supabase } from '../common/supabaseClient';
 
-// ─── Stockage local ───────────────────────────────────────────────────────────
+// ─── Stockage local & Synchro Supabase ─────────────────────────────────────────
 
 const enrollmentStore: Map<string, TransportEnrollment> = new Map();
 
 export function clearTransportEnrollmentStore() { enrollmentStore.clear(); }
 
+async function syncEnrollmentsFromSupabase(): Promise<TransportEnrollment[]> {
+  try {
+    const { data: settingsRow } = await supabase
+      .from('school_settings')
+      .select('data')
+      .eq('id', 'transport_enrollments_data')
+      .maybeSingle();
 
+    if (settingsRow?.data && Array.isArray(settingsRow.data)) {
+      enrollmentStore.clear();
+      for (const item of settingsRow.data) {
+        enrollmentStore.set(item.id, item);
+      }
+      return settingsRow.data;
+    }
+  } catch (err) {
+    console.warn('[transportEnrollmentService] Supabase sync error:', err);
+  }
+  return Array.from(enrollmentStore.values());
+}
+
+async function persistEnrollmentsToSupabase() {
+  try {
+    const list = Array.from(enrollmentStore.values());
+    await supabase
+      .from('school_settings')
+      .upsert({
+        id: 'transport_enrollments_data',
+        data: list,
+        updated_at: new Date().toISOString(),
+      });
+  } catch (err) {
+    console.warn('[transportEnrollmentService] Supabase persist error:', err);
+  }
+}
 
 // ─── Génération des périodes ──────────────────────────────────────────────────
 
@@ -40,56 +74,9 @@ export function generateTransportPeriods(netAmount: number, count: number): Tran
 export const transportEnrollmentService = {
 
   async getEnrollmentsByYear(academicYearId: string = 'ay-2026'): Promise<TransportEnrollment[]> {
+    await syncEnrollmentsFromSupabase();
 
-    try {
-      if (supabase) {
-        const { data, error } = await supabase
-          .from('transport_enrollments')
-          .select('*, transport_periods(*)')
-          .eq('academic_year_id', academicYearId);
-
-        if (!error && data && data.length > 0) {
-          return data.map((d: any) => ({
-            id: d.id,
-            studentId: d.student_id,
-            studentName: d.student_name,
-            matricule: d.matricule,
-            photoUrl: d.photo_url,
-            className: d.class_name,
-            levelCode: d.level_code,
-            parentSponsor: d.parent_sponsor,
-            parentPhone: d.parent_phone,
-            lineId: d.line_id,
-            lineName: d.line_name,
-            zone: d.zone,
-            academicYearId: d.academic_year_id,
-            annualFee: Number(d.annual_fee || 0),
-            periodsCount: Number(d.periods_count || 3),
-            discountType: d.discount_type as TransportDiscountType,
-            discountValue: Number(d.discount_value || 0),
-            discountAmount: Number(d.discount_amount || 0),
-            netAmountDue: Number(d.net_amount_due || 0),
-            totalPaid: Number(d.total_paid || 0),
-            remainingBalance: Number(d.remaining_balance || 0),
-            periods: Array.isArray(d.transport_periods)
-              ? d.transport_periods.map((p: any) => ({
-                  number: p.period_number,
-                  label: p.period_label,
-                  amountDue: Number(p.amount_due || 0),
-                  amountPaid: Number(p.amount_paid || 0),
-                  status: p.status,
-                  dueDate: p.due_date,
-                }))
-              : [],
-            status: d.status,
-            createdAt: d.created_at,
-            updatedAt: d.updated_at,
-          }));
-        }
-      }
-    } catch { /* Fallback local */ }
-
-    return Array.from(enrollmentStore.values()).filter((e) => e.academicYearId === academicYearId);
+    return Array.from(enrollmentStore.values()).filter((e) => !academicYearId || e.academicYearId === academicYearId);
   },
 
   async getEnrollmentsByLine(lineId: string, academicYearId: string = 'ay-2026'): Promise<TransportEnrollment[]> {
@@ -120,10 +107,11 @@ export const transportEnrollmentService = {
    * Inscrire un élève au transport
    */
   async createEnrollment(input: TransportEnrollmentInput): Promise<ServiceResponse<TransportEnrollment>> {
-
     if (!input.studentId || !input.academicYearId) {
       return { success: false, error: 'Élève et année scolaire requis.' };
     }
+
+    await syncEnrollmentsFromSupabase();
 
     // Double inscription
     const existing = await this.getEnrollmentByStudent(input.studentId, input.academicYearId);
@@ -188,6 +176,7 @@ export const transportEnrollmentService = {
     };
 
     enrollmentStore.set(id, record);
+    await persistEnrollmentsToSupabase();
 
     // Mise à jour du compteur de la ligne
     updateLineEnrollmentCount(line.id, +1);
@@ -198,7 +187,8 @@ export const transportEnrollmentService = {
   /**
    * Applique un paiement sur l'inscription
    */
-  applyPayment(enrollmentId: string, amount: number, periodNumber?: number): boolean {
+  async applyPayment(enrollmentId: string, amount: number, periodNumber?: number): Promise<boolean> {
+    await syncEnrollmentsFromSupabase();
     const enrollment = enrollmentStore.get(enrollmentId);
     if (!enrollment) return false;
 
@@ -215,6 +205,7 @@ export const transportEnrollmentService = {
 
     enrollment.updatedAt = new Date().toISOString();
     enrollmentStore.set(enrollmentId, enrollment);
+    await persistEnrollmentsToSupabase();
     return true;
   },
 };

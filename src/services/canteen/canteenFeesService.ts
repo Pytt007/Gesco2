@@ -20,50 +20,61 @@ const levelNamesMap: Record<CanteenLevelCode, string> = {
 
 const defaultLevelOrder: CanteenLevelCode[] = ['PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
 
-// Stockage local m\u00e9moire (r\u00e9silience uniquement — ne contient jamais de donn\u00e9es fix\u00e9es)
+// Stockage local mémoire et synchro Supabase
 const localCanteenSchedulesStore: Map<string, CanteenFeeSchedule> = new Map();
 
 export function clearCanteenSchedulesStore() {
   localCanteenSchedulesStore.clear();
 }
 
+async function syncSchedulesFromSupabase(): Promise<CanteenFeeSchedule[]> {
+  try {
+    const { data: settingsRow } = await supabase
+      .from('school_settings')
+      .select('data')
+      .eq('id', 'canteen_fee_schedules')
+      .maybeSingle();
+
+    if (settingsRow?.data && Array.isArray(settingsRow.data)) {
+      localCanteenSchedulesStore.clear();
+      for (const item of settingsRow.data) {
+        localCanteenSchedulesStore.set(item.id, item);
+      }
+      return settingsRow.data;
+    }
+  } catch (err) {
+    console.warn('[canteenFeesService] Supabase sync error:', err);
+  }
+  return Array.from(localCanteenSchedulesStore.values());
+}
+
+async function persistSchedulesToSupabase() {
+  try {
+    const list = Array.from(localCanteenSchedulesStore.values());
+    await supabase
+      .from('school_settings')
+      .upsert({
+        id: 'canteen_fee_schedules',
+        data: list,
+        updated_at: new Date().toISOString(),
+      });
+  } catch (err) {
+    console.warn('[canteenFeesService] Supabase persist error:', err);
+  }
+}
+
 export const canteenFeesService = {
   /**
-   * R\u00e9cup\u00e8re tous les tarifs cantine pour une ann\u00e9e scolaire
+   * Récupère tous les tarifs cantine pour une année scolaire
    */
   async getSchedulesByYear(academicYearId: string): Promise<CanteenFeeSchedule[]> {
     if (!academicYearId) return [];
 
-    try {
-      if (supabase) {
-        const { data, error } = await supabase
-          .from('canteen_fee_schedules')
-          .select('*')
-          .eq('academic_year_id', academicYearId)
-          .eq('status', 'ACTIVE');
+    await syncSchedulesFromSupabase();
 
-        if (!error && data) {
-          return data
-            .map((d: any) => ({
-              id: d.id,
-              academicYearId: d.academic_year_id,
-              levelCode: d.level_code as CanteenLevelCode,
-              levelName: d.level_name || levelNamesMap[d.level_code as CanteenLevelCode] || d.level_code,
-              annualRate: Number(d.annual_rate || 0),
-              periodsCount: Number(d.periods_count || 3),
-              totalAmount: Number(d.annual_rate || 0),
-              status: d.status || 'ACTIVE',
-              createdAt: d.created_at,
-              updatedAt: d.updated_at,
-            }))
-            .sort((a, b) => defaultLevelOrder.indexOf(a.levelCode) - defaultLevelOrder.indexOf(b.levelCode));
-        }
-      }
-    } catch {
-      // Erreur r\u00e9seau
-    }
-
-    return [];
+    return Array.from(localCanteenSchedulesStore.values())
+      .filter((s) => s.academicYearId === academicYearId && s.status === 'ACTIVE')
+      .sort((a, b) => defaultLevelOrder.indexOf(a.levelCode) - defaultLevelOrder.indexOf(b.levelCode));
   },
 
   /**
@@ -84,6 +95,8 @@ export const canteenFeesService = {
     if (input.annualRate < 0) {
       return { success: false, error: 'Le tarif annuel ne peut pas être négatif.' };
     }
+
+    await syncSchedulesFromSupabase();
 
     const existingList = await this.getSchedulesByYear(input.academicYearId);
     if (existingList.some((s) => s.levelCode === input.levelCode)) {
@@ -108,6 +121,8 @@ export const canteenFeesService = {
     };
 
     localCanteenSchedulesStore.set(id, record);
+    await persistSchedulesToSupabase();
+
     return { success: true, data: record, message: 'Tarif cantine créé avec succès.' };
   },
 
@@ -115,6 +130,7 @@ export const canteenFeesService = {
    * Modifie un tarif cantine
    */
   async updateSchedule(id: string, input: Partial<CanteenFeeInput>): Promise<ServiceResponse<CanteenFeeSchedule>> {
+    await syncSchedulesFromSupabase();
     const existing = localCanteenSchedulesStore.get(id);
     if (!existing) {
       return { success: false, error: 'Tarif introuvable.' };
@@ -136,6 +152,8 @@ export const canteenFeesService = {
     };
 
     localCanteenSchedulesStore.set(id, updated);
+    await persistSchedulesToSupabase();
+
     return { success: true, data: updated, message: 'Tarif cantine mis à jour avec succès.' };
   },
 
@@ -143,6 +161,7 @@ export const canteenFeesService = {
    * Archive un tarif cantine
    */
   async archiveSchedule(id: string): Promise<ServiceResponse<boolean>> {
+    await syncSchedulesFromSupabase();
     const existing = localCanteenSchedulesStore.get(id);
     if (!existing) {
       return { success: false, error: 'Tarif introuvable.' };
@@ -151,6 +170,7 @@ export const canteenFeesService = {
     existing.status = 'ARCHIVED';
     existing.updatedAt = new Date().toISOString();
     localCanteenSchedulesStore.set(id, existing);
+    await persistSchedulesToSupabase();
 
     return { success: true, data: true, message: 'Tarif cantine archivé.' };
   },
@@ -166,6 +186,7 @@ export const canteenFeesService = {
       return { success: false, error: 'Année source et année cible obligatoires.' };
     }
 
+    await syncSchedulesFromSupabase();
     const sourceTariffs = await this.getSchedulesByYear(sourceYearId);
     if (sourceTariffs.length === 0) {
       return { success: false, error: "Aucun tarif cantine trouvé pour l'année source." };
@@ -173,7 +194,7 @@ export const canteenFeesService = {
 
     const duplicated: CanteenFeeSchedule[] = [];
     for (const src of sourceTariffs) {
-      const newId = `canteen-${targetYearId}-${src.levelCode.toLowerCase()}`;
+      const newId = `canteen-${targetYearId}-${src.levelCode.toLowerCase()}-${Date.now()}`;
       const copy: CanteenFeeSchedule = {
         ...src,
         id: newId,
@@ -184,6 +205,8 @@ export const canteenFeesService = {
       localCanteenSchedulesStore.set(newId, copy);
       duplicated.push(copy);
     }
+
+    await persistSchedulesToSupabase();
 
     return {
       success: true,

@@ -191,8 +191,8 @@ export default function AcademicPage({ onNavigate }: AcademicPageProps) {
       {/* ── BARRE D'ACTIONS & FILTRES UNIFIÉE ─────────────────────────────── */}
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
           
-          <div style={{ display: 'flex', gap: '10px', flex: 1, minWidth: 260 }}>
-            <div className="search-bar-wrapper" style={{ flex: 1 }}>
+          <div style={{ display: 'flex', gap: '10px', flex: 1, flexWrap: 'wrap', minWidth: 'min(100%, 280px)' }}>
+            <div className="search-bar-wrapper" style={{ flex: 1, minWidth: 'min(100%, 220px)' }}>
               <Search size={16} className="search-bar-icon" />
               <input
                 type="text"
@@ -209,7 +209,7 @@ export default function AcademicPage({ onNavigate }: AcademicPageProps) {
             </div>
           </div>
 
-          <button className="btn btn-outline btn-sm" onClick={classroomsHook.refresh} title="Actualiser" disabled={classroomsHook.loading}>
+          <button className="btn btn-outline btn-sm" onClick={classroomsHook.refresh} title="Actualiser" disabled={classroomsHook.loading} style={{ whiteSpace: 'nowrap' }}>
             <RefreshCw size={14} className={classroomsHook.loading ? 'spin' : ''} /> Actualiser
           </button>
       </div>

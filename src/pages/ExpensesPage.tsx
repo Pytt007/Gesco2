@@ -16,6 +16,7 @@ import {
   Printer, FileText, Edit2, Ban, Tag, Shield, Building,
   BarChart2, ListFilter, Filter, Calendar, Clock, SlidersHorizontal,
 } from 'lucide-react';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
 
 const STATUS_BADGES: Record<ExpenseStatus, { label: string; bg: string; color: string; border: string }> = {
   VALIDATED: { label: '🟢 Validée', bg: '#f0fdf4', color: '#16a34a', border: '#86efac' },
@@ -48,12 +49,19 @@ export default function ExpensesPage() {
     setSelectedStatus,
     selectedMonth,
     setSelectedMonth,
+    reload: reloadExpenses,
     addCategory,
     createExpense,
     updateExpense,
     cancelExpense,
     updateBudget,
   } = useExpenses(selectedYearId);
+
+  // Synchronisation temps réel automatique
+  useRealtimeSync({
+    tables: ['expenses', 'school_settings'],
+    onDataChange: () => reloadExpenses(),
+  });
 
   // Modales
   const [showAddModal, setShowAddModal] = useState(false);

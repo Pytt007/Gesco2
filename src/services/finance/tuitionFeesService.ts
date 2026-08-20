@@ -22,6 +22,42 @@ export function clearFeeSchedulesStore() {
   localFeeSchedulesStore.clear();
 }
 
+async function syncFeeSchedulesFromSupabase(): Promise<TuitionFeeSchedule[]> {
+  try {
+    const { data: settingsRow } = await supabase
+      .from('school_settings')
+      .select('data')
+      .eq('id', 'tuition_fee_schedules')
+      .maybeSingle();
+
+    if (settingsRow?.data && Array.isArray(settingsRow.data)) {
+      localFeeSchedulesStore.clear();
+      for (const item of settingsRow.data) {
+        localFeeSchedulesStore.set(item.id, item);
+      }
+      return settingsRow.data;
+    }
+  } catch (err) {
+    console.warn('[tuitionFeesService] Supabase sync error:', err);
+  }
+  return Array.from(localFeeSchedulesStore.values());
+}
+
+async function persistFeeSchedulesToSupabase() {
+  try {
+    const list = Array.from(localFeeSchedulesStore.values());
+    await supabase
+      .from('school_settings')
+      .upsert({
+        id: 'tuition_fee_schedules',
+        data: list,
+        updated_at: new Date().toISOString(),
+      });
+  } catch (err) {
+    console.warn('[tuitionFeesService] Supabase persist error:', err);
+  }
+}
+
 export const tuitionFeesService = {
   /**
    * Obtient l'ensemble des tarifs par niveau pour une année scolaire donnée
@@ -29,37 +65,7 @@ export const tuitionFeesService = {
   async getSchedulesByYear(academicYearId: string): Promise<TuitionFeeSchedule[]> {
     if (!academicYearId) return [];
 
-    try {
-      if (supabase) {
-        const { data, error } = await supabase
-          .from('tuition_fee_schedules')
-          .select('*')
-          .eq('academic_year_id', academicYearId)
-          .eq('status', 'ACTIVE');
-
-        if (!error && data && data.length > 0) {
-          return data
-            .map((d: any) => ({
-              id: d.id,
-              academicYearId: d.academic_year_id,
-              levelCode: d.level_code as TuitionLevelCode,
-              levelName: d.level_name || levelNamesMap[d.level_code as TuitionLevelCode] || d.level_code,
-              registrationFee: Number(d.registration_fee || 0),
-              tuitionFee: Number(d.tuition_fee || 0),
-              totalAnnualFee: Number(d.registration_fee || 0) + Number(d.tuition_fee || 0),
-              allowFixedDiscount: Boolean(d.allow_fixed_discount ?? true),
-              allowPercentDiscount: Boolean(d.allow_percent_discount ?? true),
-              maxDiscountPercent: d.max_discount_percent ? Number(d.max_discount_percent) : 30,
-              status: d.status || 'ACTIVE',
-              createdAt: d.created_at,
-              updatedAt: d.updated_at,
-            }))
-            .sort((a, b) => defaultLevelOrder.indexOf(a.levelCode) - defaultLevelOrder.indexOf(b.levelCode));
-        }
-      }
-    } catch {
-      // Erreur réseau — fallback store
-    }
+    await syncFeeSchedulesFromSupabase();
 
     const localList = Array.from(localFeeSchedulesStore.values())
       .filter((s) => s.academicYearId === academicYearId && s.status === 'ACTIVE')
@@ -69,8 +75,8 @@ export const tuitionFeesService = {
       return localList;
     }
 
-    // Default schedules if empty for initial setup / mock tests
-    return defaultLevelOrder.map((code) => {
+    // Default schedules if empty for initial setup
+    const defaults = defaultLevelOrder.map((code) => {
       const isPrimary = ['CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'].includes(code);
       const reg = isPrimary ? 50000 : 40000;
       const tui = isPrimary ? 250000 : 200000;
@@ -92,6 +98,9 @@ export const tuitionFeesService = {
       localFeeSchedulesStore.set(schedule.id, schedule);
       return schedule;
     });
+
+    await persistFeeSchedulesToSupabase();
+    return defaults;
   },
 
   /**
@@ -107,6 +116,8 @@ export const tuitionFeesService = {
     if (input.registrationFee < 0 || input.tuitionFee < 0) {
       return { success: false, error: 'Les frais ne peuvent pas être négatifs.' };
     }
+
+    await syncFeeSchedulesFromSupabase();
 
     // 3. Empêcher les niveaux en double pour une même année scolaire
     const existingList = await this.getSchedulesByYear(input.academicYearId);
@@ -135,6 +146,8 @@ export const tuitionFeesService = {
     };
 
     localFeeSchedulesStore.set(id, record);
+    await persistFeeSchedulesToSupabase();
+
     return { success: true, data: record, message: 'Tarif créé avec succès.' };
   },
 
@@ -142,6 +155,7 @@ export const tuitionFeesService = {
    * Modifie les tarifs d'un niveau existant
    */
   async updateSchedule(id: string, input: Partial<TuitionFeeInput>): Promise<ServiceResponse<TuitionFeeSchedule>> {
+    await syncFeeSchedulesFromSupabase();
     const existing = localFeeSchedulesStore.get(id);
     if (!existing) {
       return { success: false, error: 'Tarif introuvable.' };
@@ -167,6 +181,8 @@ export const tuitionFeesService = {
     };
 
     localFeeSchedulesStore.set(id, updated);
+    await persistFeeSchedulesToSupabase();
+
     return { success: true, data: updated, message: 'Tarif mis à jour avec succès.' };
   },
 
@@ -174,6 +190,7 @@ export const tuitionFeesService = {
    * Archive une grille tarifaire de niveau
    */
   async archiveSchedule(id: string): Promise<ServiceResponse<boolean>> {
+    await syncFeeSchedulesFromSupabase();
     const existing = localFeeSchedulesStore.get(id);
     if (!existing) {
       return { success: false, error: 'Tarif introuvable.' };
@@ -182,6 +199,7 @@ export const tuitionFeesService = {
     existing.status = 'ARCHIVED';
     existing.updatedAt = new Date().toISOString();
     localFeeSchedulesStore.set(id, existing);
+    await persistFeeSchedulesToSupabase();
 
     return { success: true, data: true, message: 'Tarif archivé.' };
   },
@@ -197,6 +215,7 @@ export const tuitionFeesService = {
       return { success: false, error: 'Année source et année cible obligatoires.' };
     }
 
+    await syncFeeSchedulesFromSupabase();
     const sourceTariffs = await this.getSchedulesByYear(sourceYearId);
     if (sourceTariffs.length === 0) {
       return { success: false, error: 'Aucun tarif trouvé pour l’année source sélectionnée.' };
@@ -205,7 +224,7 @@ export const tuitionFeesService = {
     const duplicatedSchedules: TuitionFeeSchedule[] = [];
 
     for (const src of sourceTariffs) {
-      const newId = `fee-${targetYearId}-${src.levelCode.toLowerCase()}`;
+      const newId = `fee-${targetYearId}-${src.levelCode.toLowerCase()}-${Date.now()}`;
       const duplicated: TuitionFeeSchedule = {
         ...src,
         id: newId,
@@ -216,6 +235,8 @@ export const tuitionFeesService = {
       localFeeSchedulesStore.set(newId, duplicated);
       duplicatedSchedules.push(duplicated);
     }
+
+    await persistFeeSchedulesToSupabase();
 
     return {
       success: true,

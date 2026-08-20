@@ -299,19 +299,37 @@ function AppContent() {
     }
   };
 
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    return localStorage.getItem('gesco_sidebar_collapsed') === 'true';
+  });
+  const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState<boolean>(false);
+
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('gesco_sidebar_collapsed', String(next));
+      return next;
+    });
+  };
+
   return (
-    <div className="gesco-layout">
+    <div className={`gesco-layout ${isSidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}>
       <Sidebar
         currentView={currentView}
         onNavigate={setCurrentView}
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={toggleSidebarCollapse}
+        isMobileOpen={isSidebarMobileOpen}
+        onCloseMobile={() => setIsSidebarMobileOpen(false)}
       />
-      <main className="gesco-main">
+      <main className={`gesco-main ${isSidebarCollapsed ? 'collapsed' : ''}`}>
         <Header
           currentView={currentView}
           isDarkMode={isDarkMode}
           onToggleDarkMode={() => setIsDarkMode((d) => !d)}
           onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+          onToggleMobileMenu={() => setIsSidebarMobileOpen((prev) => !prev)}
         />
         <div className="gesco-content">
           <ErrorBoundary>

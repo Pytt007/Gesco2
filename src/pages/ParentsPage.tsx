@@ -26,6 +26,7 @@ import {
   RefreshCw, DollarSign, AlertCircle, History, ExternalLink, CheckSquare, Square,
   Download, CheckCircle2, ChevronLeft, ChevronRight
 } from 'lucide-react';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
 
 const STATUS_BADGES: Record<string, React.ReactNode> = {
   Actif: <span className="badge badge-success">Actif</span>,
@@ -64,6 +65,12 @@ export default function ParentsPage({ onNavigate }: ParentsPageProps) {
     archive,
     restore,
   } = useParents({ pageSize: 15 });
+
+  // Synchronisation temps réel automatique
+  useRealtimeSync({
+    tables: ['parents', 'school_settings'],
+    onDataChange: () => refresh(),
+  });
 
   const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
@@ -189,8 +196,8 @@ export default function ParentsPage({ onNavigate }: ParentsPageProps) {
       {/* ── BARRE D'ACTIONS & FILTRES UNIFIÉE ─────────────────────────────── */}
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
           
-          <div style={{ display: 'flex', gap: '10px', flex: 1, minWidth: 260 }}>
-            <div className="search-bar-wrapper" style={{ flex: 1 }}>
+          <div style={{ display: 'flex', gap: '10px', flex: 1, flexWrap: 'wrap', minWidth: 'min(100%, 280px)' }}>
+            <div className="search-bar-wrapper" style={{ flex: 1, minWidth: 'min(100%, 220px)' }}>
               <Search size={16} className="search-bar-icon" />
               <input
                 type="text"
@@ -208,7 +215,7 @@ export default function ParentsPage({ onNavigate }: ParentsPageProps) {
 
             <select
               className="form-select"
-              style={{ width: 140, height: 38, borderRadius: 10, fontSize: '0.875rem' }}
+              style={{ minWidth: 130, flex: '1 1 130px', height: 38, borderRadius: 10, fontSize: '0.875rem' }}
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
@@ -219,7 +226,7 @@ export default function ParentsPage({ onNavigate }: ParentsPageProps) {
             </select>
           </div>
 
-          <button className="btn btn-outline btn-sm" onClick={refresh} title="Actualiser" disabled={loading}>
+          <button className="btn btn-outline btn-sm" onClick={refresh} title="Actualiser" disabled={loading} style={{ whiteSpace: 'nowrap' }}>
             <RefreshCw size={14} className={loading ? 'spin' : ''} /> Actualiser
           </button>
       </div>

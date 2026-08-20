@@ -15,6 +15,7 @@ import DuplicateSchoolYearWizardModal from '../components/settings/DuplicateScho
 import PermissionsManager from '../components/settings/PermissionsManager/index';
 import UsersManager from '../components/settings/UsersManager/index';
 import UsersAndRolesManager from '../components/settings/UsersManager/UsersAndRolesManager';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
 
 const ALL_SYSTEM_MODULES = [
   'Dashboard', 'Élèves', 'Parents', 'Classes', 'Personnel',
@@ -37,6 +38,7 @@ export default function SettingsPage() {
   // Hooks d'Architecture 5 Couches
   const {
     loading: settingsLoading, saving: settingsSaving, schoolInfo, schoolYears, academicTerms, generalConfig,
+    reload: reloadSettings,
     saveSchoolInfo, addSchoolYear, activateSchoolYear, closeSchoolYear, archiveSchoolYear, updateSchoolYear, deleteSchoolYear, saveTerms, saveGeneralConfig,
   } = useSettings();
 
@@ -59,8 +61,18 @@ export default function SettingsPage() {
   const {
     users: userAccountsList, allUsers, loading: usersLoading, saving: usersSaving,
     error: usersError, success: usersSuccess, search, setSearch, filterRole, setFilterRole,
+    refresh: refreshUsers,
     createUser: createAccountViaHook, updateUserRole: updateRoleViaHook, archiveUser: archiveAccountViaHook,
   } = useUsers({ pageSize: 50 });
+
+  // Synchronisation temps réel automatique
+  useRealtimeSync({
+    tables: ['school_settings', 'profiles'],
+    onDataChange: () => {
+      reloadSettings();
+      refreshUsers();
+    },
+  });
 
   const { roles: roleDetailsList } = useRoles();
   const { allPermissions, checkPermission } = usePermissions();

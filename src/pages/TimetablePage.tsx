@@ -340,7 +340,7 @@ export default function TimetablePage() {
       </div>
 
       {/* TITRE ET INFORMATIONS CONTEXTUELLES */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--color-primary-light, rgba(37,99,235,0.15))', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 18px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', background: 'var(--color-primary-light, rgba(37,99,235,0.15))', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Clock size={20} color="var(--color-primary, #2563eb)" />
           <h5 style={{ margin: 0, fontWeight: 700, color: 'var(--text-primary, #1e3a5f)', fontSize: '1rem' }}>

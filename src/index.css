@@ -430,6 +430,8 @@ p { color: var(--text-secondary); line-height: 1.7; }
 .gesco-layout {
   display: flex;
   min-height: 100vh;
+  width: 100%;
+  position: relative;
 }
 
 .gesco-main {
@@ -438,13 +440,22 @@ p { color: var(--text-secondary); line-height: 1.7; }
   display: flex;
   flex-direction: column;
   margin-left: var(--sidebar-width);
-  transition: margin-left 0.3s ease;
+  transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  width: calc(100% - var(--sidebar-width));
+}
+
+.gesco-main.collapsed,
+.sidebar-is-collapsed .gesco-main {
+  margin-left: 72px;
+  width: calc(100% - 72px);
 }
 
 .gesco-content {
   flex: 1;
-  padding: 2.5rem 3.25rem;
+  padding: 1.5rem 2rem;
   overflow-x: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* ─── Sidebar (Thème Bleu Royal Ultra-Lisible & Aéré) ─────────────────── */
@@ -460,9 +471,31 @@ p { color: var(--text-secondary); line-height: 1.7; }
   overflow-x: hidden !important;
   overflow-y: hidden;
   z-index: 100;
-  transition: var(--transition-slow);
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+}
+
+.sidebar.collapsed {
+  width: 72px !important;
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 99;
+  animation: fadeIn 0.2s ease;
+}
+
+.mobile-menu-toggle {
+  display: none;
+}
+
+.mobile-close-btn {
+  display: none;
 }
 
 .sidebar-logo {
@@ -1579,15 +1612,221 @@ h1, h2, h3, h4, h5, h6,
 .text-danger { color: var(--color-danger); }
 .text-warning { color: var(--color-warning); }
 
-/* ─── Responsive ──────────────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  :root { --sidebar-width: 0px; }
-  .gesco-content { padding: 1rem; }
-  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+/* ─── Responsive Design System Global GESCO ──────────────────────────────── */
+
+/* Tableaux Responsives Universels */
+.table-responsive,
+.table-container,
+.overflow-x-auto {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-md);
+  margin-bottom: 0.5rem;
 }
 
+.table-responsive table,
+.table-container table {
+  min-width: 620px;
+}
+
+/* Hero Banners Adaptatifs */
+.hero-banner {
+  border-radius: 16px;
+  color: #ffffff;
+  padding: 20px 24px;
+  border: none;
+  box-shadow: var(--shadow-lg);
+  margin-bottom: 1rem;
+}
+
+/* Grilles KPIs / Statistiques Fluides */
+.kpi-grid,
+.stat-grid,
+.dashboard-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)) !important;
+  gap: 1.25rem !important;
+}
+
+/* Barres de filtres & recherche */
+.filter-bar,
+.actions-bar {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 0.75rem !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+/* Barre d'onglets (Pills) déroulante sans casse */
+.tab-pills-bar,
+.tabs-header {
+  display: flex !important;
+  gap: 6px !important;
+  padding: 6px !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap !important;
+  max-width: 100% !important;
+  scrollbar-width: none;
+}
+
+.tab-pills-bar::-webkit-scrollbar,
+.tabs-header::-webkit-scrollbar {
+  display: none;
+}
+
+/* Modales Responsives */
+.modal-dialog,
+.modal-content,
+.dialog-content,
+[role="dialog"] {
+  max-width: min(94vw, 760px) !important;
+  max-height: 92vh !important;
+  overflow-y: auto !important;
+  margin: auto !important;
+  border-radius: 16px !important;
+}
+
+/* ─── Laptops (1025px - 1366px) ────────────────────────────────────────── */
+@media (max-width: 1366px) {
+  .gesco-content {
+    padding: 1.25rem 1.5rem !important;
+  }
+  .card-body {
+    padding: 1.5rem 1.75rem !important;
+  }
+  .header {
+    padding: 0.75rem 1.5rem !important;
+  }
+  .header-badge-enterprise {
+    display: none !important;
+  }
+}
+
+/* ─── Tablets / iPad / Small Laptops (769px - 1024px) ─────────────────── */
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-width: 72px;
+  }
+  .gesco-main {
+    margin-left: 72px !important;
+    width: calc(100% - 72px) !important;
+  }
+  .gesco-content {
+    padding: 1rem 1.25rem !important;
+  }
+  .header {
+    padding: 0.75rem 1.25rem !important;
+  }
+  .header-breadcrumb {
+    font-size: 0.72rem !important;
+  }
+  .breadcrumb-school-name {
+    max-width: 110px !important;
+  }
+  .card-body {
+    padding: 1.25rem 1.5rem !important;
+  }
+}
+
+/* ─── Mobile & Small Tablets (< 768px) ─────────────────────────────────── */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 270px;
+  }
+  .gesco-main,
+  .gesco-main.collapsed,
+  .sidebar-is-collapsed .gesco-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+  
+  .sidebar {
+    transform: translateX(-100%);
+    width: 270px !important;
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.4);
+  }
+  .sidebar.mobile-open {
+    transform: translateX(0) !important;
+  }
+  .mobile-menu-toggle {
+    display: inline-flex !important;
+  }
+  .mobile-close-btn {
+    display: inline-flex !important;
+  }
+  .desktop-toggle-btn {
+    display: none !important;
+  }
+
+  .header {
+    padding: 0.625rem 0.875rem !important;
+    gap: 0.5rem !important;
+  }
+  .header-breadcrumb {
+    display: none !important;
+  }
+  .header-title {
+    font-size: 1.05rem !important;
+  }
+  .header-badge-year {
+    padding: 4px 8px !important;
+    font-size: 0.75rem !important;
+  }
+  .badge-year-prefix {
+    display: none !important;
+  }
+  .search-btn-text,
+  .search-btn-shortcut {
+    display: none !important;
+  }
+  .header-search-btn {
+    padding: 6px !important;
+    border-radius: 50% !important;
+  }
+
+  .gesco-content {
+    padding: 0.75rem 0.625rem !important;
+  }
+
+  .card-body {
+    padding: 1rem 1.125rem !important;
+  }
+  .card-header,
+  .card-footer {
+    padding: 0.875rem 1.125rem !important;
+  }
+
+  .hero-banner {
+    padding: 16px 16px !important;
+    border-radius: 12px !important;
+  }
+  .hero-banner h1 {
+    font-size: 1.2rem !important;
+  }
+  .hero-banner p {
+    font-size: 0.8rem !important;
+  }
+
+  .kpi-grid,
+  .stat-grid,
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+}
+
+/* ─── Compact Mobile (< 480px) ─────────────────────────────────────────── */
 @media (max-width: 480px) {
-  .stat-grid { grid-template-columns: 1fr; }
+  .header-badge-year {
+    display: none !important;
+  }
+  .gesco-content {
+    padding: 0.5rem 0.5rem !important;
+  }
 }
 
 /* ─── SYSTEME D'IMPRESSION PROPRE POUR BILANS & RAPPORTS EXÉCUTIFS ─────────── */

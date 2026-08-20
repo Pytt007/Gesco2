@@ -4,6 +4,7 @@ import { TransportLinesView } from '../components/transport/TransportLinesView';
 import { TransportEnrollmentView } from '../components/transport/TransportEnrollmentView';
 import { TransportPaymentView } from '../components/transport/TransportPaymentView';
 import { TransportTrackingView } from '../components/transport/TransportTrackingView';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
 
 type TransportTab = 'LINES' | 'ENROLLMENT' | 'PAYMENT' | 'TRACKING';
 
@@ -16,9 +17,16 @@ const TABS: { id: TransportTab; label: string; icon: React.ReactNode }[] = [
 
 export default function TransportPage() {
   const [activeTab, setActiveTab] = useState<TransportTab>('LINES');
+  const [syncKey, setSyncKey] = useState(0);
+
+  // Synchronisation temps réel automatique
+  useRealtimeSync({
+    tables: ['school_settings', 'transport_lines', 'transport_enrollments'],
+    onDataChange: () => setSyncKey((prev) => prev + 1),
+  });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <div key={syncKey} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
       {/* ── BANNIÈRE HERO SAAS ─────────────────────────────────────────────── */}
       <div
@@ -53,7 +61,7 @@ export default function TransportPage() {
       </div>
 
       {/* ── ONGLETS PILLS MODERNES ─────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 6, padding: '6px', background: 'var(--bg-surface-hover, #f1f5f9)', border: '1px solid var(--border)', borderRadius: 14, flexWrap: 'wrap' }}>
+      <div className="tab-pills-bar" style={{ display: 'flex', gap: 6, padding: '6px', background: 'var(--bg-surface-hover, #f1f5f9)', border: '1px solid var(--border)', borderRadius: 14, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         {TABS.map((tab) => {
           const active = activeTab === tab.id;
           return (

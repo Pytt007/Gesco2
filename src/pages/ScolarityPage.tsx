@@ -5,6 +5,7 @@ import { TuitionPaymentView } from '../components/finance/TuitionPaymentView';
 import { FinancialTrackingView } from '../components/finance/FinancialTrackingView';
 import { StudentRegistrationWizard } from '../components/students/StudentRegistrationWizard';
 import { GraduationCap, CreditCard, BarChart3, Settings, Plus } from 'lucide-react';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
 
 type ScolarityTab = 'PAYMENT_RECORD' | 'CONFIG' | 'PAYMENTS';
 
@@ -18,9 +19,16 @@ export default function ScolarityPage({ defaultTab }: { defaultTab?: ScolarityTa
   const { schoolYear } = useSchoolYear();
   const [activeTab, setActiveTab] = useState<ScolarityTab>(defaultTab || 'PAYMENT_RECORD');
   const [showRegistrationWizard, setShowRegistrationWizard] = useState<boolean>(false);
+  const [syncKey, setSyncKey] = useState(0);
+
+  // Synchronisation temps réel automatique
+  useRealtimeSync({
+    tables: ['school_settings', 'tuition_payments', 'students'],
+    onDataChange: () => setSyncKey((prev) => prev + 1),
+  });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <div key={syncKey} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
       {/* ── BANNIÈRE HERO SAAS ─────────────────────────────────────────────── */}
       <div
@@ -78,7 +86,7 @@ export default function ScolarityPage({ defaultTab }: { defaultTab?: ScolarityTa
       </div>
 
       {/* ── ONGLETS PILLS MODERNES ─────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 6, padding: '6px', background: 'var(--bg-surface-hover, #f1f5f9)', border: '1px solid var(--border)', borderRadius: 14, flexWrap: 'wrap' }}>
+      <div className="tab-pills-bar" style={{ display: 'flex', gap: 6, padding: '6px', background: 'var(--bg-surface-hover, #f1f5f9)', border: '1px solid var(--border)', borderRadius: 14, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         {TABS.map((tab) => {
           const active = activeTab === tab.id;
           return (

@@ -14,6 +14,7 @@ import {
   Briefcase, Phone, Mail, Award, CheckCircle2, RefreshCw, Download,
   DollarSign, FileText, ChevronLeft, ChevronRight, UserCheck, GraduationCap
 } from 'lucide-react';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
 
 const ROLE_BADGES: Record<string, React.ReactNode> = {
   TEACHER: <span className="badge badge-info">Enseignant</span>,
@@ -56,6 +57,12 @@ export default function StaffPage() {
     archive,
     restore,
   } = useStaff({ pageSize: 15 });
+
+  // Synchronisation temps réel automatique
+  useRealtimeSync({
+    tables: ['staff_members', 'school_settings'],
+    onDataChange: () => refresh(),
+  });
 
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
@@ -194,8 +201,8 @@ export default function StaffPage() {
       {/* ── BARRE D'ACTIONS & FILTRES UNIFIÉE ─────────────────────────────── */}
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
           
-          <div style={{ display: 'flex', gap: '10px', flex: 1, minWidth: 260 }}>
-            <div className="search-bar-wrapper" style={{ flex: 1 }}>
+          <div style={{ display: 'flex', gap: '10px', flex: 1, flexWrap: 'wrap', minWidth: 'min(100%, 280px)' }}>
+            <div className="search-bar-wrapper" style={{ flex: 1, minWidth: 'min(100%, 220px)' }}>
               <Search size={16} className="search-bar-icon" />
               <input
                 type="text"
@@ -213,7 +220,7 @@ export default function StaffPage() {
 
             <select
               className="form-select"
-              style={{ minWidth: 170, height: 38, borderRadius: 10, fontSize: '0.875rem' }}
+              style={{ minWidth: 150, flex: '1 1 150px', height: 38, borderRadius: 10, fontSize: '0.875rem' }}
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
             >
@@ -221,10 +228,25 @@ export default function StaffPage() {
               <option value="TEACHER">Enseignants</option>
               <option value="ADMINISTRATIVE">Administratif</option>
               <option value="DRIVER">Chauffeurs</option>
+              <option value="COOK">Cuisiniers</option>
+              <option value="SUPPORT">Support</option>
+            </select>
+
+            <select
+              className="form-select"
+              style={{ minWidth: 130, flex: '1 1 130px', height: 38, borderRadius: 10, fontSize: '0.875rem' }}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="all">Tous statuts</option>
+              <option value="Actif">Actifs</option>
+              <option value="Inactif">Inactifs</option>
+              <option value="En congé">En congé</option>
+              <option value="Archivé">Archivés</option>
             </select>
           </div>
 
-          <button className="btn btn-outline btn-sm" onClick={refresh} title="Actualiser" disabled={loading}>
+          <button className="btn btn-outline btn-sm" onClick={refresh} title="Actualiser" disabled={loading} style={{ whiteSpace: 'nowrap' }}>
             <RefreshCw size={14} className={loading ? 'spin' : ''} /> Actualiser
           </button>
       </div>

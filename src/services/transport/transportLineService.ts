@@ -11,7 +11,7 @@ import { ServiceResponse } from '../academic/academicYearsService';
 import { transportVehicleService, transportDriverService } from './transportVehicleDriverService';
 import { supabase } from '../common/supabaseClient';
 
-// ─── Stockage local ───────────────────────────────────────────────────────────
+// ─── Stockage local & Synchro Supabase ─────────────────────────────────────────
 
 const lineStore: Map<string, TransportLine> = new Map();
 
@@ -19,6 +19,43 @@ export function clearTransportLineStore() { lineStore.clear(); }
 
 // Compteur d'inscriptions par ligne (mis à jour par le service d'inscription)
 const enrollmentCountByLine: Map<string, number> = new Map();
+
+async function syncLinesFromSupabase(): Promise<TransportLine[]> {
+  try {
+    const { data: settingsRow } = await supabase
+      .from('school_settings')
+      .select('data')
+      .eq('id', 'transport_lines_data')
+      .maybeSingle();
+
+    if (settingsRow?.data && Array.isArray(settingsRow.data)) {
+      lineStore.clear();
+      for (const item of settingsRow.data) {
+        lineStore.set(item.id, item);
+        enrollmentCountByLine.set(item.id, item.enrolledCount || 0);
+      }
+      return settingsRow.data;
+    }
+  } catch (err) {
+    console.warn('[transportLineService] Supabase sync error:', err);
+  }
+  return Array.from(lineStore.values());
+}
+
+async function persistLinesToSupabase() {
+  try {
+    const list = Array.from(lineStore.values());
+    await supabase
+      .from('school_settings')
+      .upsert({
+        id: 'transport_lines_data',
+        data: list,
+        updated_at: new Date().toISOString(),
+      });
+  } catch (err) {
+    console.warn('[transportLineService] Supabase persist error:', err);
+  }
+}
 
 export function updateLineEnrollmentCount(lineId: string, delta: number) {
   const current = enrollmentCountByLine.get(lineId) ?? 0;
@@ -33,6 +70,7 @@ export function updateLineEnrollmentCount(lineId: string, delta: number) {
     line.occupancyRate = line.vehicleCapacity > 0 ? Math.round((next / line.vehicleCapacity) * 100) : 0;
     line.updatedAt = new Date().toISOString();
     lineStore.set(lineId, line);
+    persistLinesToSupabase();
   }
 }
 
@@ -44,45 +82,10 @@ export const transportLineService = {
    * Récupère toutes les lignes pour une année scolaire
    */
   async getLinesByYear(academicYearId: string = 'ay-2026'): Promise<TransportLine[]> {
-
-    try {
-      if (supabase) {
-        const { data, error } = await supabase
-          .from('transport_lines')
-          .select('*')
-          .eq('academic_year_id', academicYearId)
-          .neq('status', 'ARCHIVED');
-
-        if (!error && data && data.length > 0) {
-          return data.map((d: any) => ({
-            id: d.id,
-            name: d.name,
-            zone: d.zone,
-            vehicleId: d.vehicle_id,
-            vehicleName: d.vehicle_name,
-            vehicleLicensePlate: d.vehicle_license_plate,
-            vehicleCapacity: Number(d.vehicle_capacity || 0),
-            driverId: d.driver_id,
-            driverName: d.driver_name,
-            driverPhone: d.driver_phone,
-            annualFee: Number(d.annual_fee || 0),
-            periodsCount: Number(d.periods_count || 3),
-            enrolledCount: Number(d.enrolled_count || 0),
-            availableSeats: Number(d.vehicle_capacity || 0) - Number(d.enrolled_count || 0),
-            occupancyRate: d.vehicle_capacity > 0
-              ? Math.round((Number(d.enrolled_count) / Number(d.vehicle_capacity)) * 100)
-              : 0,
-            academicYearId: d.academic_year_id,
-            status: d.status as TransportLineStatus,
-            createdAt: d.created_at,
-            updatedAt: d.updated_at,
-          }));
-        }
-      }
-    } catch { /* Fallback local */ }
+    await syncLinesFromSupabase();
 
     return Array.from(lineStore.values())
-      .filter((l) => l.academicYearId === academicYearId && l.status !== 'ARCHIVED')
+      .filter((l) => (!academicYearId || l.academicYearId === academicYearId) && l.status !== 'ARCHIVED')
       .sort((a, b) => a.name.localeCompare(b.name));
   },
 
@@ -153,6 +156,7 @@ export const transportLineService = {
 
     lineStore.set(id, line);
     enrollmentCountByLine.set(id, 0);
+    await persistLinesToSupabase();
     return { success: true, data: line, message: 'Ligne de transport créée avec succès.' };
   },
 
@@ -160,6 +164,7 @@ export const transportLineService = {
    * Modifie une ligne de transport
    */
   async updateLine(id: string, input: Partial<TransportLineInput>): Promise<ServiceResponse<TransportLine>> {
+    await syncLinesFromSupabase();
     const existing = lineStore.get(id);
     if (!existing) return { success: false, error: 'Ligne introuvable.' };
 
@@ -209,6 +214,7 @@ export const transportLineService = {
     };
 
     lineStore.set(id, updated);
+    await persistLinesToSupabase();
     return { success: true, data: updated, message: 'Ligne mise à jour avec succès.' };
   },
 
@@ -216,11 +222,13 @@ export const transportLineService = {
    * Change le statut d'une ligne (Suspendre / Réactiver / Archiver)
    */
   async setStatus(id: string, status: TransportLineStatus): Promise<ServiceResponse<TransportLine>> {
+    await syncLinesFromSupabase();
     const existing = lineStore.get(id);
     if (!existing) return { success: false, error: 'Ligne introuvable.' };
 
     const updated = { ...existing, status, updatedAt: new Date().toISOString() };
     lineStore.set(id, updated);
+    await persistLinesToSupabase();
 
     const labels: Record<TransportLineStatus, string> = {
       ACTIVE: 'Ligne réactivée.',

@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { supabase } from '../common/supabaseClient';
+import { broadcastDataChange } from '../common/realtimeSyncService';
 
 export interface ServiceResponse<T> {
   success: boolean;
@@ -104,9 +105,112 @@ function createError<T>(error: any, fallbackMessage: string): ServiceResponse<T>
 
 // Données initiales vierges
 const INITIAL_STAFF: StaffMember[] = [];
-
 const localStaffCache: Map<string, StaffMember> = new Map(INITIAL_STAFF.map(s => [s.id, s]));
 
+/**
+ * Charge le personnel depuis Supabase
+ */
+async function syncStaffFromSupabase(): Promise<StaffMember[]> {
+  try {
+    // 1. Tenter la lecture dans school_settings (données riches complètes)
+    const { data: settingsRow } = await supabase
+      .from('school_settings')
+      .select('data')
+      .eq('id', 'staff_members_data')
+      .maybeSingle();
+
+    let fullList: StaffMember[] = [];
+    if (settingsRow?.data && Array.isArray(settingsRow.data)) {
+      fullList = settingsRow.data;
+    }
+
+    // 2. Tenter la lecture dans staff_members table
+    const { data: dbRows, error: dbErr } = await supabase
+      .from('staff_members')
+      .select('*')
+      .limit(500);
+
+    if (!dbErr && Array.isArray(dbRows) && dbRows.length > 0) {
+      for (const row of dbRows) {
+        const existingIdx = fullList.findIndex((m) => m.id === row.id);
+        const mappedRole: StaffRole =
+          row.role === 'TEACHER' ? 'Enseignant' :
+          row.role === 'DIRECTOR' ? 'Directeur' :
+          (row.role as StaffRole) || 'Enseignant';
+
+        const mapped: StaffMember = {
+          id: row.id,
+          employeeNumber: `EMP-${row.id.slice(0, 6)}`,
+          firstName: row.first_name || '',
+          lastName: row.last_name || '',
+          gender: 'Masculin',
+          role: mappedRole,
+          phonePrimary: row.phone || '',
+          email: row.email || '',
+          baseSalary: row.base_salary || 200000,
+          hireDate: row.hire_date || new Date().toISOString().split('T')[0],
+          status: row.status === 'ACTIVE' ? 'Actif' : 'Inactif',
+          createdAt: row.created_at || new Date().toISOString(),
+          updatedAt: row.updated_at || new Date().toISOString(),
+        };
+
+        if (existingIdx >= 0) {
+          fullList[existingIdx] = { ...mapped, ...fullList[existingIdx] };
+        } else {
+          fullList.push(mapped);
+        }
+      }
+    }
+
+    // Mettre à jour le cache local
+    localStaffCache.clear();
+    for (const item of fullList) {
+      localStaffCache.set(item.id, item);
+    }
+    return fullList;
+  } catch (err) {
+    console.warn('[staffService] syncStaffFromSupabase warning:', err);
+    return Array.from(localStaffCache.values());
+  }
+}
+
+async function persistStaffToSupabase(member: StaffMember, allMembers?: StaffMember[]) {
+  const currentList = allMembers || Array.from(localStaffCache.values());
+
+  // 1. Sauvegarder dans school_settings (garantit tous les champs personnalisés)
+  try {
+    await supabase
+      .from('school_settings')
+      .upsert({
+        id: 'staff_members_data',
+        data: currentList,
+        updated_at: new Date().toISOString()
+      });
+  } catch (e) {
+    console.warn('[staffService] school_settings persist warning:', e);
+  }
+
+  try {
+    await supabase.from('staff_members').upsert({
+      id: member.id,
+      first_name: member.firstName,
+      last_name: member.lastName,
+      email: member.email || null,
+      phone: member.phonePrimary || null,
+      role: member.role === 'Enseignant' ? 'TEACHER' : member.role === 'Directeur' ? 'DIRECTOR' : 'STAFF',
+      specialty: member.jobTitle || member.positionTitle || null,
+      hire_date: member.hireDate || new Date().toISOString().split('T')[0],
+      base_salary: member.baseSalary ?? 0,
+      status: member.status === 'Actif' ? 'ACTIVE' : 'INACTIVE',
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'id' });
+  } catch (e) {
+    console.warn('[staffService] staff_members SQL persist warning:', e);
+  }
+
+  // Diffuser en temps réel aux autres utilisateurs
+  broadcastDataChange('staff_members', 'update', member);
+}
 
 /**
  * Crée un nouveau membre du personnel avec contrôles d'unicité (Tél, Email) et validation salaire
@@ -120,10 +224,13 @@ export async function createStaff(staffData: Partial<StaffMember>): Promise<Serv
       return createError(null, 'Le téléphone principal est obligatoire.');
     }
 
+    // Synchroniser d'abord pour avoir la liste à jour
+    await syncStaffFromSupabase();
+
     const phone = staffData.phonePrimary.trim();
     const email = staffData.email?.trim().toLowerCase();
 
-    // ANOMALIE-MAJ-04 FIX: Contrôle d'unicité du Téléphone et de l'Email
+    // Contrôle d'unicité du Téléphone et de l'Email
     for (const member of localStaffCache.values()) {
       if (member.phonePrimary === phone) {
         return createError(null, `Un membre du personnel possède déjà le numéro de téléphone ${phone} (${member.lastName} ${member.firstName}).`);
@@ -141,12 +248,16 @@ export async function createStaff(staffData: Partial<StaffMember>): Promise<Serv
     const newId = staffData.id || crypto.randomUUID();
     const created: StaffMember = {
       id: newId,
-      employeeNumber: staffData.employeeNumber || `EMP-2026-${String(localStaffCache.size + 1).padStart(3, '0')}`,
+      employeeNumber: staffData.employeeNumber || `EMP-${new Date().getFullYear()}-${String(localStaffCache.size + 1).padStart(3, '0')}`,
       firstName: staffData.firstName.trim(),
       lastName: staffData.lastName.trim(),
       middleName: staffData.middleName?.trim() || '',
       gender: staffData.gender || 'Masculin',
       role: staffData.role || 'Enseignant',
+      departmentId: staffData.departmentId || '',
+      departmentName: staffData.departmentName || '',
+      positionId: staffData.positionId || '',
+      positionTitle: staffData.positionTitle || '',
       phonePrimary: phone,
       phoneSecondary: staffData.phoneSecondary?.trim() || '',
       email: email || '',
@@ -156,32 +267,13 @@ export async function createStaff(staffData: Partial<StaffMember>): Promise<Serv
       baseSalary: staffData.baseSalary ?? 200000,
       hireDate: staffData.hireDate || new Date().toISOString().split('T')[0],
       status: staffData.status || 'Actif',
+      contractType: staffData.contractType || 'CDI',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
     localStaffCache.set(newId, created);
-
-    // Persistance Supabase — table staff_members
-    try {
-      if (supabase) {
-        const { error: dbErr } = await supabase.from('staff_members').upsert({
-          id: newId,
-          first_name: created.firstName,
-          last_name: created.lastName,
-          email: created.email || null,
-          phone: created.phonePrimary || null,
-          role: created.role === 'Enseignant' ? 'TEACHER' : created.role === 'Directeur' ? 'DIRECTOR' : 'STAFF',
-          specialty: created.jobTitle || null,
-          hire_date: created.hireDate || new Date().toISOString().split('T')[0],
-          base_salary: created.baseSalary ?? 0,
-          status: created.status === 'Actif' ? 'ACTIVE' : 'INACTIVE',
-        }, { onConflict: 'id' });
-        if (dbErr) console.warn('[staffService] Supabase upsert warning:', dbErr.message);
-      }
-    } catch (dbErr) {
-      console.warn('[staffService] Supabase persist fallback:', dbErr);
-    }
+    await persistStaffToSupabase(created);
 
     return createSuccess(created, 'Membre du personnel créé avec succès.');
   } catch (err) {
@@ -194,6 +286,7 @@ export async function createStaff(staffData: Partial<StaffMember>): Promise<Serv
  */
 export async function updateStaff(id: string, updates: Partial<StaffMember>): Promise<ServiceResponse<StaffMember>> {
   try {
+    await syncStaffFromSupabase();
     const cached = localStaffCache.get(id);
     if (!cached) return createError(null, 'Employé introuvable.');
 
@@ -203,6 +296,8 @@ export async function updateStaff(id: string, updates: Partial<StaffMember>): Pr
 
     const updated = { ...cached, ...updates, updatedAt: new Date().toISOString() };
     localStaffCache.set(id, updated);
+    await persistStaffToSupabase(updated);
+
     return createSuccess(updated, 'Mise à jour réussie.');
   } catch (err) {
     return createError(err, 'Erreur de mise à jour.');
@@ -211,19 +306,30 @@ export async function updateStaff(id: string, updates: Partial<StaffMember>): Pr
 
 export async function archiveStaff(id: string): Promise<ServiceResponse<boolean>> {
   if (!id?.trim()) return createError(null, 'Identifiant manquant.');
+  await syncStaffFromSupabase();
   const cached = localStaffCache.get(id);
-  if (cached) localStaffCache.set(id, { ...cached, status: 'Archivé' });
+  if (cached) {
+    const updated = { ...cached, status: 'Archivé' as StaffStatus, archivedAt: new Date().toISOString() };
+    localStaffCache.set(id, updated);
+    await persistStaffToSupabase(updated);
+  }
   return createSuccess(true, 'Archivé.');
 }
 
 export async function restoreStaff(id: string): Promise<ServiceResponse<boolean>> {
   if (!id?.trim()) return createError(null, 'Identifiant manquant.');
+  await syncStaffFromSupabase();
   const cached = localStaffCache.get(id);
-  if (cached) localStaffCache.set(id, { ...cached, status: 'Actif' });
+  if (cached) {
+    const updated = { ...cached, status: 'Actif' as StaffStatus };
+    localStaffCache.set(id, updated);
+    await persistStaffToSupabase(updated);
+  }
   return createSuccess(true, 'Restauré.');
 }
 
 export async function getStaffById(id: string): Promise<ServiceResponse<StaffMember>> {
+  await syncStaffFromSupabase();
   const cached = localStaffCache.get(id);
   if (cached) return createSuccess(cached);
   return createError(null, 'Introuvable.');
@@ -232,7 +338,10 @@ export async function getStaffById(id: string): Promise<ServiceResponse<StaffMem
 export async function listStaff(filters: StaffFilters = {}): Promise<ServiceResponse<StaffListResult>> {
   try {
     const { page = 1, pageSize = 50, searchQuery, role = 'all', status = 'all', sortBy = 'lastName', sortOrder = 'asc' } = filters;
-    let rawList = Array.from(localStaffCache.values());
+    
+    // Toujours synchroniser avec Supabase
+    const list = await syncStaffFromSupabase();
+    let rawList = [...list];
 
     if (role && role !== 'all') {
       rawList = rawList.filter((s) => s.role === role || s.role?.toLowerCase().includes(role.toLowerCase()));
@@ -252,7 +361,7 @@ export async function listStaff(filters: StaffFilters = {}): Promise<ServiceResp
       );
     }
 
-    // ANOMALIE-MIN-01 FIX: Tri par rôle/fonction
+    // Tri par rôle/fonction/nom
     rawList.sort((a, b) => {
       let valA = a.lastName;
       let valB = b.lastName;

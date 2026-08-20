@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { supabase } from '../common/supabaseClient';
+import { broadcastDataChange } from '../common/realtimeSyncService';
 import { Student } from '../../types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -71,6 +72,62 @@ export const OFFICIAL_GIRL_AVATAR = 'https://api.dicebear.com/7.x/adventurer/svg
 
 let localStudentsStore: Student[] = [];
 
+async function syncStudentsFromSupabase(): Promise<Student[]> {
+  try {
+    const { data: settingsRow } = await supabase
+      .from('school_settings')
+      .select('data')
+      .eq('id', 'students_data')
+      .maybeSingle();
+
+    if (settingsRow?.data && Array.isArray(settingsRow.data) && settingsRow.data.length > 0) {
+      localStudentsStore = settingsRow.data;
+      return settingsRow.data;
+    }
+
+    const { data: rows, error } = await supabase.from('students').select('*').limit(500);
+    if (!error && Array.isArray(rows)) {
+      const list: Student[] = rows.map((row: any) => {
+        const d = row.data as any;
+        return {
+          id: row.id,
+          matricule: d?.matricule || row.matricule || row.registration_number || `MAT-${row.id.slice(0, 6)}`,
+          firstName: d?.firstName || row.first_name || 'Élève',
+          lastName: d?.lastName || row.last_name || 'GESCO',
+          gender: d?.gender || (row.gender === 'F' ? 'Féminin' : 'Masculin'),
+          photo: d?.photo || row.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${row.id}`,
+          grade: d?.grade || row.class_id || '6ème',
+          status: d?.status || (row.status === 'ACTIVE' ? 'Actif' : (row.status || 'Actif')),
+          feesStatus: d?.feesStatus || 'En attente',
+          attendance: d?.attendance ?? 100,
+          parentName: d?.parentName || '',
+          parentPhone: d?.parentPhone || '',
+          address: d?.address || '',
+          schoolYear: row.school_year_id || row.school_year || '2026-2027',
+        };
+      });
+      localStudentsStore = list;
+      return list;
+    }
+  } catch (err) {
+    console.warn('[studentsService] syncStudentsFromSupabase warning:', err);
+  }
+  return localStudentsStore;
+}
+
+async function persistStudentsToSupabase(allStudents: Student[]) {
+  try {
+    await supabase
+      .from('school_settings')
+      .upsert({
+        id: 'students_data',
+        data: allStudents,
+        updated_at: new Date().toISOString(),
+      });
+  } catch (err) {
+    console.warn('[studentsService] persistStudentsToSupabase warning:', err);
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MÉTHODES DU SERVICE ÉLÈVES
@@ -81,7 +138,6 @@ let localStudentsStore: Student[] = [];
  */
 export async function createStudent(studentData: Partial<Student>): Promise<ServiceResponse<Student>> {
   try {
-    // ✅ INT-004 P1 : Validation des champs obligatoires
     if (!studentData.firstName?.trim()) {
       return createError(null, 'Le prénom de l\'élève est obligatoire.');
     }
@@ -89,10 +145,11 @@ export async function createStudent(studentData: Partial<Student>): Promise<Serv
       return createError(null, 'Le nom de famille de l\'élève est obligatoire.');
     }
 
+    await syncStudentsFromSupabase();
+
     const matricule = studentData.matricule || `MAT-${new Date().getFullYear()}-${String(localStudentsStore.length + 1).padStart(4, '0')}`;
     const newId = studentData.id || crypto.randomUUID();
 
-    // ✅ INT-001 P0 : Vérification de l'unicité du matricule
     const duplicate = localStudentsStore.find(
       (s) => s.matricule.toLowerCase() === matricule.toLowerCase()
     );
@@ -114,27 +171,13 @@ export async function createStudent(studentData: Partial<Student>): Promise<Serv
       parentName: studentData.parentName || '',
       parentPhone: studentData.parentPhone || '',
       address: studentData.address || '',
-      schoolYear: studentData.schoolYear || '2024-2025',
+      schoolYear: studentData.schoolYear || '2026-2027',
     };
 
     localStudentsStore.unshift(createdStudent);
+    await persistStudentsToSupabase(localStudentsStore);
 
-    // Résolution sécurisée de class_id pour respecter la contrainte foreign key
-    let resolvedClassId: string | null = null;
-    if ((studentData as any).classId) {
-      resolvedClassId = (studentData as any).classId;
-    } else if (studentData.grade) {
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(studentData.grade);
-      if (isUUID) {
-        resolvedClassId = studentData.grade;
-      } else {
-        try {
-          const { data: clsRow } = await supabase.from('classes').select('id').eq('name', studentData.grade).maybeSingle();
-          if (clsRow) resolvedClassId = clsRow.id;
-        } catch { /* Fallback */ }
-      }
-    }
-
+    // Résolution de classe et persistance table SQL students
     try {
       await supabase.from('students').insert({
         id: newId,
@@ -144,16 +187,16 @@ export async function createStudent(studentData: Partial<Student>): Promise<Serv
         gender: createdStudent.gender === 'Féminin' ? 'F' : 'M',
         birth_date: '2014-06-15',
         nationality: 'Ivoirienne',
-        class_id: resolvedClassId,
-        school_year_id: createdStudent.schoolYear || '2024-2025',
+        school_year_id: createdStudent.schoolYear,
         avatar_url: createdStudent.photo,
         status: 'ACTIVE',
-        school_year: createdStudent.schoolYear || '2024-2025',
+        school_year: createdStudent.schoolYear,
       });
     } catch (err) {
       console.warn('[studentsService] Supabase insert fallback:', err);
     }
 
+    broadcastDataChange('students', 'insert', createdStudent);
     return createSuccess(createdStudent, 'Elève créé avec succès.');
   } catch (err) {
     return createError(err, 'Erreur lors de la création de l\'elève.');
@@ -184,6 +227,8 @@ export async function updateStudent(id: string, updates: Partial<Student>): Prom
     }
 
     const updated = localStudentsStore.find((s) => s.id === id) || (updates as Student);
+    await persistStudentsToSupabase(localStudentsStore);
+    broadcastDataChange('students', 'update', updated);
     return createSuccess(updated, 'Élève mis à jour avec succès.');
   } catch (err) {
     return createError(err, 'Erreur lors de la mise à jour.');
@@ -199,6 +244,8 @@ export async function archiveStudent(id: string): Promise<ServiceResponse<boolea
     if (idx !== -1) {
       localStudentsStore[idx].status = 'Archivé';
     }
+    await persistStudentsToSupabase(localStudentsStore);
+    broadcastDataChange('students', 'update', { id, status: 'Archivé' });
     return createSuccess(true, 'Élève archivé avec succès.');
   } catch (err) {
     return createError(err, 'Erreur lors de l\'archivage.');
@@ -214,6 +261,8 @@ export async function restoreStudent(id: string): Promise<ServiceResponse<boolea
     if (idx !== -1) {
       localStudentsStore[idx].status = 'Actif';
     }
+    await persistStudentsToSupabase(localStudentsStore);
+    broadcastDataChange('students', 'update', { id, status: 'Actif' });
     return createSuccess(true, 'Élève restauré avec succès.');
   } catch (err) {
     return createError(err, 'Erreur lors de la restauration.');
@@ -264,34 +313,8 @@ export async function listStudents(filters: StudentFilters = {}): Promise<Servic
       sortOrder = 'asc',
     } = filters;
 
-    let rawList: Student[] = [...localStudentsStore];
-
-    // Tentative de récupération Supabase si disponible
-    try {
-      const { data: rows, error } = await supabase.from('students').select('*').limit(500);
-      if (!error && Array.isArray(rows)) {
-        rawList = rows.map((row: any) => {
-
-          const d = row.data as any;
-          return {
-            id: row.id,
-            matricule: d?.matricule || row.matricule || row.registration_number || `MAT-${row.id.slice(0, 6)}`,
-            firstName: d?.firstName || row.first_name || 'Élève',
-            lastName: d?.lastName || row.last_name || 'GESCO',
-            gender: d?.gender || (row.gender === 'F' ? 'Féminin' : 'Masculin'),
-            photo: d?.photo || row.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${row.id}`,
-            grade: d?.grade || row.class_id || '6ème',
-            status: d?.status || (row.status === 'ACTIVE' ? 'Actif' : (row.status || 'Actif')),
-            feesStatus: d?.feesStatus || 'En attente',
-            attendance: d?.attendance ?? 100,
-            parentName: d?.parentName || '',
-            parentPhone: d?.parentPhone || '',
-            address: d?.address || '',
-            schoolYear: row.school_year_id || row.school_year || '2024-2025',
-          };
-        });
-      }
-    } catch { /* Fallback store local */ }
+    const list = await syncStudentsFromSupabase();
+    let rawList: Student[] = [...list];
 
     // Filtre par année scolaire
     if (schoolYear) {

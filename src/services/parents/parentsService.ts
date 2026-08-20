@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { supabase } from '../common/supabaseClient';
+import { broadcastDataChange } from '../common/realtimeSyncService';
 import { getChildren } from './parentRelationshipService';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -136,6 +137,7 @@ export async function createParent(parentData: Partial<Parent>): Promise<Service
       });
     } catch (dbErr) { console.warn('[parentsService] Supabase insert fallback:', dbErr); }
 
+    broadcastDataChange('parents', 'insert', createdParent);
     return createSuccess(createdParent, 'Responsable légal créé avec succès.');
   } catch (err) {
     return createError(err, 'Erreur lors de la création du responsable légal.');
@@ -176,6 +178,7 @@ export async function updateParent(id: string, updates: Partial<Parent>): Promis
     } catch { /* Silent local fallback */ }
 
     const updated = localParentsStore.find((p) => p.id === id) || (updates as Parent);
+    broadcastDataChange('parents', 'update', updated);
     return createSuccess(updated, 'Fiche du responsable légal mise à jour.');
   } catch (err) {
     return createError(err, 'Erreur lors de la mise à jour.');
@@ -194,6 +197,7 @@ export async function archiveParent(id: string): Promise<ServiceResponse<boolean
       localParentsStore[idx].status = 'Archivé';
       localParentsStore[idx].archivedAt = new Date().toISOString();
     }
+    broadcastDataChange('parents', 'update', { id, status: 'Archivé' });
     return createSuccess(true, 'Responsable légal archivé avec succès.');
   } catch (err) {
     return createError(err, 'Erreur lors de l\'archivage.');
@@ -211,6 +215,7 @@ export async function restoreParent(id: string): Promise<ServiceResponse<boolean
     if (idx !== -1) {
       localParentsStore[idx].status = 'Actif';
     }
+    broadcastDataChange('parents', 'update', { id, status: 'Actif' });
     return createSuccess(true, 'Responsable légal restauré avec succès.');
   } catch (err) {
     return createError(err, 'Erreur lors de la restauration.');

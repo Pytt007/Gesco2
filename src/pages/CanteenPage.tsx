@@ -5,6 +5,7 @@ import { CanteenPaymentView } from '../components/canteen/CanteenPaymentView';
 import { MealListView } from '../components/canteen/MealListView';
 import { CanteenTrackingView } from '../components/canteen/CanteenTrackingView';
 import { UtensilsCrossed, CreditCard, ClipboardList, BarChart3, UserPlus, Settings } from 'lucide-react';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
 
 type CanteenTab = 'PAYMENT' | 'MEAL_LIST' | 'TRACKING' | 'ENROLLMENT' | 'CONFIG';
 
@@ -18,9 +19,16 @@ const TABS: { id: CanteenTab; label: string; icon: React.ReactNode }[] = [
 
 export default function CanteenPage() {
   const [activeTab, setActiveTab] = useState<CanteenTab>('PAYMENT');
+  const [syncKey, setSyncKey] = useState(0);
+
+  // Synchronisation temps réel automatique
+  useRealtimeSync({
+    tables: ['school_settings', 'canteen_enrollments'],
+    onDataChange: () => setSyncKey((prev) => prev + 1),
+  });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <div key={syncKey} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
       {/* ── BANNIÈRE HERO SAAS ─────────────────────────────────────────────── */}
       <div
@@ -55,7 +63,7 @@ export default function CanteenPage() {
       </div>
 
       {/* ── ONGLETS PILLS MODERNES ─────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 6, padding: '6px', background: 'var(--bg-surface-hover, #f1f5f9)', border: '1px solid var(--border)', borderRadius: 14, flexWrap: 'wrap' }}>
+      <div className="tab-pills-bar" style={{ display: 'flex', gap: 6, padding: '6px', background: 'var(--bg-surface-hover, #f1f5f9)', border: '1px solid var(--border)', borderRadius: 14, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         {TABS.map((tab) => {
           const active = activeTab === tab.id;
           return (
