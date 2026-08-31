@@ -210,6 +210,7 @@ export async function createStudent(studentData: Partial<Student>): Promise<Serv
  */
 export async function updateStudent(id: string, updates: Partial<Student>): Promise<ServiceResponse<Student>> {
   try {
+    await syncStudentsFromSupabase();
     const idx = localStudentsStore.findIndex((s) => s.id === id);
     if (idx !== -1) {
       localStudentsStore[idx] = { ...localStudentsStore[idx], ...updates };
@@ -387,6 +388,7 @@ export async function searchStudents(filters: StudentFilters): Promise<ServiceRe
 
 export async function deleteStudent(id: string): Promise<ServiceResponse<boolean>> {
   try {
+    await syncStudentsFromSupabase();
     const idx = localStudentsStore.findIndex((s) => s.id === id);
     if (idx !== -1) {
       localStudentsStore.splice(idx, 1);
