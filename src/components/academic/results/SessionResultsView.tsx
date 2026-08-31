@@ -15,6 +15,7 @@ import { useToast } from '../../../context/ToastContext';
 import { useConfirm } from '../../../context/ConfirmContext';
 import { useAuth } from '../../../context/AuthContext';
 import { downloadExcel } from '../../../utils/exportUtils';
+import { safePrintHtml } from '../../../services/documents/safePrintService';
 
 interface SessionResultsViewProps {
   session: AssessmentSession;
@@ -157,15 +158,7 @@ export const SessionResultsView: React.FC<SessionResultsViewProps> = ({
       </html>
     `;
 
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-      printWindow.focus();
-      setTimeout(() => {
-        try { printWindow.print(); } catch {}
-      }, 250);
-    }
+    safePrintHtml(htmlContent, `Procès Verbal - ${session.title}`);
   };
 
   const handleExportExcel = async () => {

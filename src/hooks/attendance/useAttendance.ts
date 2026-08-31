@@ -13,6 +13,7 @@ import { attendanceService } from '../../services/attendance/attendanceService';
 import { downloadExcel } from '../../utils/exportUtils';
 import { useToast } from '../../context/ToastContext';
 import { generateAttendanceDocument } from '../../services/documents/DocumentEngine/index';
+import { safePrintHtml } from '../../services/documents/safePrintService';
 
 export function useAttendance(academicYearId: string = '') {
   const [selectedClassId, setSelectedClassId] = useState<string>('');
@@ -136,15 +137,7 @@ export function useAttendance(academicYearId: string = '') {
       items,
     });
 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    printWindow.document.write(doc.fullHtml);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-    }, 250);
+    safePrintHtml(doc.fullHtml, `Feuille d'Appel - ${selectedDate}`);
   }, [items, selectedClassId, selectedDate, stats]);
 
   return {

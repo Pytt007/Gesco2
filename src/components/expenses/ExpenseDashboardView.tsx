@@ -6,6 +6,7 @@ import { useAcademicYears } from '../../hooks/academic';
 import { useSchoolYear } from '../../context/SchoolYearContext';
 import { downloadExcel } from '../../utils/exportUtils';
 import { documentEngineEnterprise } from '../../services/documents/DocumentEngine/index';
+import { safePrintHtml } from '../../services/documents/safePrintService';
 import {
   PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, Legend, CartesianGrid,
@@ -115,15 +116,7 @@ export const ExpenseDashboardView: React.FC = () => {
       sectionsHtml: kpiHtml + tableHtml,
     });
 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    printWindow.document.write(doc.fullHtml);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-    }, 250);
+    safePrintHtml(doc.fullHtml, `Rapport Dépenses - ${schoolYear}`);
   };
 
   const kpiCards = [

@@ -4,6 +4,7 @@ import { useTimetable } from '../hooks/timetable/useTimetable';
 import { useAcademicYears } from '../hooks/academic';
 import { useSchoolYear } from '../context/SchoolYearContext';
 import { documentEngineEnterprise } from '../services/documents/DocumentEngine/index';
+import { safePrintHtml } from '../services/documents/safePrintService';
 import { TimePicker } from '../components/ui/time-picker';
 import {
   DAYS_OF_WEEK,
@@ -215,14 +216,7 @@ export default function TimetablePage() {
       sectionsHtml: tableHeaderHtml,
     });
 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-    printWindow.document.write(doc.fullHtml);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-    }, 250);
+    safePrintHtml(doc.fullHtml, `Emploi du temps - ${selectedName}`);
   };
 
   const selectedClass = classes.find((c) => c.id === selectedClassId);

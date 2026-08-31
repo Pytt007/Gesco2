@@ -1,4 +1,5 @@
 import { CompiledDocument, PDFRenderResult } from './types';
+import { safePrintHtml } from './safePrintService';
 
 /**
  * Service de rendu PDF (PDF Renderer) pour le Document Engine de GESCO
@@ -29,24 +30,10 @@ export const pdfRenderer = {
   },
 
   /**
-   * Lance l'impression du document dans une fenêtre/iframe d'impression du navigateur
+   * Lance l'impression sécurisée du document (anti-XSS et isolation)
    */
   printHtml(htmlContent: string): void {
-    if (typeof window === 'undefined') return;
-
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-      printWindow.focus();
-      setTimeout(() => {
-        try {
-          printWindow.print();
-        } catch {
-          // Fallback silencieux en environnement headless
-        }
-      }, 250);
-    }
+    safePrintHtml(htmlContent);
   },
 
   /**

@@ -11,6 +11,7 @@ import {
 import { EXPENSE_PAYMENT_MODE_LABELS } from '../services/expenses/expenseService';
 import { downloadExcel } from '../utils/exportUtils';
 import { documentEngineEnterprise } from '../services/documents/DocumentEngine/index';
+import { safePrintHtml } from '../services/documents/safePrintService';
 import {
   Plus, Search, Download, X, Save, TrendingDown, DollarSign,
   Printer, FileText, Edit2, Ban, Tag, Shield, Building,
@@ -254,15 +255,7 @@ export default function ExpensesPage() {
       sectionsHtml: tableHtml,
     });
 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    printWindow.document.write(doc.fullHtml);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-    }, 250);
+    safePrintHtml(doc.fullHtml, 'Journal des Dépenses GESCO');
   };
 
   const formatFCFA = (val: number) => `${val.toLocaleString('fr-FR')} FCFA`;

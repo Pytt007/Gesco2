@@ -9,6 +9,7 @@ import { executeStudentRegistrationTransaction } from '../../services/students/s
 import { useSchoolYear } from '../../context/SchoolYearContext';
 import { useToast } from '../../context/ToastContext';
 import { useDraftAutosave } from '../../hooks/common/useDraftAutosave';
+import { safePrintHtml } from '../../services/documents/safePrintService';
 
 interface Props {
   isOpen: boolean;
@@ -205,13 +206,8 @@ export const StudentRegistrationWizard: React.FC<Props> = ({ isOpen, onClose, on
 
   // Imprimer / Fermer Reçu
   const handlePrintReceipt = () => {
-    if (!receiptHtml) return;
-    const printWin = window.open('', '_blank');
-    if (printWin) {
-      printWin.document.write(receiptHtml);
-      printWin.document.close();
-      printWin.focus();
-      setTimeout(() => printWin.print(), 250);
+    if (receiptHtml) {
+      safePrintHtml(receiptHtml, 'Reçu d\'inscription GESCO');
     }
     onSuccess();
     onClose();

@@ -12,6 +12,7 @@ import {
 import { staffAttendanceService } from '../../services/staffAttendance/staffAttendanceService';
 import { downloadExcel } from '../../utils/exportUtils';
 import { useToast } from '../../context/ToastContext';
+import { safePrintHtml } from '../../services/documents/safePrintService';
 
 export function useStaffAttendance(academicYearId: string = 'ay-2026') {
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -132,9 +133,6 @@ export function useStaffAttendance(academicYearId: string = 'ay-2026') {
 
   // Impression / PDF — Design Corporate Salford & Co / GESCO Premium
   const printSheet = useCallback(() => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
     const htmlContent = `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -469,12 +467,7 @@ export function useStaffAttendance(academicYearId: string = 'ay-2026') {
 </body>
 </html>`;
 
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-    }, 250);
+    safePrintHtml(htmlContent, `Présence Personnel - ${selectedDate}`);
   }, [items, selectedDate, stats]);
 
   return {
