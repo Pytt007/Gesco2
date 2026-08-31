@@ -103,11 +103,18 @@ export const FinancialConfigStep: React.FC<Props> = ({
     const baseAmount = Math.floor(netTotal / count);
     const remainder = netTotal - baseAmount * count;
 
-    const currentYear = new Date().getFullYear();
+    let startYear = new Date().getFullYear();
+    if (schoolYear) {
+      const parts = schoolYear.split(/[-/]/);
+      const parsed = parseInt(parts[0], 10);
+      if (!isNaN(parsed) && parsed > 2000) {
+        startYear = parsed;
+      }
+    }
     const months = ['10', '11', '12', '01', '02', '03', '04', '05'];
 
     return Array.from({ length: count }, (_, i) => {
-      const yr = i >= 3 ? currentYear + 1 : currentYear;
+      const yr = i >= 3 ? startYear + 1 : startYear;
       const amount = i === 0 ? baseAmount + remainder : baseAmount;
       return {
         number: i + 1,

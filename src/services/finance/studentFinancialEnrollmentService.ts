@@ -24,12 +24,14 @@ export function clearFinancialEnrollmentsStore() {
 export function generateDefaultInstallments(
   netTotalDue: number,
   registrationFee: number,
-  customs?: { number: number; amountDue: number; label?: string }[]
+  customs?: { number: number; amountDue: number; label?: string; dueDate?: string }[],
+  academicYear?: string
 ): EnrollmentInstallmentItem[] {
   if (customs && customs.length > 0) {
     return customs.map((c) => ({
       number: c.number,
       label: c.label || `Échéance ${c.number}`,
+      dueDate: c.dueDate,
       amountDue: c.amountDue,
       amountPaid: 0,
       status: 'PENDING' as const,
@@ -41,19 +43,31 @@ export function generateDefaultInstallments(
   const basePerInstallment = Math.floor(netTuition / count);
   const remainder = netTuition - basePerInstallment * count;
 
+  let startYear = new Date().getFullYear();
+  if (academicYear) {
+    const parts = academicYear.split(/[-/]/);
+    const parsed = parseInt(parts[0], 10);
+    if (!isNaN(parsed) && parsed > 2000) {
+      startYear = parsed;
+    }
+  }
+
+  const months = ['10', '11', '12', '01', '02', '03', '04', '05'];
   const items: EnrollmentInstallmentItem[] = [];
 
   for (let i = 1; i <= count; i++) {
-    // Échéance 1 inclut les frais d'inscription + sa quote-part de scolarité + le reliquat de répartition
     const isFirst = i === 1;
     const dueAmount = isFirst
       ? registrationFee + basePerInstallment + remainder
       : basePerInstallment;
 
+    const monthIndex = i - 1;
+    const yearForMonth = monthIndex >= 3 ? startYear + 1 : startYear;
+
     items.push({
       number: i,
       label: `Échéance ${i}`,
-      dueDate: `2026-0${Math.min(9, i + 1)}-05`,
+      dueDate: `${yearForMonth}-${months[monthIndex]}-05`,
       amountDue: dueAmount,
       amountPaid: 0,
       status: 'PENDING' as const,
@@ -197,7 +211,12 @@ export const studentFinancialEnrollmentService = {
     const netTotalDue = Math.max(0, totalAnnualFee - discountAmount);
 
     // 6. Génération automatique des 8 échéances
-    const installments = generateDefaultInstallments(netTotalDue, registrationFee, input.customInstallments);
+    const installments = generateDefaultInstallments(
+      netTotalDue,
+      registrationFee,
+      input.customInstallments,
+      input.academicYearId
+    );
 
     // 7. Assemblage du dossier financier
     let studentName = `ÉLÈVE ${input.studentId}`;
@@ -280,7 +299,12 @@ export const studentFinancialEnrollmentService = {
     const netTotalDue = Math.max(0, existing.totalAnnualFee - discountAmount);
     const remainingBalance = Math.max(0, netTotalDue - existing.totalPaid);
 
-    const installments = generateDefaultInstallments(netTotalDue, existing.registrationFee, input.customInstallments);
+    const installments = generateDefaultInstallments(
+      netTotalDue,
+      existing.registrationFee,
+      input.customInstallments,
+      existing.academicYearId
+    );
 
     const updated: StudentFinancialEnrollment = {
       ...existing,
