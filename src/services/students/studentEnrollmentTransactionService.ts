@@ -94,9 +94,9 @@ export async function executeStudentRegistrationTransaction(
   if (!classroom) {
     classroom = {
       id: input.assignment.classId || crypto.randomUUID(),
-      name: input.assignment.className || '6ème',
+      name: input.assignment.className || 'CP1',
       academicYearId: schoolYear,
-      levelId: input.assignment.levelId || 'lvl-6e',
+      levelId: input.assignment.levelId || 'lvl-cp1',
       roomName: 'Salle principale',
       mainTeacherId: '',
       mainTeacherName: 'Enseignant',

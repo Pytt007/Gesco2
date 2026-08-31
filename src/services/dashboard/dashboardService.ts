@@ -1,4 +1,4 @@
-﻿/**
+/**
  * GESCO — Service Master Dashboard (src/services/dashboard/dashboardService.ts)
  * Couche d'accès et d'agrégation globale des indicateurs, alertes, activités et recherche globale
  */
@@ -557,7 +557,7 @@ export const dashboardService = {
     } catch { /* Fallback */ }
 
     // 3. Recherche Classes
-    const mockClasses = ['CP1 A', 'CP1 B', 'CE1 A', 'CE2 B', 'CM1 A', 'CM2 A', '6ème A', '5ème B'];
+    const mockClasses = ['Garderie A', 'PS A', 'MS A', 'GS A', 'CP1 A', 'CP1 B', 'CE1 A', 'CE2 B', 'CM1 A', 'CM2 A'];
     mockClasses.forEach((cls) => {
       if (cls.toLowerCase().includes(q)) {
         results.push({
