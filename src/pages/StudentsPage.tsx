@@ -55,8 +55,6 @@ export default function StudentsPage() {
     error,
     create,
     update,
-    archive,
-    restore,
     remove,
     searchQuery,
     setSearchQuery,
@@ -357,7 +355,6 @@ export default function StudentsPage() {
               <option value="all">Tous statuts</option>
               <option value="Actif">Actifs</option>
               <option value="Inactif">Inactifs</option>
-              <option value="Archivé">Archivés</option>
             </select>
           </div>
 
@@ -437,52 +434,25 @@ export default function StudentsPage() {
                         <button className="btn btn-ghost btn-sm" title="Modifier" onClick={() => handleOpenEdit(st)}>
                           <Edit2 size={15} color="#0ea5e9" />
                         </button>
-                        {st.status === 'Archivé' ? (
-                          <>
-                            <button className="btn btn-ghost btn-sm" title="Restaurer" onClick={() => restore(st.id)}>
-                              <RotateCcw size={15} color="#10b981" />
-                            </button>
-                            <button
-                              className="btn btn-ghost btn-sm"
-                              title="Supprimer définitivement"
-                              onClick={async () => {
-                                const isConfirmed = await confirm({
-                                  title: "Supprimer l'élève",
-                                  message: `Voulez-vous vraiment supprimer définitivement le dossier de l'élève ${st.lastName} ${st.firstName} ? Cette action est irréversible.`,
-                                  confirmText: 'Oui, supprimer définitivement',
-                                  cancelText: 'Annuler',
-                                  variant: 'danger',
-                                });
-                                if (isConfirmed) {
-                                  const ok = await remove(st.id);
-                                  if (ok) addNotification('success', `L'élève ${st.lastName} ${st.firstName} a été supprimé avec succès.`);
-                                }
-                              }}
-                            >
-                              <Trash2 size={15} color="#ef4444" />
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            className="btn btn-ghost btn-sm"
-                            title="Supprimer"
-                            onClick={async () => {
-                              const isConfirmed = await confirm({
-                                title: "Supprimer l'élève",
-                                message: `Voulez-vous vraiment supprimer définitivement l'élève ${st.lastName} ${st.firstName} ? Cette action est irréversible.`,
-                                confirmText: 'Oui, supprimer',
-                                cancelText: 'Annuler',
-                                variant: 'danger',
-                              });
-                              if (isConfirmed) {
-                                const ok = await remove(st.id);
-                                if (ok) addNotification('success', `L'élève ${st.lastName} ${st.firstName} a été supprimé avec succès.`);
-                              }
-                            }}
-                          >
-                            <Trash2 size={15} color="#ef4444" />
-                          </button>
-                        )}
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          title="Supprimer"
+                          onClick={async () => {
+                            const isConfirmed = await confirm({
+                              title: "Supprimer l'élève",
+                              message: `Voulez-vous vraiment supprimer définitivement l'élève ${st.lastName} ${st.firstName} ? Cette action est irréversible.`,
+                              confirmText: 'Oui, supprimer',
+                              cancelText: 'Annuler',
+                              variant: 'danger',
+                            });
+                            if (isConfirmed) {
+                              const ok = await remove(st.id);
+                              if (ok) addNotification('success', `L'élève ${st.lastName} ${st.firstName} a été supprimé avec succès.`);
+                            }
+                          }}
+                        >
+                          <Trash2 size={15} color="#ef4444" />
+                        </button>
                       </div>
                     </td>
                   </tr>

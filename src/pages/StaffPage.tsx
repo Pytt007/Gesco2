@@ -54,8 +54,6 @@ export default function StaffPage() {
     refresh,
     create,
     update,
-    archive,
-    restore,
     remove,
   } = useStaff({ pageSize: 15 });
 
@@ -250,7 +248,6 @@ export default function StaffPage() {
               <option value="Actif">Actifs</option>
               <option value="Inactif">Inactifs</option>
               <option value="En congé">En congé</option>
-              <option value="Archivé">Archivés</option>
             </select>
           </div>
 
@@ -327,55 +324,25 @@ export default function StaffPage() {
                         <button className="btn btn-ghost btn-sm" title="Modifier" onClick={() => handleOpenEdit(s)}>
                           <Edit2 size={15} color="#0ea5e9" />
                         </button>
-                        {s.status === 'Archivé' ? (
-                          <>
-                            <button className="btn btn-ghost btn-sm" title="Restaurer" onClick={async () => {
-                              const ok = await restore(s.id);
-                              if (ok) addNotification('success', `L'employé ${s.lastName} ${s.firstName} a été réactivé.`);
-                            }}>
-                              <RotateCcw size={15} color="#10b981" />
-                            </button>
-                            <button
-                              className="btn btn-ghost btn-sm"
-                              title="Supprimer définitivement"
-                              onClick={async () => {
-                                const isConfirmed = await confirm({
-                                  title: "Supprimer le membre du personnel",
-                                  message: `Voulez-vous vraiment supprimer définitivement l'employé ${s.lastName} ${s.firstName} ? Cette action est irréversible.`,
-                                  confirmText: 'Oui, supprimer définitivement',
-                                  cancelText: 'Annuler',
-                                  variant: 'danger',
-                                });
-                                if (isConfirmed) {
-                                  const ok = await remove(s.id);
-                                  if (ok) addNotification('success', `L'employé ${s.lastName} ${s.firstName} a été supprimé avec succès.`);
-                                }
-                              }}
-                            >
-                              <Trash2 size={15} color="#ef4444" />
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            className="btn btn-ghost btn-sm"
-                            title="Supprimer"
-                            onClick={async () => {
-                              const isConfirmed = await confirm({
-                                title: "Supprimer le membre du personnel",
-                                message: `Voulez-vous vraiment supprimer définitivement l'employé ${s.lastName} ${s.firstName} ?`,
-                                confirmText: 'Oui, supprimer',
-                                cancelText: 'Annuler',
-                                variant: 'danger',
-                              });
-                              if (isConfirmed) {
-                                const ok = await remove(s.id);
-                                if (ok) addNotification('success', `L'employé ${s.lastName} ${s.firstName} a été supprimé avec succès.`);
-                              }
-                            }}
-                          >
-                            <Trash2 size={15} color="#ef4444" />
-                          </button>
-                        )}
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          title="Supprimer"
+                          onClick={async () => {
+                            const isConfirmed = await confirm({
+                              title: "Supprimer le membre du personnel",
+                              message: `Voulez-vous vraiment supprimer définitivement l'employé ${s.lastName} ${s.firstName} ?`,
+                              confirmText: 'Oui, supprimer',
+                              cancelText: 'Annuler',
+                              variant: 'danger',
+                            });
+                            if (isConfirmed) {
+                              const ok = await remove(s.id);
+                              if (ok) addNotification('success', `L'employé ${s.lastName} ${s.firstName} a été supprimé avec succès.`);
+                            }
+                          }}
+                        >
+                          <Trash2 size={15} color="#ef4444" />
+                        </button>
                       </div>
                     </td>
                   </tr>
