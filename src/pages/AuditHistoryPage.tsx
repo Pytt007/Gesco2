@@ -9,7 +9,7 @@ import {
 import { useSchoolYear } from '../context/SchoolYearContext';
 import { useAcademicYears } from '../hooks/academic';
 
-import { supabase } from '../services/common/supabaseClient';
+import { auditLogService } from '../services/common/auditLogService';
 
 export interface AuditLogEntry {
   id: string;
@@ -39,31 +39,20 @@ export default function AuditHistoryPage() {
     async function loadAuditLogs() {
       setLoading(true);
       try {
-        if (supabase) {
-          const { data, error } = await supabase
-            .from('audit_logs')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(100);
-
-          if (!error && data) {
-            const mapped: AuditLogEntry[] = data.map((d: any) => ({
-              id: d.id,
-              timestamp: d.created_at ? new Date(d.created_at).toLocaleString('fr-FR') : new Date().toLocaleString('fr-FR'),
-              user: d.user_name || d.user_email || d.user_id || 'Administrateur',
-              role: d.role || 'Admin',
-              action: d.action || 'Action',
-              module: (d.module || 'SYSTEM').toUpperCase() as any,
-              ipAddress: d.ip_address || '',
-              severity: (d.severity || 'INFO').toUpperCase() as any,
-              details: d.details || d.description || '',
-            }));
-            if (isMounted) setLogs(mapped);
-          } else {
-            if (isMounted) setLogs([]);
-          }
-        } else {
-          if (isMounted) setLogs([]);
+        const data = await auditLogService.getLogs(200);
+        if (isMounted) {
+          const mapped: AuditLogEntry[] = data.map((d) => ({
+            id: d.id,
+            timestamp: d.timestamp ? new Date(d.timestamp).toLocaleString('fr-FR') : new Date().toLocaleString('fr-FR'),
+            user: d.user || 'Administrateur',
+            role: d.role || 'Admin',
+            action: d.action || 'Action',
+            module: d.module,
+            ipAddress: d.ipAddress || '127.0.0.1',
+            severity: d.severity,
+            details: d.details || '',
+          }));
+          setLogs(mapped);
         }
       } catch {
         if (isMounted) setLogs([]);

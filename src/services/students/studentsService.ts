@@ -5,6 +5,7 @@
 
 import { supabase } from '../common/supabaseClient';
 import { broadcastDataChange } from '../common/realtimeSyncService';
+import { auditLogService } from '../common/auditLogService';
 import { Student } from '../../types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -216,6 +217,15 @@ export async function createStudent(studentData: Partial<Student>): Promise<Serv
     }
 
     broadcastDataChange('students', 'insert', createdStudent);
+
+    // Traçabilité d'audit
+    auditLogService.log({
+      action: 'CREATION_ELEVE',
+      module: 'PEDAGOGY',
+      details: `Création de l'élève ${createdStudent.lastName} ${createdStudent.firstName} (Matricule: ${createdStudent.matricule}, Classe: ${createdStudent.grade})`,
+      severity: 'INFO',
+    });
+
     return createSuccess(createdStudent, 'Elève créé avec succès.');
   } catch (err) {
     return createError(err, 'Erreur lors de la création de l\'elève.');
@@ -417,6 +427,15 @@ export async function deleteStudent(id: string): Promise<ServiceResponse<boolean
     }
     await persistStudentsToSupabase(localStudentsStore);
     broadcastDataChange('students', 'delete', { id });
+
+    // Traçabilité d'audit
+    auditLogService.log({
+      action: 'SUPPRESSION_ELEVE',
+      module: 'PEDAGOGY',
+      details: `Suppression définitive de l'élève ID: ${id}`,
+      severity: 'WARNING',
+    });
+
     return createSuccess(true, 'Élève supprimé avec succès.');
   } catch (err) {
     return createError(err, 'Erreur lors de la suppression.');

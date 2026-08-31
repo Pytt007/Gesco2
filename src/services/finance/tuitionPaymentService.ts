@@ -10,6 +10,7 @@ import { qrCodeService } from '../documents/qrCodeService';
 import { ServiceResponse } from '../academic/academicYearsService';
 import { supabase } from '../common/supabaseClient';
 import { generateSecureReceiptNumber } from './receiptSequenceService';
+import { auditLogService } from '../common/auditLogService';
 
 const localPaymentsStore: Map<string, TuitionPaymentRecord> = new Map();
 let receiptCounter = 1001;
@@ -192,6 +193,15 @@ export const tuitionPaymentService = {
     // 6. Génération du reçu officiel avec QR Code
     const receipt = await this.generateReceiptData(paymentRecord, enrollment);
 
+    // Traçabilité d'audit
+    auditLogService.log({
+      action: 'ENCAISSEMENT_SCOLARITE',
+      module: 'FINANCE',
+      details: `Règlement de ${paymentRecord.amount.toLocaleString('fr-FR')} FCFA pour l'élève ${enrollment.studentName} (${enrollment.matricule}) - Reçu N° ${paymentRecord.receiptNumber} (${paymentRecord.paymentMode})`,
+      severity: 'SUCCESS',
+      user: paymentRecord.recordedBy,
+    });
+
     return {
       success: true,
       data: { payment: paymentRecord, receipt },
@@ -330,6 +340,15 @@ export const tuitionPaymentService = {
         return { ...inst, amountPaid: paidForInst, status };
       });
     }
+
+    // Traçabilité d'audit
+    auditLogService.log({
+      action: 'ANNULATION_PAIEMENT',
+      module: 'FINANCE',
+      details: `Annulation du versement ID: ${paymentId} (${payment.amount.toLocaleString('fr-FR')} FCFA) - Motif: "${reason}"`,
+      severity: 'DANGER',
+      user: cancelledBy,
+    });
 
     return { success: true, data: true, message: 'Paiement annulé avec succès avec traçabilité d’audit.' };
   },

@@ -6,6 +6,7 @@
 
 import { supabase, createIsolatedClient, usernameToEmail, emailToUsername } from '../common/supabaseClient';
 import { GescoUser, UserAccount, UserRole } from '../../types';
+import { auditLogService } from '../common/auditLogService';
 
 const STORAGE_SESSION_KEY = 'gesco_auth_session';
 const STORAGE_USERS_KEY = 'gesco_memory_users';
@@ -296,12 +297,21 @@ export async function createAccount(
     // Mode local
   }
 
+  // Traçabilité d'audit
+  auditLogService.log({
+    action: 'CREATION_COMPTE_UTILISATEUR',
+    module: 'SYSTEM',
+    details: `Création du compte utilisateur "${username}" (${fullName}) avec le rôle ${role}`,
+    severity: 'WARNING',
+  });
+
   return {};
 }
 
 export async function deleteAccount(userId: string): Promise<{ error?: string }> {
   deletedUserIds.add(userId);
   const currentList = await syncAccountsFromSupabase();
+  const deletedUser = currentList.find((u) => u.id === userId);
   const updated = currentList.filter((u) => u.id !== userId);
   saveLocalUserAccounts(updated);
   await persistAccountsToSupabase(updated);
@@ -309,6 +319,14 @@ export async function deleteAccount(userId: string): Promise<{ error?: string }>
   try {
     await supabase.from('profiles').delete().eq('id', userId);
   } catch {}
+
+  // Traçabilité d'audit
+  auditLogService.log({
+    action: 'SUPPRESSION_COMPTE_UTILISATEUR',
+    module: 'SYSTEM',
+    details: `Suppression définitive du compte utilisateur "${deletedUser?.username || userId}"`,
+    severity: 'DANGER',
+  });
 
   return {};
 }
@@ -329,5 +347,14 @@ export async function updateAccountRole(userId: string, role: UserRole): Promise
   try {
     await supabase.from('profiles').update({ role }).eq('id', userId);
   } catch {}
+
+  // Traçabilité d'audit
+  auditLogService.log({
+    action: 'MODIFICATION_ROLE_UTILISATEUR',
+    module: 'SYSTEM',
+    details: `Attribution du rôle ${role} à l'utilisateur ID: ${userId}`,
+    severity: 'WARNING',
+  });
+
   return {};
 }
