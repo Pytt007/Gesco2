@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home, ChevronDown, ChevronUp } from 'lucide-react';
+import { errorTelemetryService } from '../../services/monitoring/errorTelemetryService';
 
 export interface ErrorBoundaryProps {
   children: ReactNode;
@@ -34,6 +35,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('[GESCO ErrorBoundary] Exception interceptée avec succès:', error, errorInfo);
+    errorTelemetryService.captureException(error, {
+      componentStack: errorInfo?.componentStack || undefined,
+      severity: 'FATAL',
+    });
     (this as any).setState({ errorInfo });
   }
 

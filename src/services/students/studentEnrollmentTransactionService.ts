@@ -115,6 +115,18 @@ export async function executeStudentRegistrationTransaction(
 
   // ── 2. TRANSACTION EXECUTION (ALL-OR-NOTHING) ─────────────────────────────
   try {
+    // Tentative d'exécution atomique serveur via Procédure Stockée RPC PostgreSQL
+    try {
+      if (supabase && typeof supabase.rpc === 'function') {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('create_complete_student_enrollment', {
+          p_payload: { ...input, schoolYear },
+        });
+        if (!rpcError && rpcData && rpcData.success) {
+          console.log('[GESCO] Inscription exécutée avec succès via RPC Transactionnel PostgreSQL.');
+        }
+      }
+    } catch { /* Fallback direct vers pipeline orchestré */ }
+
     // A. Génération du matricule unique
     const yearPrefix = schoolYear.split('-')[0] || new Date().getFullYear().toString();
     const randomNum = Math.floor(1000 + Math.random() * 9000);

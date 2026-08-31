@@ -8,6 +8,7 @@ import { SummaryStep } from './steps/SummaryStep';
 import { executeStudentRegistrationTransaction } from '../../services/students/studentEnrollmentTransactionService';
 import { useSchoolYear } from '../../context/SchoolYearContext';
 import { useToast } from '../../context/ToastContext';
+import { useDraftAutosave } from '../../hooks/common/useDraftAutosave';
 
 interface Props {
   isOpen: boolean;
@@ -79,6 +80,14 @@ export const StudentRegistrationWizard: React.FC<Props> = ({ isOpen, onClose, on
     allowCapacityOverflow: false,
   });
 
+  const isDirty = Boolean(studentData.firstName || studentData.lastName || parentsData.father?.firstName);
+  const { clearDraft } = useDraftAutosave('student_registration', {
+    studentData,
+    parentsData,
+    paymentData,
+    assignmentData,
+  }, { isDirty, enabled: isOpen });
+
   if (!isOpen) return null;
 
   // Validation par étape (souple et non bloquante)
@@ -126,6 +135,7 @@ export const StudentRegistrationWizard: React.FC<Props> = ({ isOpen, onClose, on
         addNotification('error', res.error || 'Erreur lors de la validation transactionnelle.');
       } else {
         addNotification('success', `Élève inscrit avec succès ! Matricule attribué : ${res.matricule}`);
+        clearDraft();
         if (res.receiptHtml) {
           setReceiptHtml(res.receiptHtml);
         } else {

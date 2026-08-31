@@ -3,11 +3,12 @@ node_modules/
 .pnp
 .pnp.js
 
-# ─── Build / Dist ────────────────────────────────────────────────
+# ─── Build / Dist & Backups ──────────────────────────────────────
 dist/
 dist-ssr/
 build/
 _archive_pre_release/
+backups/
 
 
 # ─── Environnement (secrets) ─────────────────────────────────────
