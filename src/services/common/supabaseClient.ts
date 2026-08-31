@@ -6,16 +6,12 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const defaultUrl = 'https://zkofvccysqlacyysujdu.supabase.co';
-const defaultKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inprb2Z2Y2N5c3FsYWN5eXN1amR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1MTc4MDIsImV4cCI6MjEwMjA5MzgwMn0.Mymv4iymIlhxQ9EfqMgIx-sDKDBpLvCIlrxOTuSDxtI';
+const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string) || '';
+const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || '';
 
-const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string) || defaultUrl;
-const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || defaultKey;
-
-// SEC-005 : Avertissement interne minimal — ne jamais exposer les noms de variables en production
-if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+if (!supabaseUrl || !supabaseAnonKey) {
   if (import.meta.env.DEV) {
-    console.warn('[GESCO] Configuration de connexion manquante. Utilisation de la configuration par défaut.');
+    console.warn('[GESCO] Variables VITE_SUPABASE_URL ou VITE_SUPABASE_ANON_KEY manquantes dans votre fichier .env.local.');
   }
 }
 
