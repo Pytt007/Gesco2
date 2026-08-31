@@ -11,24 +11,27 @@ const STORAGE_SESSION_KEY = 'gesco_auth_session';
 const STORAGE_USERS_KEY = 'gesco_memory_users';
 
 // ── COMPTE ADMINISTRATEUR INITIAL ─────────────────────────────────────────────
-export const DEMO_USERS_MAP: Record<string, { passwords: string[]; user: GescoUser }> = {
-  admin: {
-    passwords: ['admin123', 'admin', 'gesco2026', 'Gesco2026!', 'password'],
-    user: {
-      id: '00000000-0000-0000-0000-000000000001',
-      username: 'admin',
-      role: 'ADMIN_GENERALE',
-      fullName: 'Direction Générale (Admin)',
-      avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=admin',
-      status: 'ACTIF',
-      createdAt: '2026-01-01T00:00:00Z',
-      isOwner: true,
-    }
-  }
+// ⚠️ SÉCURITÉ : Les mots de passe de secours sont privés au module et ne doivent JAMAIS être exportés.
+// Ce fallback n'est actif QUE si Supabase est injoignable (mode hors-ligne total).
+// Modifier ce mot de passe de secours dès le premier déploiement en production.
+const _ADMIN_OFFLINE_FALLBACK_PASS = import.meta.env.VITE_ADMIN_OFFLINE_PASS || 'Gesco2026!';
+
+const _ADMIN_USER: GescoUser = {
+  id: '00000000-0000-0000-0000-000000000001',
+  username: 'admin',
+  role: 'ADMIN_GENERALE',
+  fullName: 'Direction Générale (Admin)',
+  avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=admin',
+  status: 'ACTIF',
+  createdAt: '2026-01-01T00:00:00Z',
+  isOwner: true,
 };
 
+// Exporté uniquement pour les composants qui affichent la liste des utilisateurs (sans les mots de passe)
+export const DEMO_ADMIN_USER: GescoUser = _ADMIN_USER;
 
-export const DEMO_ADMIN_USER: GescoUser = DEMO_USERS_MAP.admin.user;
+
+
 
 export async function resolveUserFromSupabase(user: any): Promise<GescoUser> {
   const meta = user.user_metadata || {};
@@ -140,46 +143,7 @@ export async function loginWithPassword(username: string, password: string): Pro
   // Vérifier le rate-limit
   checkRateLimit(trimmedUser);
 
-  // 1. Vérification comptes Démo instantanés
-  const demo = DEMO_USERS_MAP[trimmedUser];
-  if (demo) {
-    const isPasswordValid =
-      demo.passwords.includes(trimmedPass) ||
-      trimmedPass === 'admin123' ||
-      trimmedPass === 'gesco2026' ||
-      trimmedPass === 'admin';
-
-    if (isPasswordValid) {
-      clearAttempts(trimmedUser);
-      try {
-        localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(demo.user));
-      } catch {}
-      return demo.user;
-    }
-  }
-
-  // 2. Vérification utilisateurs stockés localement
-  const localAccounts = getLocalUserAccounts();
-  const foundLocal = localAccounts.find((u) => u.username.toLowerCase() === trimmedUser);
-  if (foundLocal && (trimmedPass === 'admin123' || trimmedPass === 'gesco2026' || trimmedPass.length >= 4)) {
-    clearAttempts(trimmedUser);
-    const gescoUser: GescoUser = {
-      id: foundLocal.id,
-      username: foundLocal.username,
-      role: foundLocal.role,
-      fullName: foundLocal.fullName,
-      avatarUrl: foundLocal.avatarUrl,
-      status: 'ACTIF',
-      createdAt: foundLocal.createdAt,
-      isOwner: foundLocal.isOwner || foundLocal.role === 'ADMIN_GENERALE',
-    };
-    try {
-      localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(gescoUser));
-    } catch {}
-    return gescoUser;
-  }
-
-  // 3. Tenter Supabase Auth distant
+  // 1. Authentification via Supabase Auth (source de vérité principale)
   try {
     const email = usernameToEmail(trimmedUser);
     const { data, error } = await supabase.auth.signInWithPassword({ email, password: trimmedPass });
@@ -192,14 +156,17 @@ export async function loginWithPassword(username: string, password: string): Pro
       return user;
     }
   } catch {
-    // Si Supabase est injoignable et que c'est un compte admin/demo
-    if (trimmedUser === 'admin' && (trimmedPass === 'admin123' || trimmedPass === 'admin')) {
+    // Supabase injoignable — fallback de secours hors-ligne pour le seul compte admin
+    // ⚠️ Ce bloc ne s'active QUE si le réseau est totalement absent.
+    if (
+      trimmedUser === 'admin' &&
+      trimmedPass === _ADMIN_OFFLINE_FALLBACK_PASS
+    ) {
       clearAttempts(trimmedUser);
-      const adminUser = DEMO_USERS_MAP.admin.user;
       try {
-        localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(adminUser));
+        localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(_ADMIN_USER));
       } catch {}
-      return adminUser;
+      return _ADMIN_USER;
     }
   }
 
