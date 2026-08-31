@@ -39,6 +39,7 @@ const DevPortalPage = import.meta.env.DEV
   : null;
 
 import ErrorBoundary from './components/common/ErrorBoundary';
+import PwaUpdatePrompt from './components/common/PwaUpdatePrompt';
 
 // ─── COMPOSANTS AUXILIAIRES PREMIUM ─────────────────────────────────────────
 
@@ -273,6 +274,7 @@ function AppContent() {
       />
       <ToastContainer />
       <Toaster />
+      <PwaUpdatePrompt />
     </div>
   );
 }
