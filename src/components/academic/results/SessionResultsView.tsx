@@ -14,6 +14,7 @@ import { useAssessmentResults } from '../../../hooks/academic/results';
 import { useToast } from '../../../context/ToastContext';
 import { useConfirm } from '../../../context/ConfirmContext';
 import { useAuth } from '../../../context/AuthContext';
+import { downloadExcel } from '../../../utils/exportUtils';
 
 interface SessionResultsViewProps {
   session: AssessmentSession;
@@ -167,7 +168,7 @@ export const SessionResultsView: React.FC<SessionResultsViewProps> = ({
     }
   };
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     const data = results.map((r, idx) => ({
       Rang: r.rank ? `${r.rank}e` : `${idx + 1}e`,
       Matricule: r.matricule,
@@ -177,10 +178,8 @@ export const SessionResultsView: React.FC<SessionResultsViewProps> = ({
       Appréciation: r.appreciation || '',
       Décision: r.decision || '',
     }));
-    import('../../../utils/exportUtils').then(({ downloadExcel }) => {
-      downloadExcel(data, `Resultats_${session.title.replace(/\s+/g, '_')}`, 'Résultats');
-      addNotification('success', 'Exportation Excel générée avec succès !');
-    });
+    await downloadExcel(data, `Resultats_${session.title.replace(/\s+/g, '_')}`, 'Résultats');
+    addNotification('success', 'Exportation Excel générée avec succès !');
   };
 
   // Rendu des badges de rangs 🥇 🥈 🥉

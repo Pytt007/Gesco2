@@ -12,29 +12,30 @@ import LoginPage from './pages/LoginPage';
 import { Toaster } from './components/ui/toaster';
 import './index.css';
 
-import DashboardPage from './pages/DashboardPage';
-import StudentsPage from './pages/StudentsPage';
-import ParentsPage from './pages/ParentsPage';
-import StaffPage from './pages/StaffPage';
-import ScolarityPage from './pages/ScolarityPage';
-import ExpensesPage from './pages/ExpensesPage';
-import SettingsPage from './pages/SettingsPage';
-import AcademicPage from './pages/AcademicPage';
-import CatalogPage from './pages/CatalogPage';
-import GradeEntryPage from './pages/GradeEntryPage';
-import ReportCardsPage from './pages/ReportCardsPage';
-import CanteenPage from './pages/CanteenPage';
-import TransportPage from './pages/TransportPage';
-import TimetablePage from './pages/TimetablePage';
-import AttendancePage from './pages/AttendancePage';
-import StaffAttendancePage from './pages/StaffAttendancePage';
-import ReportsPage from './pages/ReportsPage';
-import StatisticsPage from './pages/StatisticsPage';
-import AuditHistoryPage from './pages/AuditHistoryPage';
-import PlaceholderPage from './pages/PlaceholderPage';
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const StudentsPage = lazy(() => import('./pages/StudentsPage'));
+const ParentsPage = lazy(() => import('./pages/ParentsPage'));
+const StaffPage = lazy(() => import('./pages/StaffPage'));
+const ScolarityPage = lazy(() => import('./pages/ScolarityPage'));
+const ExpensesPage = lazy(() => import('./pages/ExpensesPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const AcademicPage = lazy(() => import('./pages/AcademicPage'));
+const CatalogPage = lazy(() => import('./pages/CatalogPage'));
+const GradeEntryPage = lazy(() => import('./pages/GradeEntryPage'));
+const ReportCardsPage = lazy(() => import('./pages/ReportCardsPage'));
+const CanteenPage = lazy(() => import('./pages/CanteenPage'));
+const TransportPage = lazy(() => import('./pages/TransportPage'));
+const TimetablePage = lazy(() => import('./pages/TimetablePage'));
+const AttendancePage = lazy(() => import('./pages/AttendancePage'));
+const StaffAttendancePage = lazy(() => import('./pages/StaffAttendancePage'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const StatisticsPage = lazy(() => import('./pages/StatisticsPage'));
+const AuditHistoryPage = lazy(() => import('./pages/AuditHistoryPage'));
+const PlaceholderPage = lazy(() => import('./pages/PlaceholderPage'));
+
 // ⚠️  DEV ONLY — importé uniquement en développement, ne jamais supprimer la guard ci-dessous
 const DevPortalPage = import.meta.env.DEV
-  ? React.lazy(() => import('./pages/DevPortalPage'))
+  ? lazy(() => import('./pages/DevPortalPage'))
   : null;
 
 // ─── ERROR BOUNDARY ──────────────────────────────────────────────────────────
