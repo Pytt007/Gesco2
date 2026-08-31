@@ -90,18 +90,70 @@ export const StudentRegistrationWizard: React.FC<Props> = ({ isOpen, onClose, on
 
   if (!isOpen) return null;
 
-  // Validation par étape (souple et non bloquante)
+  // Validation stricte et guidée par étape
   const validateStep = (step: number): boolean => {
     const errs: Record<string, string> = {};
 
     if (step === 1) {
-      if (!studentData.lastName.trim() && !studentData.firstName.trim()) {
-        errs.lastName = 'Veuillez renseigner au moins le nom ou le prénom.';
+      if (!studentData.lastName.trim()) {
+        errs.lastName = 'Le nom de famille de l\'élève est obligatoire.';
+      }
+      if (!studentData.firstName.trim()) {
+        errs.firstName = 'Le prénom de l\'élève est obligatoire.';
+      }
+      if (!studentData.gender) {
+        errs.gender = 'Le genre de l\'élève est obligatoire.';
+      }
+    } else if (step === 2) {
+      const payer = parentsData.financialPayer;
+      if (payer === 'FATHER') {
+        if (!parentsData.father.lastName.trim() && !parentsData.father.firstName.trim()) {
+          errs.fatherName = 'Veuillez renseigner le nom ou prénom du père (responsable financier).';
+        }
+        if (!parentsData.father.phone.trim()) {
+          errs.fatherPhone = 'Le numéro de téléphone du responsable financier est obligatoire.';
+        }
+      } else if (payer === 'MOTHER') {
+        if (!parentsData.mother.lastName.trim() && !parentsData.mother.firstName.trim()) {
+          errs.motherName = 'Veuillez renseigner le nom ou prénom de la mère (responsable financière).';
+        }
+        if (!parentsData.mother.phone.trim()) {
+          errs.motherPhone = 'Le numéro de téléphone de la mère est obligatoire.';
+        }
+      } else if (payer === 'GUARDIAN') {
+        if (!parentsData.guardian.lastName.trim() && !parentsData.guardian.firstName.trim()) {
+          errs.guardianName = 'Veuillez renseigner le nom ou prénom du tuteur légal.';
+        }
+        if (!parentsData.guardian.phone.trim()) {
+          errs.guardianPhone = 'Le numéro de téléphone du tuteur légal est obligatoire.';
+        }
+      }
+    } else if (step === 3) {
+      if (paymentData.registrationFee < 0) {
+        errs.registrationFee = 'Les frais d\'inscription ne peuvent pas être négatifs.';
+      }
+      if (paymentData.tuitionFee < 0) {
+        errs.tuitionFee = 'Les frais de scolarité ne peuvent pas être négatifs.';
+      }
+      if (paymentData.paidAmount < 0) {
+        errs.paidAmount = 'Le montant versé ne peut pas être négatif.';
+      }
+      if (paymentData.discountType === 'PERCENTAGE' && (paymentData.discountValue < 0 || paymentData.discountValue > 100)) {
+        errs.discountValue = 'Le pourcentage de remise doit être compris entre 0 et 100%.';
+      }
+    } else if (step === 4) {
+      if (!assignmentData.classId && !assignmentData.className) {
+        errs.classId = 'Veuillez sélectionner une classe pour affecter l\'élève.';
       }
     }
 
     setErrors(errs);
-    return Object.keys(errs).length === 0;
+    const hasErrors = Object.keys(errs).length > 0;
+    if (hasErrors) {
+      const firstError = Object.values(errs)[0];
+      addNotification('error', firstError);
+    }
+    return !hasErrors;
   };
 
   const handleNext = () => {
@@ -111,6 +163,7 @@ export const StudentRegistrationWizard: React.FC<Props> = ({ isOpen, onClose, on
   };
 
   const handlePrev = () => {
+    setErrors({});
     setActiveStep((prev) => Math.max(1, prev - 1));
   };
 
