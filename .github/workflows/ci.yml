@@ -1,0 +1,41 @@
+name: Continuous Integration & Verification
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  verify:
+    name: TypeCheck, Tests & Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript TypeCheck
+        run: npx tsc --noEmit
+
+      - name: Run Core Unit & Service Tests
+        run: npx vitest run tests/academicEngine.test.ts tests/finance.test.ts tests/useLocalStorage.test.ts
+        env:
+          VITE_SUPABASE_URL: "https://mockproject.supabase.co"
+          VITE_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mockKey"
+
+      - name: Production Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: "https://mockproject.supabase.co"
+          VITE_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mockKey"
