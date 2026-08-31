@@ -11,6 +11,7 @@ import {
   updateParent,
   archiveParent,
   restoreParent,
+  deleteParent,
   Parent,
   ParentFilters,
 } from '../../services/parents/parentsService';
@@ -171,6 +172,31 @@ export function useParents(options: UseParentsOptions = {}) {
     [fetchParentsList]
   );
 
+  const remove = useCallback(
+    async (id: string): Promise<boolean> => {
+      setSaving(true);
+      setError(null);
+      setSuccess(null);
+      try {
+        const res = await deleteParent(id);
+        if (!res.success) {
+          setError(res.error || 'Erreur lors de la suppression.');
+          setSaving(false);
+          return false;
+        }
+        setSuccess(res.message || 'Responsable supprimé.');
+        await fetchParentsList();
+        setSaving(false);
+        return true;
+      } catch (err: any) {
+        setError(err.message || 'Erreur lors de la suppression.');
+        setSaving(false);
+        return false;
+      }
+    },
+    [fetchParentsList]
+  );
+
   return {
     parents: parents || [],
     parentsList: parents || [],
@@ -195,5 +221,7 @@ export function useParents(options: UseParentsOptions = {}) {
     update,
     archive,
     restore,
+    deleteParent: remove,
+    remove,
   };
 }

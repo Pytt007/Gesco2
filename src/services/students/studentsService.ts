@@ -437,11 +437,23 @@ export async function searchStudents(filters: StudentFilters): Promise<ServiceRe
   return listStudents(filters);
 }
 
-export async function deleteStudent(id: string): Promise<ServiceResponse<never>> {
-  return {
-    success: false,
-    error: 'La suppression physique d\'un élève est interdite. Seul l\'archivage est autorisé.',
-  };
+export async function deleteStudent(id: string): Promise<ServiceResponse<boolean>> {
+  try {
+    const idx = localStudentsStore.findIndex((s) => s.id === id);
+    if (idx !== -1) {
+      localStudentsStore.splice(idx, 1);
+    }
+    try {
+      await supabase.from('students').delete().eq('id', id);
+    } catch (err) {
+      console.warn('[studentsService:deleteStudent] Supabase delete fallback:', err);
+    }
+    await persistStudentsToSupabase(localStudentsStore);
+    broadcastDataChange('students', 'delete', { id });
+    return createSuccess(true, 'Élève supprimé avec succès.');
+  } catch (err) {
+    return createError(err, 'Erreur lors de la suppression.');
+  }
 }
 
 export async function createEnrollment(data: EnrollmentData): Promise<ServiceResponse<EnrollmentData>> {

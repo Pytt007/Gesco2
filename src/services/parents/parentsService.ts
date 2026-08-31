@@ -336,9 +336,20 @@ export async function searchParents(filters: ParentFilters): Promise<ServiceResp
   return listParents(filters);
 }
 
-export async function deleteParent(id: string): Promise<ServiceResponse<never>> {
-  return {
-    success: false,
-    error: 'La suppression physique d\'un responsable est interdite. Seul l\'archivage est autorisé.',
-  };
+export async function deleteParent(id: string): Promise<ServiceResponse<boolean>> {
+  try {
+    const idx = localParentsStore.findIndex((p) => p.id === id);
+    if (idx !== -1) {
+      localParentsStore.splice(idx, 1);
+    }
+    try {
+      await supabase.from('parents').delete().eq('id', id);
+    } catch (err) {
+      console.warn('[parentsService:deleteParent] Supabase delete fallback:', err);
+    }
+    broadcastDataChange('parents', 'delete', { id });
+    return createSuccess(true, 'Responsable supprimé avec succès.');
+  } catch (err) {
+    return createError(err, 'Erreur lors de la suppression.');
+  }
 }

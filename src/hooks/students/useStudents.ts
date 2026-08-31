@@ -10,6 +10,7 @@ import {
   updateStudent,
   archiveStudent,
   restoreStudent,
+  deleteStudent,
 } from '../../services/students/studentsService';
 import { logStudentEvent } from '../../services/students/studentHistoryService';
 import { Student } from '../../types';
@@ -167,6 +168,28 @@ export function useStudents(options: UseStudentsOptions = {}) {
     }
   }, [fetchStudentsList]);
 
+  const remove = useCallback(async (id: string): Promise<boolean> => {
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await deleteStudent(id);
+      if (!res.success) {
+        setError(res.error || 'Erreur de suppression.');
+        setSaving(false);
+        return false;
+      }
+      setSuccess(res.message || 'Élève supprimé.');
+      await fetchStudentsList();
+      setSaving(false);
+      return true;
+    } catch (err: any) {
+      setError(err.message || 'Erreur de suppression.');
+      setSaving(false);
+      return false;
+    }
+  }, [fetchStudentsList]);
+
   return {
     students: students || [],
     studentsList: students || [],
@@ -193,5 +216,7 @@ export function useStudents(options: UseStudentsOptions = {}) {
     update,
     archive,
     restore,
+    deleteStudent: remove,
+    remove,
   };
 }

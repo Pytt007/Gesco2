@@ -328,6 +328,25 @@ export async function restoreStaff(id: string): Promise<ServiceResponse<boolean>
   return createSuccess(true, 'Restauré.');
 }
 
+export async function deleteStaff(id: string): Promise<ServiceResponse<boolean>> {
+  if (!id?.trim()) return createError(null, 'Identifiant manquant.');
+  try {
+    await syncStaffFromSupabase();
+    localStaffCache.delete(id);
+    try {
+      await supabase.from('staff_members').delete().eq('id', id);
+    } catch (err) {
+      console.warn('[staffService:deleteStaff] Supabase delete fallback:', err);
+    }
+    const currentList = Array.from(localStaffCache.values());
+    await persistStaffToSupabase({ id } as any, currentList);
+    broadcastDataChange('staff', 'delete', { id });
+    return createSuccess(true, 'Membre du personnel supprimé.');
+  } catch (err) {
+    return createError(err, 'Erreur lors de la suppression.');
+  }
+}
+
 export async function getStaffById(id: string): Promise<ServiceResponse<StaffMember>> {
   await syncStaffFromSupabase();
   const cached = localStaffCache.get(id);

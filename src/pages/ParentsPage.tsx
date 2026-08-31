@@ -64,6 +64,7 @@ export default function ParentsPage({ onNavigate }: ParentsPageProps) {
     update,
     archive,
     restore,
+    remove,
   } = useParents({ pageSize: 15 });
 
   // Synchronisation temps réel automatique
@@ -301,25 +302,55 @@ export default function ParentsPage({ onNavigate }: ParentsPageProps) {
                         <button className="btn btn-ghost btn-sm" title="Modifier" onClick={() => handleOpenEdit(p)}>
                           <Edit2 size={15} color="#0ea5e9" />
                         </button>
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          title="Archiver / Supprimer"
-                          onClick={async () => {
-                            const isConfirmed = await confirm({
-                              title: 'Archiver le responsable',
-                              message: `Voulez-vous vraiment archiver la fiche de ${p.lastName} ${p.firstName} ?`,
-                              confirmText: 'Oui, archiver',
-                              cancelText: 'Annuler',
-                              variant: 'danger',
-                            });
-                            if (isConfirmed) {
-                              const ok = await archive(p.id);
-                              if (ok) addNotification('success', `Le responsable ${p.lastName} ${p.firstName} a été archivé avec succès.`);
-                            }
-                          }}
-                        >
-                          <Trash2 size={15} color="#ef4444" />
-                        </button>
+                        {p.status === 'Archivé' ? (
+                          <>
+                            <button className="btn btn-ghost btn-sm" title="Restaurer" onClick={async () => {
+                              const ok = await restore(p.id);
+                              if (ok) addNotification('success', `Le responsable ${p.lastName} ${p.firstName} a été réactivé.`);
+                            }}>
+                              <RotateCcw size={15} color="#10b981" />
+                            </button>
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              title="Supprimer définitivement"
+                              onClick={async () => {
+                                const isConfirmed = await confirm({
+                                  title: 'Supprimer le responsable',
+                                  message: `Voulez-vous vraiment supprimer définitivement le responsable ${p.lastName} ${p.firstName} ? Cette action est irréversible.`,
+                                  confirmText: 'Oui, supprimer définitivement',
+                                  cancelText: 'Annuler',
+                                  variant: 'danger',
+                                });
+                                if (isConfirmed) {
+                                  const ok = await remove(p.id);
+                                  if (ok) addNotification('success', `Le responsable ${p.lastName} ${p.firstName} a été supprimé avec succès.`);
+                                }
+                              }}
+                            >
+                              <Trash2 size={15} color="#ef4444" />
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            title="Supprimer"
+                            onClick={async () => {
+                              const isConfirmed = await confirm({
+                                title: 'Supprimer le responsable',
+                                message: `Voulez-vous vraiment supprimer définitivement la fiche de ${p.lastName} ${p.firstName} ?`,
+                                confirmText: 'Oui, supprimer',
+                                cancelText: 'Annuler',
+                                variant: 'danger',
+                              });
+                              if (isConfirmed) {
+                                const ok = await remove(p.id);
+                                if (ok) addNotification('success', `Le responsable ${p.lastName} ${p.firstName} a été supprimé avec succès.`);
+                              }
+                            }}
+                          >
+                            <Trash2 size={15} color="#ef4444" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

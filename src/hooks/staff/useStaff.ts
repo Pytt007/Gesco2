@@ -11,6 +11,7 @@ import {
   updateStaff,
   archiveStaff,
   restoreStaff,
+  deleteStaff,
   StaffMember,
   StaffFilters,
   StaffStatus,
@@ -173,6 +174,31 @@ export function useStaff(options: UseStaffOptions = {}) {
     [fetchStaffList]
   );
 
+  const remove = useCallback(
+    async (id: string): Promise<boolean> => {
+      setSaving(true);
+      setError(null);
+      setSuccess(null);
+      try {
+        const res = await deleteStaff(id);
+        if (!res.success) {
+          setError(res.error || 'Erreur lors de la suppression.');
+          setSaving(false);
+          return false;
+        }
+        setSuccess(res.message || 'Membre du personnel supprimé.');
+        await fetchStaffList();
+        setSaving(false);
+        return true;
+      } catch (err: any) {
+        setError(err.message || 'Erreur lors de la suppression.');
+        setSaving(false);
+        return false;
+      }
+    },
+    [fetchStaffList]
+  );
+
   return {
     staffMembers: staffMembers || [],
     staff: staffMembers || [],
@@ -199,5 +225,7 @@ export function useStaff(options: UseStaffOptions = {}) {
     update,
     archive,
     restore,
+    deleteStaff: remove,
+    remove,
   };
 }
