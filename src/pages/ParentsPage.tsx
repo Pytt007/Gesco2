@@ -110,20 +110,27 @@ export default function ParentsPage({ onNavigate }: ParentsPageProps) {
   };
 
   const handleSaveParent = async () => {
-    if (!form.firstName?.trim() || !form.lastName?.trim() || !form.phonePrimary?.trim()) {
-      addNotification('error', 'Le prénom, le nom et le téléphone principal sont obligatoires.');
+    if (!form.firstName?.trim() && !form.lastName?.trim()) {
+      addNotification('error', 'Veuillez renseigner au moins le nom ou le prénom.');
       return;
     }
 
+    const payload = {
+      ...form,
+      firstName: form.firstName?.trim() || form.lastName?.trim() || 'Parent',
+      lastName: form.lastName?.trim() || '',
+      phonePrimary: form.phonePrimary?.trim() || '—',
+    };
+
     if (editingParent) {
-      const ok = await update(editingParent.id, form);
+      const ok = await update(editingParent.id, payload);
       if (ok) {
         addNotification('success', 'Fiche responsable mise à jour avec succès.');
         setShowAddModal(false);
         setEditingParent(null);
       }
     } else {
-      const created = await create(form);
+      const created = await create(payload);
       if (created) {
         addNotification('success', 'Nouveau responsable légal créé avec succès.');
         setWizardStep(4);
@@ -380,15 +387,15 @@ export default function ParentsPage({ onNavigate }: ParentsPageProps) {
               {wizardStep === 1 && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <div>
-                    <label className="form-label">Nom *</label>
+                    <label className="form-label">Nom</label>
                     <input type="text" className="form-input" value={form.lastName || ''} onChange={(e) => setForm({ ...form, lastName: e.target.value })} placeholder="ex: KOUASSI" />
                   </div>
                   <div>
-                    <label className="form-label">Prénom(s) *</label>
+                    <label className="form-label">Prénom(s)</label>
                     <input type="text" className="form-input" value={form.firstName || ''} onChange={(e) => setForm({ ...form, firstName: e.target.value })} placeholder="ex: Charles" />
                   </div>
                   <div>
-                    <label className="form-label">Lien de Parente</label>
+                    <label className="form-label">Lien de Parenté</label>
                     <select className="form-select" value={form.relationshipType || 'Père'} onChange={(e) => setForm({ ...form, relationshipType: e.target.value as any })}>
                       <option value="Père">Père</option>
                       <option value="Mère">Mère</option>
@@ -406,7 +413,7 @@ export default function ParentsPage({ onNavigate }: ParentsPageProps) {
               {wizardStep === 2 && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <div>
-                    <label className="form-label">Téléphone Principal *</label>
+                    <label className="form-label">Téléphone Principal</label>
                     <input type="text" className="form-input" value={form.phonePrimary || ''} onChange={(e) => setForm({ ...form, phonePrimary: e.target.value })} placeholder="+225 07..." />
                   </div>
                   <div>

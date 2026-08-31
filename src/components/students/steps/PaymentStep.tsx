@@ -28,8 +28,7 @@ interface Props {
 export const PaymentStep: React.FC<Props> = ({ data, onChange, levelCode = 'CP1', schoolYear = '2024-2025', errors }) => {
   // Chargement automatique de la grille tarifaire configurée
   useEffect(() => {
-    tuitionFeesService.getSchedulesByYear(schoolYear).then((schedules) => {
-      const match = schedules.find((s) => s.levelCode === levelCode);
+    tuitionFeesService.getScheduleByLevel(levelCode, schoolYear).then((match) => {
       if (match) {
         onChange({
           registrationFee: match.registrationFee,
@@ -94,32 +93,44 @@ export const PaymentStep: React.FC<Props> = ({ data, onChange, levelCode = 'CP1'
           <div>
             <label className="form-label" style={{ fontSize: '0.78125rem', fontWeight: 600 }}>Droit d'Inscription</label>
             <input
-              type="number" className="form-input" value={data.registrationFee}
-              onChange={(e) => onChange({ registrationFee: Math.max(0, Number(e.target.value)) })}
+              type="number"
+              className="form-input"
+              placeholder="0"
+              value={data.registrationFee ? data.registrationFee : ''}
+              onChange={(e) => onChange({ registrationFee: e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)) })}
             />
           </div>
 
           <div>
             <label className="form-label" style={{ fontSize: '0.78125rem', fontWeight: 600 }}>Frais de Scolarité</label>
             <input
-              type="number" className="form-input" value={data.tuitionFee}
-              onChange={(e) => onChange({ tuitionFee: Math.max(0, Number(e.target.value)) })}
+              type="number"
+              className="form-input"
+              placeholder="0"
+              value={data.tuitionFee ? data.tuitionFee : ''}
+              onChange={(e) => onChange({ tuitionFee: e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)) })}
             />
           </div>
 
           <div>
-            <label className="form-label" style={{ fontSize: '0.78125rem', fontWeight: 600 }}>Option Cantine (Trimester)</label>
+            <label className="form-label" style={{ fontSize: '0.78125rem', fontWeight: 600 }}>Option Cantine (Trimestre)</label>
             <input
-              type="number" className="form-input" value={data.canteenFee}
-              onChange={(e) => onChange({ canteenFee: Math.max(0, Number(e.target.value)) })}
+              type="number"
+              className="form-input"
+              placeholder="0"
+              value={data.canteenFee ? data.canteenFee : ''}
+              onChange={(e) => onChange({ canteenFee: e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)) })}
             />
           </div>
 
           <div>
             <label className="form-label" style={{ fontSize: '0.78125rem', fontWeight: 600 }}>Option Transport (Trimestre)</label>
             <input
-              type="number" className="form-input" value={data.transportFee}
-              onChange={(e) => onChange({ transportFee: Math.max(0, Number(e.target.value)) })}
+              type="number"
+              className="form-input"
+              placeholder="0"
+              value={data.transportFee ? data.transportFee : ''}
+              onChange={(e) => onChange({ transportFee: e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)) })}
             />
           </div>
         </div>
@@ -146,22 +157,25 @@ export const PaymentStep: React.FC<Props> = ({ data, onChange, levelCode = 'CP1'
           <div>
             <label className="form-label" style={{ fontSize: '0.78125rem', fontWeight: 600 }}>Valeur de la Remise</label>
             <input
-              type="number" className="form-input" value={data.discountValue}
-              onChange={(e) => onChange({ discountValue: Math.max(0, Number(e.target.value)) })}
+              type="number"
+              className="form-input"
+              placeholder="0"
+              value={data.discountValue ? data.discountValue : ''}
+              onChange={(e) => onChange({ discountValue: e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)) })}
             />
           </div>
 
           <div>
             <label className="form-label" style={{ fontSize: '0.78125rem', fontWeight: 700, color: '#16a34a' }}>
-              Montant Encaisse Ce Jour <span style={{ color: '#ef4444' }}>*</span>
+              Montant Encaissé Ce Jour <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <input
               type="number"
               className={`form-input ${errors.paidAmount ? 'border-danger' : ''}`}
               style={{ fontWeight: 800, fontSize: '1rem', color: '#16a34a' }}
-              placeholder="Ex: 85000"
-              value={data.paidAmount || ''}
-              onChange={(e) => onChange({ paidAmount: Math.max(0, Number(e.target.value)) })}
+              placeholder="0"
+              value={data.paidAmount ? data.paidAmount : ''}
+              onChange={(e) => onChange({ paidAmount: e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)) })}
             />
             {errors.paidAmount && <span style={{ fontSize: '0.75rem', color: '#ef4444', display: 'block', marginTop: 2 }}>{errors.paidAmount}</span>}
           </div>

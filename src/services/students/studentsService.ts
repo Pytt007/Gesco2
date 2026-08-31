@@ -70,7 +70,58 @@ function createError<T>(error: any, fallbackMessage: string): ServiceResponse<T>
 export const OFFICIAL_BOY_AVATAR = 'https://api.dicebear.com/7.x/adventurer/svg?seed=girl&skinColor=8d5524,6c4524,4c3019&hairColor=000000,2c1b18,1a1a1a&backgroundColor=ffffff';
 export const OFFICIAL_GIRL_AVATAR = 'https://api.dicebear.com/7.x/adventurer/svg?seed=boy&skinColor=8d5524,6c4524,4c3019&hairColor=000000,2c1b18,1a1a1a&backgroundColor=ffffff';
 
-let localStudentsStore: Student[] = [];
+export const DEFAULT_STUDENTS: Student[] = [
+  {
+    id: 'st-001',
+    matricule: 'MAT-2026-0001',
+    firstName: 'Jean-Philippe',
+    lastName: 'KOUASSI',
+    gender: 'Masculin',
+    photo: OFFICIAL_BOY_AVATAR,
+    grade: 'CP1 A',
+    status: 'Actif',
+    feesStatus: 'Partiel',
+    attendance: 98,
+    parentName: 'Kouassi Michel',
+    parentPhone: '+225 07 00 00 01',
+    address: 'Abidjan Cocody',
+    schoolYear: 'ay-2026',
+  },
+  {
+    id: 'st-002',
+    matricule: 'MAT-2026-0002',
+    firstName: 'Marie-Paule',
+    lastName: 'BAKAYOKO',
+    gender: 'Féminin',
+    photo: OFFICIAL_GIRL_AVATAR,
+    grade: 'CP1 A',
+    status: 'Actif',
+    feesStatus: 'Payé',
+    attendance: 100,
+    parentName: 'Bakayoko Ibrahim',
+    parentPhone: '+225 07 00 00 02',
+    address: 'Abidjan Plateau',
+    schoolYear: 'ay-2026',
+  },
+  {
+    id: 'st-003',
+    matricule: 'MAT-2026-0003',
+    firstName: 'Awa',
+    lastName: 'TRAORÉ',
+    gender: 'Féminin',
+    photo: OFFICIAL_GIRL_AVATAR,
+    grade: 'CE1 B',
+    status: 'Actif',
+    feesStatus: 'En attente',
+    attendance: 95,
+    parentName: 'Traoré Seydou',
+    parentPhone: '+225 07 00 00 03',
+    address: 'Abidjan Yopougon',
+    schoolYear: 'ay-2026',
+  },
+];
+
+let localStudentsStore: Student[] = [...DEFAULT_STUDENTS];
 
 async function syncStudentsFromSupabase(): Promise<Student[]> {
   try {
@@ -86,7 +137,7 @@ async function syncStudentsFromSupabase(): Promise<Student[]> {
     }
 
     const { data: rows, error } = await supabase.from('students').select('*').limit(500);
-    if (!error && Array.isArray(rows)) {
+    if (!error && Array.isArray(rows) && rows.length > 0) {
       const list: Student[] = rows.map((row: any) => {
         const d = row.data as any;
         return {
@@ -111,6 +162,9 @@ async function syncStudentsFromSupabase(): Promise<Student[]> {
     }
   } catch (err) {
     console.warn('[studentsService] syncStudentsFromSupabase warning:', err);
+  }
+  if (localStudentsStore.length === 0) {
+    localStudentsStore = [...DEFAULT_STUDENTS];
   }
   return localStudentsStore;
 }

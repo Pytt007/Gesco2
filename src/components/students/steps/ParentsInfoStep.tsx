@@ -109,7 +109,7 @@ export const ParentsInfoStep: React.FC<Props> = ({ data, onChange, errors }) => 
             />
           </div>
           <div>
-            <label className="form-label" style={{ fontSize: '0.78125rem', fontWeight: 600 }}>Téléphone Principal {data.financialPayer === 'FATHER' && <span style={{ color: '#ef4444' }}>*</span>}</label>
+            <label className="form-label" style={{ fontSize: '0.78125rem', fontWeight: 600 }}>Téléphone Principal</label>
             <input
               type="tel" className={`form-input ${errors.fatherPhone ? 'border-danger' : ''}`} placeholder="Ex: 0708091011"
               value={data.father.phone} onChange={(e) => updateFather({ phone: e.target.value })}
@@ -147,7 +147,7 @@ export const ParentsInfoStep: React.FC<Props> = ({ data, onChange, errors }) => 
             />
           </div>
           <div>
-            <label className="form-label" style={{ fontSize: '0.78125rem', fontWeight: 600 }}>Téléphone Principal {data.financialPayer === 'MOTHER' && <span style={{ color: '#ef4444' }}>*</span>}</label>
+            <label className="form-label" style={{ fontSize: '0.78125rem', fontWeight: 600 }}>Téléphone Principal</label>
             <input
               type="tel" className={`form-input ${errors.motherPhone ? 'border-danger' : ''}`} placeholder="Ex: 0506070809"
               value={data.mother.phone} onChange={(e) => updateMother({ phone: e.target.value })}

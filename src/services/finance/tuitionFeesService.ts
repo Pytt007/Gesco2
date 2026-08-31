@@ -15,7 +15,30 @@ const levelNamesMap: Record<TuitionLevelCode, string> = {
   CM2: 'Cours Moyen 2 (CM2)',
 };
 
-const defaultLevelOrder: TuitionLevelCode[] = ['GARDERIE', 'PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
+const defaultLevelOrder: TuitionLevelCode[] = ['PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
+
+export const defaultFeeTariffs: Record<TuitionLevelCode, { registrationFee: number; tuitionFee: number; levelName: string }> = {
+  GARDERIE: { registrationFee: 50000, tuitionFee: 200000, levelName: 'Garderie' },
+  PS:       { registrationFee: 50000, tuitionFee: 250000, levelName: 'Petite Section (PS)' },
+  MS:       { registrationFee: 50000, tuitionFee: 250000, levelName: 'Moyenne Section (MS)' },
+  GS:       { registrationFee: 50000, tuitionFee: 250000, levelName: 'Grande Section (GS)' },
+  CP1:      { registrationFee: 60000, tuitionFee: 300000, levelName: 'Cours Préparatoire 1 (CP1)' },
+  CP2:      { registrationFee: 60000, tuitionFee: 300000, levelName: 'Cours Préparatoire 2 (CP2)' },
+  CE1:      { registrationFee: 60000, tuitionFee: 320000, levelName: 'Cours Élémentaire 1 (CE1)' },
+  CE2:      { registrationFee: 60000, tuitionFee: 320000, levelName: 'Cours Élémentaire 2 (CE2)' },
+  CM1:      { registrationFee: 70000, tuitionFee: 350000, levelName: 'Cours Moyen 1 (CM1)' },
+  CM2:      { registrationFee: 70000, tuitionFee: 350000, levelName: 'Cours Moyen 2 (CM2)' },
+};
+
+export function normalizeLevelCode(code?: string): TuitionLevelCode {
+  if (!code) return 'CP1';
+  const clean = code.trim().toUpperCase().replace(/^LVL-/, '').replace(/^LEVEL-/, '');
+  if (clean in levelNamesMap) {
+    return clean as TuitionLevelCode;
+  }
+  const found = defaultLevelOrder.find((l) => clean === l || clean.includes(l) || l.includes(clean));
+  return found || 'CP1';
+}
 
 const localFeeSchedulesStore: Map<string, TuitionFeeSchedule> = new Map();
 
@@ -68,11 +91,47 @@ export const tuitionFeesService = {
 
     await syncFeeSchedulesFromSupabase();
 
-    const localList = Array.from(localFeeSchedulesStore.values())
+    let localList = Array.from(localFeeSchedulesStore.values())
       .filter((s) => s.academicYearId === academicYearId && s.status === 'ACTIVE')
       .sort((a, b) => defaultLevelOrder.indexOf(a.levelCode) - defaultLevelOrder.indexOf(b.levelCode));
 
+    if (localList.length === 0) {
+      const now = new Date().toISOString();
+      const generated: TuitionFeeSchedule[] = defaultLevelOrder.map((code) => {
+        const item = defaultFeeTariffs[code];
+        const reg = item.registrationFee;
+        const tui = item.tuitionFee;
+        return {
+          id: `fee-${academicYearId}-${code.toLowerCase()}`,
+          academicYearId,
+          levelCode: code,
+          levelName: item.levelName,
+          registrationFee: reg,
+          tuitionFee: tui,
+          totalAnnualFee: reg + tui,
+          allowFixedDiscount: true,
+          allowPercentDiscount: true,
+          maxDiscountPercent: 30,
+          status: 'ACTIVE',
+          createdAt: now,
+          updatedAt: now,
+        };
+      });
+
+      generated.forEach((sch) => localFeeSchedulesStore.set(sch.id, sch));
+      localList = generated;
+    }
+
     return localList;
+  },
+
+  /**
+   * Trouve le tarif configuré pour un niveau spécifique (supporte 'lvl-cp1', 'CP1', etc.)
+   */
+  async getScheduleByLevel(levelCode: string, academicYearId: string): Promise<TuitionFeeSchedule | null> {
+    const list = await this.getSchedulesByYear(academicYearId);
+    const normalized = normalizeLevelCode(levelCode);
+    return list.find((s) => s.levelCode === normalized || s.levelCode === levelCode || s.id === levelCode) || null;
   },
 
   /**
@@ -174,6 +233,59 @@ export const tuitionFeesService = {
     await persistFeeSchedulesToSupabase();
 
     return { success: true, data: true, message: 'Tarif archivé.' };
+  },
+
+  /**
+   * Supprime définitivement une grille tarifaire
+   */
+  async deleteSchedule(id: string): Promise<ServiceResponse<boolean>> {
+    await syncFeeSchedulesFromSupabase();
+    const existing = localFeeSchedulesStore.get(id);
+    if (!existing) {
+      return { success: false, error: 'Tarif introuvable.' };
+    }
+
+    localFeeSchedulesStore.delete(id);
+    await persistFeeSchedulesToSupabase();
+
+    return { success: true, data: true, message: 'Tarif supprimé avec succès.' };
+  },
+
+  /**
+   * Réinitialise les tarifs aux valeurs officielles par défaut
+   */
+  async resetToDefaultSchedules(academicYearId: string): Promise<ServiceResponse<TuitionFeeSchedule[]>> {
+    await syncFeeSchedulesFromSupabase();
+    const now = new Date().toISOString();
+    const generated: TuitionFeeSchedule[] = defaultLevelOrder.map((code) => {
+      const item = defaultFeeTariffs[code];
+      const reg = item.registrationFee;
+      const tui = item.tuitionFee;
+      return {
+        id: `fee-${academicYearId}-${code.toLowerCase()}`,
+        academicYearId,
+        levelCode: code,
+        levelName: item.levelName,
+        registrationFee: reg,
+        tuitionFee: tui,
+        totalAnnualFee: reg + tui,
+        allowFixedDiscount: true,
+        allowPercentDiscount: true,
+        maxDiscountPercent: 30,
+        status: 'ACTIVE',
+        createdAt: now,
+        updatedAt: now,
+      };
+    });
+
+    Array.from(localFeeSchedulesStore.values())
+      .filter((s) => s.academicYearId === academicYearId)
+      .forEach((s) => localFeeSchedulesStore.delete(s.id));
+
+    generated.forEach((sch) => localFeeSchedulesStore.set(sch.id, sch));
+    await persistFeeSchedulesToSupabase();
+
+    return { success: true, data: generated, message: 'Grille tarifaire réinitialisée aux standards officiels.' };
   },
 
   /**

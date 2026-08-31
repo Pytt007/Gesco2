@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { TuitionFeeSchedule, TuitionLevelCode } from '../../services/finance/types';
-import { X, DollarSign, Percent, ShieldCheck } from 'lucide-react';
+import { X, DollarSign, Percent, ShieldCheck, CreditCard, Sparkles, Check } from 'lucide-react';
 
 interface TuitionFeeModalProps {
   isOpen: boolean;
@@ -19,15 +19,15 @@ interface TuitionFeeModalProps {
 
 const levelOptions: { code: TuitionLevelCode; label: string }[] = [
   { code: 'GARDERIE', label: 'Garderie' },
-  { code: 'PS', label: 'PS - Petite Section' },
-  { code: 'MS', label: 'MS - Moyenne Section' },
-  { code: 'GS', label: 'GS - Grande Section' },
-  { code: 'CP1', label: 'CP1 - Cours Préparatoire 1' },
-  { code: 'CP2', label: 'CP2 - Cours Préparatoire 2' },
-  { code: 'CE1', label: 'CE1 - Cours Élémentaire 1' },
-  { code: 'CE2', label: 'CE2 - Cours Élémentaire 2' },
-  { code: 'CM1', label: 'CM1 - Cours Moyen 1' },
-  { code: 'CM2', label: 'CM2 - Cours Moyen 2' },
+  { code: 'PS', label: 'Petite Section (PS)' },
+  { code: 'MS', label: 'Moyenne Section (MS)' },
+  { code: 'GS', label: 'Grande Section (GS)' },
+  { code: 'CP1', label: 'Cours Préparatoire 1 (CP1)' },
+  { code: 'CP2', label: 'Cours Préparatoire 2 (CP2)' },
+  { code: 'CE1', label: 'Cours Élémentaire 1 (CE1)' },
+  { code: 'CE2', label: 'Cours Élémentaire 2 (CE2)' },
+  { code: 'CM1', label: 'Cours Moyen 1 (CM1)' },
+  { code: 'CM2', label: 'Cours Moyen 2 (CM2)' },
 ];
 
 export const TuitionFeeModal: React.FC<TuitionFeeModalProps> = ({
@@ -49,8 +49,8 @@ export const TuitionFeeModal: React.FC<TuitionFeeModalProps> = ({
   useEffect(() => {
     if (initialData) {
       setLevelCode(initialData.levelCode);
-      setRegistrationFee(initialData.registrationFee.toString());
-      setTuitionFee(initialData.tuitionFee.toString());
+      setRegistrationFee(initialData.registrationFee > 0 ? initialData.registrationFee.toString() : '');
+      setTuitionFee(initialData.tuitionFee > 0 ? initialData.tuitionFee.toString() : '');
       setAllowFixedDiscount(initialData.allowFixedDiscount);
       setAllowPercentDiscount(initialData.allowPercentDiscount);
       setMaxDiscountPercent((initialData.maxDiscountPercent || 30).toString());
@@ -79,8 +79,8 @@ export const TuitionFeeModal: React.FC<TuitionFeeModalProps> = ({
     e.preventDefault();
     setError(null);
 
-    const reg = Number(registrationFee);
-    const tui = Number(tuitionFee);
+    const reg = Number(registrationFee) || 0;
+    const tui = Number(tuitionFee) || 0;
 
     if (isNaN(reg) || reg < 0) {
       setError('Les frais d’inscription ne peuvent pas être négatifs.');
@@ -121,52 +121,122 @@ export const TuitionFeeModal: React.FC<TuitionFeeModalProps> = ({
     <div
       style={{
         position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        inset: 0,
         backgroundColor: 'rgba(15, 23, 42, 0.65)',
+        backdropFilter: 'blur(6px)',
+        WebkitBackdropFilter: 'blur(6px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1050,
-        padding: '16px',
+        padding: '1.25rem',
       }}
     >
       <div
-        className="card shadow-lg"
-        style={{ width: '100%', maxWidth: '520px', borderRadius: '12px', overflow: 'hidden' }}
+        className="card shadow-xl"
+        style={{
+          width: '100%',
+          maxWidth: '540px',
+          borderRadius: '20px',
+          overflow: 'hidden',
+          border: '1px solid var(--border)',
+          background: 'var(--bg-surface, #ffffff)',
+          animation: 'slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+        }}
       >
+        {/* ── HEADER MODAL AÉRÉ & ÉLÉGANT ─────────────────────────────────── */}
         <div
           style={{
-            padding: '16px 20px',
-            backgroundColor: '#1e293b',
-            color: '#ffffff',
+            padding: '1.5rem 1.75rem',
+            borderBottom: '1px solid var(--border)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            background: 'linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%)',
+            color: '#ffffff',
           }}
         >
-          <h5 style={{ margin: 0, fontWeight: 600, fontSize: '1.1rem', color: '#ffffff' }}>
-            {initialData ? `Modifier les tarifs - ${initialData.levelName}` : 'Nouveau Tarif Scolaire'}
-          </h5>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
-            <X size={20} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 12,
+                background: 'rgba(255, 255, 255, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid rgba(255,255,255,0.25)',
+              }}
+            >
+              <CreditCard size={20} color="#93c5fd" />
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1.15rem', color: '#ffffff', letterSpacing: '-0.01em' }}>
+                {initialData ? `Modifier le Tarif · ${initialData.levelName}` : 'Nouveau Tarif Scolaire'}
+              </h3>
+              <p style={{ margin: '3px 0 0', fontSize: '0.78125rem', color: '#93c5fd' }}>
+                Paramétrez les frais annuels et les règles d'allègement pour ce niveau
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: 'rgba(255,255,255,0.1)',
+              border: 'none',
+              borderRadius: '10px',
+              color: '#ffffff',
+              cursor: 'pointer',
+              padding: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background 0.15s ease',
+            }}
+            title="Fermer"
+          >
+            <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ padding: '20px' }}>
+        {/* ── CORPS DU FORMULAIRE SPACIEUX & CONFORTABLE ───────────────────── */}
+        <form onSubmit={handleSubmit} style={{ padding: '1.75rem 2rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          
           {error && (
-            <div className="alert alert-danger p-2 mb-3 text-sm" style={{ borderRadius: '6px' }}>
+            <div
+              style={{
+                padding: '0.75rem 1rem',
+                borderRadius: '10px',
+                background: '#fef2f2',
+                border: '1px solid #fca5a5',
+                color: '#991b1b',
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+              }}
+            >
               {error}
             </div>
           )}
 
-          {/* Niveau */}
-          <div className="mb-3">
-            <label className="form-label text-sm fw-semibold">Niveau Scolaire</label>
+          {/* Niveau Scolaire */}
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary, #0f172a)', marginBottom: '6px' }}>
+              Niveau Scolaire
+            </label>
             <select
-              className="form-select text-sm"
+              className="form-select"
+              style={{
+                width: '100%',
+                height: 44,
+                borderRadius: 12,
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                border: '1px solid var(--border)',
+                background: initialData ? 'var(--bg-surface-hover, #f8fafc)' : 'var(--bg-surface, #ffffff)',
+              }}
               value={levelCode}
               onChange={(e) => setLevelCode(e.target.value as TuitionLevelCode)}
               disabled={!!initialData}
@@ -179,26 +249,36 @@ export const TuitionFeeModal: React.FC<TuitionFeeModalProps> = ({
             </select>
           </div>
 
-          {/* Frais Inscription & Scolarité */}
-          <div className="row g-3 mb-3">
-            <div className="col-6">
-              <label className="form-label text-sm fw-semibold">Frais d'inscription (FCFA)</label>
+          {/* Grille Frais Inscription & Scolarité */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary, #0f172a)', marginBottom: '6px' }}>
+                Frais d'inscription (FCFA)
+              </label>
               <input
                 type="number"
                 min="0"
-                className="form-input text-sm"
+                step="500"
+                className="form-input"
+                style={{ height: 44, borderRadius: 12, fontSize: '0.875rem', fontWeight: 600 }}
+                placeholder="Ex : 40 000"
                 value={registrationFee}
                 onChange={(e) => setRegistrationFee(e.target.value)}
                 required
               />
             </div>
 
-            <div className="col-6">
-              <label className="form-label text-sm fw-semibold">Frais de scolarité (FCFA)</label>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary, #0f172a)', marginBottom: '6px' }}>
+                Frais de scolarité (FCFA)
+              </label>
               <input
                 type="number"
                 min="0"
-                className="form-input text-sm"
+                step="1000"
+                className="form-input"
+                style={{ height: 44, borderRadius: 12, fontSize: '0.875rem', fontWeight: 600 }}
+                placeholder="Ex : 200 000"
                 value={tuitionFee}
                 onChange={(e) => setTuitionFee(e.target.value)}
                 required
@@ -206,76 +286,144 @@ export const TuitionFeeModal: React.FC<TuitionFeeModalProps> = ({
             </div>
           </div>
 
-          {/* Total Annuel Calculé */}
+          {/* Total Annuel Calculé Dynamique */}
           <div
-            className="mb-4 p-3"
-            style={{ backgroundColor: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0', textAlign: 'center' }}
+            style={{
+              padding: '1rem 1.25rem',
+              borderRadius: '14px',
+              background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+              border: '1px solid #a7f3d0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
           >
-            <span style={{ fontSize: '0.8125rem', color: '#166534', fontWeight: 600, display: 'block' }}>
-              Total annuel calculé automatiquement
-            </span>
-            <span style={{ fontSize: '1.4rem', fontWeight: 700, color: '#15803d' }}>
+            <div>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>
+                Total Annuel Calculé
+              </span>
+              <span style={{ fontSize: '0.75rem', color: '#065f46' }}>
+                Inscription + Scolarité
+              </span>
+            </div>
+            <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#065f46', fontFamily: "'Outfit', sans-serif" }}>
               {totalAnnualCalculated.toLocaleString('fr-FR')} FCFA
-            </span>
+            </div>
           </div>
 
-          {/* Remises autorisées */}
-          <div className="mb-4 p-3" style={{ backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-            <label className="form-label text-sm fw-semibold mb-2" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <ShieldCheck size={16} color="#2563eb" /> Options de Remises Autorisées
-            </label>
-
-            <div className="form-check mb-2">
-              <input
-                type="checkbox"
-                className="form-check-input"
-                id="chk-fixed"
-                checked={allowFixedDiscount}
-                onChange={(e) => setAllowFixedDiscount(e.target.checked)}
-              />
-              <label className="form-check-label text-sm" htmlFor="chk-fixed">
-                ☑ Autoriser la remise en montant fixe
-              </label>
+          {/* Options de Remises Autorisées */}
+          <div
+            style={{
+              padding: '1.125rem 1.25rem',
+              borderRadius: '14px',
+              border: '1px solid var(--border)',
+              background: 'var(--bg-surface-hover, #f8fafc)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.875rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-primary, #2563eb)', fontSize: '0.8125rem', fontWeight: 800 }}>
+              <ShieldCheck size={16} />
+              <span>Règles de Remises Autorisées</span>
             </div>
 
-            <div className="form-check mb-2">
-              <input
-                type="checkbox"
-                className="form-check-input"
-                id="chk-percent"
-                checked={allowPercentDiscount}
-                onChange={(e) => setAllowPercentDiscount(e.target.checked)}
-              />
-              <label className="form-check-label text-sm" htmlFor="chk-percent">
-                ☑ Autoriser la remise en pourcentage (%)
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+              {/* Remise Fixe */}
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  cursor: 'pointer',
+                  fontSize: '0.84375rem',
+                  fontWeight: 600,
+                  color: 'var(--text-primary, #1e293b)',
+                  userSelect: 'none',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  id="chk-fixed"
+                  checked={allowFixedDiscount}
+                  onChange={(e) => setAllowFixedDiscount(e.target.checked)}
+                  style={{ width: 17, height: 17, accentColor: '#2563eb', cursor: 'pointer' }}
+                />
+                <span>Autoriser les remises en montant fixe</span>
+              </label>
+
+              {/* Remise Pourcentage */}
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  cursor: 'pointer',
+                  fontSize: '0.84375rem',
+                  fontWeight: 600,
+                  color: 'var(--text-primary, #1e293b)',
+                  userSelect: 'none',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  id="chk-percent"
+                  checked={allowPercentDiscount}
+                  onChange={(e) => setAllowPercentDiscount(e.target.checked)}
+                  style={{ width: 17, height: 17, accentColor: '#2563eb', cursor: 'pointer' }}
+                />
+                <span>Autoriser les remises en pourcentage (%)</span>
               </label>
             </div>
 
             {allowPercentDiscount && (
-              <div className="mt-2">
-                <label className="form-label text-xs text-muted">Remise maximale autorisée (%)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  className="form-input text-sm"
-                  style={{ width: '120px' }}
-                  value={maxDiscountPercent}
-                  onChange={(e) => setMaxDiscountPercent(e.target.value)}
-                />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '0.5rem', borderTop: '1px dashed var(--border)' }}>
+                <span style={{ fontSize: '0.78125rem', fontWeight: 600, color: 'var(--text-secondary, #64748b)' }}>
+                  Pourcentage max. autorisé :
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    className="form-input"
+                    style={{ width: 80, height: 34, textAlign: 'center', fontWeight: 700, borderRadius: 8, fontSize: '0.875rem' }}
+                    value={maxDiscountPercent}
+                    onChange={(e) => setMaxDiscountPercent(e.target.value)}
+                  />
+                  <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-muted)' }}>%</span>
+                </div>
               </div>
             )}
           </div>
 
-          {/* Footer actions */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-            <button type="button" className="btn btn-secondary text-sm" onClick={onClose}>
+          {/* ── FOOTER ACTIONS ──────────────────────────────────────────────── */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '0.5rem' }}>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={onClose}
+              style={{ padding: '10px 20px', borderRadius: 12, fontWeight: 700, fontSize: '0.875rem' }}
+            >
               Annuler
             </button>
-            <button type="submit" className="btn btn-primary text-sm" disabled={submitting}>
-              {submitting ? 'Enregistrement...' : 'Enregistrer les tarifs'}
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={submitting}
+              style={{
+                padding: '10px 24px',
+                borderRadius: 12,
+                fontWeight: 800,
+                fontSize: '0.875rem',
+                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)',
+              }}
+            >
+              {submitting ? 'Enregistrement...' : 'Enregistrer le tarif'}
             </button>
           </div>
+
         </form>
       </div>
     </div>

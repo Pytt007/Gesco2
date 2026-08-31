@@ -4,9 +4,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import React, { useState, useEffect } from 'react';
-import { Calculator, DollarSign, Calendar, CreditCard, ShieldAlert, Award, ArrowRight, Clock, Plus, Trash2 } from 'lucide-react';
-import { tuitionFeesService } from '../../../services/finance/tuitionFeesService';
+import { Calculator, DollarSign, Calendar, CreditCard, ShieldAlert, Award, ArrowRight, Clock, Plus, Trash2, Layers } from 'lucide-react';
+import { tuitionFeesService, normalizeLevelCode } from '../../../services/finance/tuitionFeesService';
 import { PaymentMode, TuitionFeeSchedule } from '../../../services/finance/types';
+import { getLevels, SchoolLevel } from '../../../services/academic/schoolLevelsService';
 
 export interface InstallmentItem {
   number: number;
@@ -35,6 +36,7 @@ interface Props {
   data: FinancialConfigStepData;
   onChange: (updates: Partial<FinancialConfigStepData>) => void;
   levelCode?: string;
+  onLevelChange?: (levelId: string) => void;
   schoolYear?: string;
   errors: Record<string, string>;
 }
@@ -43,22 +45,33 @@ export const FinancialConfigStep: React.FC<Props> = ({
   data,
   onChange,
   levelCode = 'CP1',
+  onLevelChange,
   schoolYear = '2024-2025',
   errors,
 }) => {
   const [loadingTariffs, setLoadingTariffs] = useState(false);
   const [tariffSchedule, setTariffSchedule] = useState<TuitionFeeSchedule | null>(null);
+  const [availableLevels, setAvailableLevels] = useState<SchoolLevel[]>([]);
 
-  // Chargement automatique de la grille tarifaire configurée
+  // Chargement des niveaux scolaires disponibles
+  useEffect(() => {
+    getLevels().then((res) => {
+      if (res.success && res.data) {
+        setAvailableLevels(res.data);
+      }
+    });
+  }, []);
+
+  // Chargement automatique de la grille tarifaire configurée pour le niveau actif
   useEffect(() => {
     setLoadingTariffs(true);
-    tuitionFeesService.getSchedulesByYear(schoolYear).then((schedules) => {
-      const match = schedules.find((s) => s.levelCode === levelCode);
+    tuitionFeesService.getScheduleByLevel(levelCode, schoolYear).then((match) => {
       if (match) {
         setTariffSchedule(match);
         onChange({
           registrationFee: match.registrationFee,
           tuitionFee: match.tuitionFee,
+          paidAmount: data.paidAmount === 85000 || data.paidAmount === 0 ? match.registrationFee : data.paidAmount,
         });
       } else {
         setTariffSchedule(null);
@@ -66,6 +79,12 @@ export const FinancialConfigStep: React.FC<Props> = ({
       setLoadingTariffs(false);
     });
   }, [levelCode, schoolYear]);
+
+  // Nom lisible du niveau
+  const currentLevelObj = availableLevels.find(
+    (l) => l.id === levelCode || l.code === levelCode || l.code === normalizeLevelCode(levelCode)
+  );
+  const displayLevelName = tariffSchedule?.levelName || currentLevelObj?.name || normalizeLevelCode(levelCode);
 
   // Calculs financiers automatiques
   const grossTotal = data.registrationFee + data.tuitionFee + data.canteenFee + data.transportFee + data.otherFees;
@@ -108,6 +127,12 @@ export const FinancialConfigStep: React.FC<Props> = ({
     onChange({ customInstallments: copy });
   };
 
+  const handleLevelSelect = (newLevelId: string) => {
+    if (onLevelChange) {
+      onLevelChange(newLevelId);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       {/* ── BANNIÈRE RÉCAPITULATIF FINANCIER DYNAMIQUE ──────────────────────── */}
@@ -123,7 +148,7 @@ export const FinancialConfigStep: React.FC<Props> = ({
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
           <div>
             <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
-              Brut Annuel ({levelCode})
+              Brut Annuel ({displayLevelName})
             </span>
             <h3 style={{ margin: '4px 0 0', fontSize: '1.375rem', fontWeight: 900, color: '#ffffff' }}>
               {grossTotal.toLocaleString('fr-FR')} FCFA
@@ -178,13 +203,36 @@ export const FinancialConfigStep: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* ── SECTION 1 : TARIFS DE BASE DU NIVEAU ───────────────────────────── */}
+      {/* ── SECTION 1 : TARIFS DE BASE DU NIVEAU & SÉLECTEUR DE NIVEAU ──────── */}
       <div className="card p-4" style={{ borderRadius: 14, border: '1px solid #e2e8f0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <h5 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Calculator size={18} color="#2563eb" /> Tarifs Officiels Récupérés ({levelCode})
-          </h5>
-          {loadingTariffs && <span style={{ fontSize: '0.8125rem', color: '#64748b' }}>Chargement des tarifs...</span>}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
+          <div>
+            <h5 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Calculator size={18} color="#2563eb" /> Tarifs Officiels Récupérés — {displayLevelName}
+            </h5>
+            <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: '#64748b' }}>
+              Montants synchronisés automatiquement avec la configuration des frais de scolarité
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <label style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Layers size={15} color="#2563eb" /> Niveau :
+            </label>
+            <select
+              className="form-select form-select-sm"
+              value={levelCode}
+              onChange={(e) => handleLevelSelect(e.target.value)}
+              style={{ fontWeight: 700, minWidth: 160, borderRadius: 8, padding: '4px 10px', fontSize: '0.8125rem' }}
+            >
+              {availableLevels.map((lvl) => (
+                <option key={lvl.id} value={lvl.id}>
+                  {lvl.name} ({lvl.code})
+                </option>
+              ))}
+            </select>
+            {loadingTariffs && <span style={{ fontSize: '0.75rem', color: '#2563eb' }}>Chargement...</span>}
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
@@ -193,8 +241,9 @@ export const FinancialConfigStep: React.FC<Props> = ({
             <input
               type="number"
               className="form-input"
-              value={data.registrationFee}
-              onChange={(e) => onChange({ registrationFee: Math.max(0, Number(e.target.value)) })}
+              placeholder="0"
+              value={data.registrationFee ? data.registrationFee : ''}
+              onChange={(e) => onChange({ registrationFee: e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)) })}
               style={{ fontWeight: 700 }}
             />
           </div>
@@ -204,8 +253,9 @@ export const FinancialConfigStep: React.FC<Props> = ({
             <input
               type="number"
               className="form-input"
-              value={data.tuitionFee}
-              onChange={(e) => onChange({ tuitionFee: Math.max(0, Number(e.target.value)) })}
+              placeholder="0"
+              value={data.tuitionFee ? data.tuitionFee : ''}
+              onChange={(e) => onChange({ tuitionFee: e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)) })}
               style={{ fontWeight: 700 }}
             />
           </div>
@@ -215,8 +265,9 @@ export const FinancialConfigStep: React.FC<Props> = ({
             <input
               type="number"
               className="form-input"
-              value={data.canteenFee}
-              onChange={(e) => onChange({ canteenFee: Math.max(0, Number(e.target.value)) })}
+              placeholder="0"
+              value={data.canteenFee ? data.canteenFee : ''}
+              onChange={(e) => onChange({ canteenFee: e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)) })}
             />
           </div>
 
@@ -225,8 +276,9 @@ export const FinancialConfigStep: React.FC<Props> = ({
             <input
               type="number"
               className="form-input"
-              value={data.transportFee}
-              onChange={(e) => onChange({ transportFee: Math.max(0, Number(e.target.value)) })}
+              placeholder="0"
+              value={data.transportFee ? data.transportFee : ''}
+              onChange={(e) => onChange({ transportFee: e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)) })}
             />
           </div>
         </div>
@@ -258,8 +310,9 @@ export const FinancialConfigStep: React.FC<Props> = ({
             <input
               type="number"
               className="form-input"
-              value={data.discountValue}
-              onChange={(e) => onChange({ discountValue: Math.max(0, Number(e.target.value)) })}
+              placeholder="0"
+              value={data.discountValue ? data.discountValue : ''}
+              onChange={(e) => onChange({ discountValue: e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)) })}
               style={{ fontWeight: 700, color: '#16a34a' }}
             />
           </div>
@@ -318,8 +371,9 @@ export const FinancialConfigStep: React.FC<Props> = ({
                     <input
                       type="number"
                       className="form-control form-control-sm text-end"
-                      value={inst.amountDue}
-                      onChange={(e) => handleUpdateInstallment(idx, 'amountDue', Math.max(0, Number(e.target.value)))}
+                      placeholder="0"
+                      value={inst.amountDue ? inst.amountDue : ''}
+                      onChange={(e) => handleUpdateInstallment(idx, 'amountDue', e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
                       style={{ width: 140, fontWeight: 700, marginLeft: 'auto' }}
                     />
                   </td>
@@ -339,13 +393,14 @@ export const FinancialConfigStep: React.FC<Props> = ({
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
           <div>
             <label className="form-label" style={{ fontSize: '0.78125rem', fontWeight: 700, color: '#1e40af' }}>
-              Montant Encaissé (FCFA) *
+              Montant Encaissé (FCFA)
             </label>
             <input
               type="number"
               className="form-input"
-              value={data.paidAmount}
-              onChange={(e) => onChange({ paidAmount: Math.max(0, Number(e.target.value)) })}
+              placeholder="0"
+              value={data.paidAmount ? data.paidAmount : ''}
+              onChange={(e) => onChange({ paidAmount: e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)) })}
               style={{ fontWeight: 800, fontSize: '1.05rem', color: '#1d4ed8' }}
             />
             {errors.paidAmount && <span style={{ fontSize: '0.75rem', color: '#dc2626' }}>{errors.paidAmount}</span>}
@@ -353,7 +408,7 @@ export const FinancialConfigStep: React.FC<Props> = ({
 
           <div>
             <label className="form-label" style={{ fontSize: '0.78125rem', fontWeight: 700, color: '#1e40af' }}>
-              Mode de Règlement *
+              Mode de Règlement
             </label>
             <select
               className="form-select"

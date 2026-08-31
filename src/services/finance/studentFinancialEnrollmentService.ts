@@ -76,7 +76,7 @@ export const studentFinancialEnrollmentService = {
           .eq('academic_year_id', academicYearId)
           .eq('status', 'ACTIVE');
 
-        if (!error && Array.isArray(data)) {
+        if (!error && Array.isArray(data) && data.length > 0) {
           return data.map((d: any) => ({
             id: d.id,
             studentId: d.student_id,
@@ -165,8 +165,7 @@ export const studentFinancialEnrollmentService = {
     } catch { /* Fallback */ }
 
     // 4. Récupération automatique des tarifs selon l'année scolaire et le niveau
-    const yearTariffs = await tuitionFeesService.getSchedulesByYear(input.academicYearId);
-    const feeSchedule = yearTariffs.find((s) => s.levelCode === levelCode);
+    const feeSchedule = await tuitionFeesService.getScheduleByLevel(levelCode, input.academicYearId);
 
     if (!feeSchedule) {
       return {

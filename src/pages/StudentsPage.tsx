@@ -188,19 +188,26 @@ export default function StudentsPage() {
   };
 
   const handleSave = async () => {
-    if (!form.firstName?.trim() || !form.lastName?.trim() || !form.grade) {
-      addNotification('error', 'Le nom, le prénom et la classe sont obligatoires.');
+    if (!form.firstName?.trim() && !form.lastName?.trim()) {
+      addNotification('error', 'Veuillez renseigner au moins le nom ou le prénom.');
       return;
     }
 
+    const payload = {
+      ...form,
+      grade: form.grade || 'Non assigné',
+      firstName: form.firstName?.trim() || form.lastName?.trim() || 'Élève',
+      lastName: form.lastName?.trim() || '',
+    };
+
     if (editingStudent) {
-      const ok = await update(editingStudent.id, form);
+      const ok = await update(editingStudent.id, payload);
       if (ok) {
         addNotification('success', 'Élève mis à jour avec succès.');
         setShowAddModal(false);
       }
     } else {
-      const created = await create(form);
+      const created = await create(payload);
       if (created) {
         addNotification('success', 'Élève inscrit avec succès.');
         setWizardStep(4);

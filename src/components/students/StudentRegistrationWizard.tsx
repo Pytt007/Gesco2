@@ -57,14 +57,14 @@ export const StudentRegistrationWizard: React.FC<Props> = ({ isOpen, onClose, on
 
   // État Step 3: Configuration Financière
   const [paymentData, setPaymentData] = useState<FinancialConfigStepData>({
-    registrationFee: 60000,
-    tuitionFee: 300000,
+    registrationFee: 0,
+    tuitionFee: 0,
     canteenFee: 0,
     transportFee: 0,
     otherFees: 0,
     discountType: 'FIXED',
     discountValue: 0,
-    paidAmount: 85000,
+    paidAmount: 0,
     paymentMode: 'CASH',
     paymentReference: '',
     remarks: '',
@@ -81,40 +81,13 @@ export const StudentRegistrationWizard: React.FC<Props> = ({ isOpen, onClose, on
 
   if (!isOpen) return null;
 
-  // Validation par étape
+  // Validation par étape (souple et non bloquante)
   const validateStep = (step: number): boolean => {
     const errs: Record<string, string> = {};
 
     if (step === 1) {
-      if (!studentData.lastName.trim()) errs.lastName = 'Le nom de famille est obligatoire.';
-      if (!studentData.firstName.trim()) errs.firstName = 'Le prénom est obligatoire.';
-      if (!studentData.birthDate) errs.birthDate = 'La date de naissance est obligatoire.';
-      if (!studentData.birthPlace.trim()) errs.birthPlace = 'Le lieu de naissance est obligatoire.';
-      if (!studentData.address.trim()) errs.address = 'L\'adresse de résidence est obligatoire.';
-    }
-
-    if (step === 2) {
-      const payer = parentsData.financialPayer;
-      if (payer === 'FATHER' && !parentsData.father.phone.trim()) {
-        errs.fatherPhone = 'Le numéro du père (payeur principal) est obligatoire.';
-      }
-      if (payer === 'MOTHER' && !parentsData.mother.phone.trim()) {
-        errs.motherPhone = 'Le numéro de la mère (payeuse principale) est obligatoire.';
-      }
-      if (payer === 'GUARDIAN' && !parentsData.guardian.phone.trim()) {
-        errs.guardianPhone = 'Le numéro du tuteur (payeur principal) est obligatoire.';
-      }
-    }
-
-    if (step === 3) {
-      if (paymentData.paidAmount <= 0) {
-        errs.paidAmount = 'Un versement valide est obligatoire pour autoriser l\'inscription.';
-      }
-    }
-
-    if (step === 4) {
-      if (!assignmentData.classId) {
-        errs.classId = 'Veuillez sélectionner une classe d\'affectation.';
+      if (!studentData.lastName.trim() && !studentData.firstName.trim()) {
+        errs.lastName = 'Veuillez renseigner au moins le nom ou le prénom.';
       }
     }
 
@@ -272,7 +245,14 @@ export const StudentRegistrationWizard: React.FC<Props> = ({ isOpen, onClose, on
                 <ParentsInfoStep data={parentsData} onChange={(u) => setParentsData((p) => ({ ...p, ...u }))} errors={errors} />
               )}
               {activeStep === 3 && (
-                <FinancialConfigStep data={paymentData} onChange={(u) => setPaymentData((p) => ({ ...p, ...u }))} levelCode={assignmentData.levelId} schoolYear={assignmentData.schoolYear} errors={errors} />
+                <FinancialConfigStep
+                  data={paymentData}
+                  onChange={(u) => setPaymentData((p) => ({ ...p, ...u }))}
+                  levelCode={assignmentData.levelId}
+                  onLevelChange={(newLevelId) => setAssignmentData((p) => ({ ...p, levelId: newLevelId }))}
+                  schoolYear={assignmentData.schoolYear}
+                  errors={errors}
+                />
               )}
               {activeStep === 4 && (
                 <ClassAssignmentStep data={assignmentData} onChange={(u) => setAssignmentData((p) => ({ ...p, ...u }))} errors={errors} />

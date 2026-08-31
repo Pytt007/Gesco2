@@ -99,19 +99,26 @@ export default function StaffPage() {
   };
 
   const handleSaveStaff = async () => {
-    if (!form.firstName?.trim() || !form.lastName?.trim() || !form.phone?.trim()) {
-      addNotification('error', 'Le nom, le prénom et le téléphone sont obligatoires.');
+    if (!form.firstName?.trim() && !form.lastName?.trim()) {
+      addNotification('error', 'Veuillez renseigner au moins le nom ou le prénom.');
       return;
     }
 
+    const payload = {
+      ...form,
+      firstName: form.firstName?.trim() || form.lastName?.trim() || 'Employé',
+      lastName: form.lastName?.trim() || '',
+      phone: form.phone?.trim() || '—',
+    };
+
     if (editingStaff) {
-      const ok = await update(editingStaff.id, form);
+      const ok = await update(editingStaff.id, payload);
       if (ok) {
         addNotification('success', 'Fiche employé mise à jour avec succès.');
         setShowAddModal(false);
       }
     } else {
-      const created = await create(form);
+      const created = await create(payload);
       if (created) {
         addNotification('success', 'Nouveau membre du personnel créé avec succès.');
         setWizardStep(4);
@@ -405,15 +412,15 @@ export default function StaffPage() {
               {wizardStep === 1 && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <div>
-                    <label className="form-label">Nom *</label>
+                    <label className="form-label">Nom</label>
                     <input type="text" className="form-input" value={form.lastName || ''} onChange={(e) => setForm({ ...form, lastName: e.target.value })} placeholder="ex: KOUASSI" />
                   </div>
                   <div>
-                    <label className="form-label">Prénom(s) *</label>
+                    <label className="form-label">Prénom(s)</label>
                     <input type="text" className="form-input" value={form.firstName || ''} onChange={(e) => setForm({ ...form, firstName: e.target.value })} placeholder="ex: Eugénie" />
                   </div>
                   <div>
-                    <label className="form-label">Téléphone *</label>
+                    <label className="form-label">Téléphone</label>
                     <input type="text" className="form-input" value={form.phone || ''} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+225 07..." />
                   </div>
                   <div>

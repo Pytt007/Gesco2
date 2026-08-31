@@ -1,4 +1,4 @@
-﻿import {
+import {
   TuitionPaymentRecord,
   RecordPaymentInput,
   ReceiptData,
@@ -321,7 +321,7 @@ export const tuitionPaymentService = {
     localPaymentsStore.set(paymentId, payment);
 
     // 2. Ajustement en retour du solde du dossier financier
-    const enrollments = await studentFinancialEnrollmentService.getEnrollmentsByYear(yearId || '');
+    const enrollments = await studentFinancialEnrollmentService.getEnrollmentsByYear(payment.academicYearId || '');
     const enrollment = enrollments.find((e) => e.id === payment.enrollmentId);
 
     if (enrollment) {

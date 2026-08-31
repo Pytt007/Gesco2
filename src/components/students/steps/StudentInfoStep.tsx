@@ -191,7 +191,7 @@ export const StudentInfoStep: React.FC<Props> = ({ data, onChange, errors }) => 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
         <div>
           <label className="form-label" style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1e293b' }}>
-            Nom de famille <span style={{ color: '#ef4444' }}>*</span>
+            Nom de famille
           </label>
           <input
             type="text"
@@ -205,7 +205,7 @@ export const StudentInfoStep: React.FC<Props> = ({ data, onChange, errors }) => 
 
         <div>
           <label className="form-label" style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1e293b' }}>
-            Prénom(s) <span style={{ color: '#ef4444' }}>*</span>
+            Prénom(s)
           </label>
           <input
             type="text"
@@ -219,7 +219,7 @@ export const StudentInfoStep: React.FC<Props> = ({ data, onChange, errors }) => 
 
         <div>
           <label className="form-label" style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1e293b' }}>
-            Sexe / Genre <span style={{ color: '#ef4444' }}>*</span>
+            Sexe / Genre
           </label>
           <select
             className="form-select"
@@ -236,7 +236,7 @@ export const StudentInfoStep: React.FC<Props> = ({ data, onChange, errors }) => 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
         <div>
           <label className="form-label" style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1e293b' }}>
-            Date de Naissance <span style={{ color: '#ef4444' }}>*</span>
+            Date de Naissance
           </label>
           <input
             type="date"
@@ -249,7 +249,7 @@ export const StudentInfoStep: React.FC<Props> = ({ data, onChange, errors }) => 
 
         <div>
           <label className="form-label" style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1e293b' }}>
-            Lieu de Naissance <span style={{ color: '#ef4444' }}>*</span>
+            Lieu de Naissance
           </label>
           <input
             type="text"
@@ -279,7 +279,7 @@ export const StudentInfoStep: React.FC<Props> = ({ data, onChange, errors }) => 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div>
           <label className="form-label" style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1e293b' }}>
-            Adresse de Résidence Habituelle <span style={{ color: '#ef4444' }}>*</span>
+            Adresse de Résidence Habituelle
           </label>
           <textarea
             className={`form-input ${errors.address ? 'border-danger' : ''}`}

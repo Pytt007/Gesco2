@@ -123,6 +123,45 @@ export function useTuitionFees(academicYearId: string = 'ay-2026') {
     [academicYearId, fetchSchedules]
   );
 
+  // Suppression définitive d'un tarif
+  const deleteFeeSchedule = useCallback(
+    async (id: string) => {
+      setSaving(true);
+      setError(null);
+      try {
+        const res = await tuitionFeesService.deleteSchedule(id);
+        if (res.success) {
+          await fetchSchedules();
+          return true;
+        } else {
+          setError(res.error || 'Erreur lors de la suppression');
+          return false;
+        }
+      } finally {
+        setSaving(false);
+      }
+    },
+    [fetchSchedules]
+  );
+
+  // Réinitialisation aux tarifs officiels par défaut
+  const resetToDefault = useCallback(async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await tuitionFeesService.resetToDefaultSchedules(academicYearId);
+      if (res.success) {
+        await fetchSchedules();
+        return true;
+      } else {
+        setError(res.error || 'Erreur lors de la réinitialisation');
+        return false;
+      }
+    } finally {
+      setSaving(false);
+    }
+  }, [academicYearId, fetchSchedules]);
+
   return {
     schedules,
     loading,
@@ -133,6 +172,8 @@ export function useTuitionFees(academicYearId: string = 'ay-2026') {
     createFeeSchedule,
     updateFeeSchedule,
     archiveFeeSchedule,
+    deleteFeeSchedule,
+    resetToDefault,
     duplicatePreviousYear,
   };
 }

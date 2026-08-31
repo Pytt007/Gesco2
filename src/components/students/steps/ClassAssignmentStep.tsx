@@ -86,7 +86,7 @@ export const ClassAssignmentStep: React.FC<Props> = ({ data, onChange, errors })
       {/* SELECTION CLASSE PAR CARTE / DROPDOWN */}
       <div>
         <label className="form-label" style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1e293b', marginBottom: 8, display: 'block' }}>
-          Choisir la Classe d'Affectation <span style={{ color: '#ef4444' }}>*</span>
+          Choisir la Classe d'Affectation (Optionnel)
         </label>
 
         {loadingClasses ? (
