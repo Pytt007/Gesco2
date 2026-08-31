@@ -7,6 +7,7 @@ import {
 import { canteenEnrollmentService } from './canteenEnrollmentService';
 import { ServiceResponse } from '../academic/academicYearsService';
 import { supabase } from '../common/supabaseClient';
+import { generateSecureReceiptNumber } from '../finance/receiptSequenceService';
 
 export const CANTEEN_PAYMENT_MODE_LABELS: Record<CanteenPaymentMode, string> = {
   CASH: 'Espèces',
@@ -18,12 +19,6 @@ export const CANTEEN_PAYMENT_MODE_LABELS: Record<CanteenPaymentMode, string> = {
 };
 
 const localCanteenPaymentsStore: Map<string, CanteenPaymentRecord> = new Map();
-let receiptCounter = 1;
-
-function generateReceiptNumber(): string {
-  const num = String(receiptCounter++).padStart(6, '0');
-  return `CANT-${new Date().getFullYear()}-${num}`;
-}
 
 export const canteenPaymentService = {
   /**
@@ -67,7 +62,7 @@ export const canteenPaymentService = {
       };
     }
 
-    const receiptNumber = generateReceiptNumber();
+    const receiptNumber = await generateSecureReceiptNumber('CANT');
     const id = `cp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const totalPaidBefore = enrollment.totalPaid;
 

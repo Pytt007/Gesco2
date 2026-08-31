@@ -11,6 +11,7 @@ import {
 import { transportEnrollmentService } from './transportEnrollmentService';
 import { ServiceResponse } from '../academic/academicYearsService';
 import { supabase } from '../common/supabaseClient';
+import { generateSecureReceiptNumber } from '../finance/receiptSequenceService';
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -24,11 +25,6 @@ export const TRANSPORT_PAYMENT_MODE_LABELS: Record<TransportPaymentMode, string>
 };
 
 const paymentStore: Map<string, TransportPaymentRecord> = new Map();
-let receiptCounter = 1;
-
-function generateReceiptNumber(): string {
-  return `TRP-${new Date().getFullYear()}-${String(receiptCounter++).padStart(6, '0')}`;
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -63,7 +59,7 @@ export const transportPaymentService = {
       };
     }
 
-    const receiptNumber = generateReceiptNumber();
+    const receiptNumber = await generateSecureReceiptNumber('TRP');
     const id = `tp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const totalPaidBefore = enrollment.totalPaid;
 

@@ -9,6 +9,7 @@ import { studentFinancialEnrollmentService } from './studentFinancialEnrollmentS
 import { qrCodeService } from '../documents/qrCodeService';
 import { ServiceResponse } from '../academic/academicYearsService';
 import { supabase } from '../common/supabaseClient';
+import { generateSecureReceiptNumber } from './receiptSequenceService';
 
 const localPaymentsStore: Map<string, TuitionPaymentRecord> = new Map();
 let receiptCounter = 1001;
@@ -104,20 +105,8 @@ export const tuitionPaymentService = {
       };
     }
 
-    // 4. Numéro de reçu — ✅ INT-003 P0 : Tentative de séquence Supabase pour unicité garantie
-    let receiptNumber: string;
-    try {
-      const { data: seqRow } = await supabase
-        .from('receipt_sequences')
-        .select('next_value')
-        .eq('year', new Date().getFullYear())
-        .single();
-      const randomDigits = Math.floor(Math.random() * 9000 + 1000);
-      receiptNumber = `REC-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}${randomDigits}`;
-    } catch {
-      const randomDigits = Math.floor(Math.random() * 9000 + 1000);
-      receiptNumber = `REC-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}${randomDigits}`;
-    }
+    // 4. Numéro de reçu — Génération sécurisée, garantie unique et anti-collision
+    const receiptNumber = await generateSecureReceiptNumber('REC');
     const paymentId = `pay-${Date.now()}`;
     const recordedBy = input.recordedBy || 'Comptabilité GESCO';
 
@@ -283,7 +272,7 @@ export const tuitionPaymentService = {
       studentName: enrollment.studentName,
       matricule: enrollment.matricule,
       className: enrollment.className,
-      academicYear: '2026-2027',
+      academicYear: enrollment.academicYearId || payment.academicYearId || '2026-2027',
       parentSponsor: enrollment.parentSponsor || 'Parent d’Élève',
       paymentDate: payment.paymentDate,
       amountPaid: payment.amount,
