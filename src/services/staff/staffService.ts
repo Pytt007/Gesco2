@@ -124,14 +124,31 @@ async function syncStaffFromSupabase(): Promise<StaffMember[]> {
       fullList = settingsRow.data;
     }
 
-    // 2. Tenter la lecture dans staff_members table
-    const { data: dbRows, error: dbErr } = await supabase
-      .from('staff_members')
-      .select('*')
-      .limit(500);
+    // Chargement paginé sans limite arbitraire (toutes les pages de 500 lignes)
+    const PAGE_SIZE_STAFF = 500;
+    let staffOffset = 0;
+    let allStaffRows: any[] = [];
+    let staffFetching = true;
+    while (staffFetching) {
+      const { data: dbRows, error: dbErr } = await supabase
+        .from('staff_members')
+        .select('*')
+        .range(staffOffset, staffOffset + PAGE_SIZE_STAFF - 1);
+      if (dbErr || !Array.isArray(dbRows) || dbRows.length === 0) {
+        staffFetching = false;
+      } else {
+        allStaffRows = allStaffRows.concat(dbRows);
+        staffOffset += PAGE_SIZE_STAFF;
+        if (dbRows.length < PAGE_SIZE_STAFF) staffFetching = false;
+      }
+    }
 
-    if (!dbErr && Array.isArray(dbRows) && dbRows.length > 0) {
-      for (const row of dbRows) {
+    if (!allStaffRows.length) {
+      staffFetching = false; // already false, for clarity
+    }
+
+    if (Array.isArray(allStaffRows) && allStaffRows.length > 0) {
+      for (const row of allStaffRows) {
         const existingIdx = fullList.findIndex((m) => m.id === row.id);
         const mappedRole: StaffRole =
           row.role === 'TEACHER' ? 'Enseignant' :

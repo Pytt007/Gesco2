@@ -87,9 +87,26 @@ async function syncStudentsFromSupabase(): Promise<Student[]> {
       return settingsRow.data;
     }
 
-    const { data: rows, error } = await supabase.from('students').select('*').limit(500);
-    if (!error && Array.isArray(rows)) {
-      const list: Student[] = rows.map((row: any) => {
+    // Chargement paginé sans limite arbitraire (toutes les pages de 500 lignes)
+    const PAGE_SIZE = 500;
+    let offset = 0;
+    let allRows: any[] = [];
+    let keepFetching = true;
+    while (keepFetching) {
+      const { data: rows, error } = await supabase
+        .from('students')
+        .select('*')
+        .range(offset, offset + PAGE_SIZE - 1);
+      if (error || !Array.isArray(rows) || rows.length === 0) {
+        keepFetching = false;
+      } else {
+        allRows = allRows.concat(rows);
+        offset += PAGE_SIZE;
+        if (rows.length < PAGE_SIZE) keepFetching = false;
+      }
+    }
+    if (allRows.length > 0) {
+      const list: Student[] = allRows.map((row: any) => {
         const d = row.data as any;
         return {
           id: row.id,

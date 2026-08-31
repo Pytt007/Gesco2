@@ -252,9 +252,26 @@ export async function listParents(filters: ParentFilters = {}): Promise<ServiceR
     let rawList: Parent[] = [...localParentsStore];
 
     try {
-      const { data: rows } = await supabase.from('parents').select('*').limit(500);
-      if (rows && rows.length > 0) {
-        rawList = rows.map((r: any) => ({
+      // Chargement paginé sans limite arbitraire (toutes les pages de 500 lignes)
+      const PAGE_SIZE_PARENTS = 500;
+      let pOffset = 0;
+      let allParentRows: any[] = [];
+      let parentFetching = true;
+      while (parentFetching) {
+        const { data: rows } = await supabase
+          .from('parents')
+          .select('*')
+          .range(pOffset, pOffset + PAGE_SIZE_PARENTS - 1);
+        if (!Array.isArray(rows) || rows.length === 0) {
+          parentFetching = false;
+        } else {
+          allParentRows = allParentRows.concat(rows);
+          pOffset += PAGE_SIZE_PARENTS;
+          if (rows.length < PAGE_SIZE_PARENTS) parentFetching = false;
+        }
+      }
+      if (allParentRows.length > 0) {
+        rawList = allParentRows.map((r: any) => ({
           id: r.id,
           firstName: r.first_name || 'Prénom',
           lastName: r.last_name || 'Nom',
