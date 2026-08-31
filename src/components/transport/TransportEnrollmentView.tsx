@@ -49,8 +49,8 @@ export const TransportEnrollmentView: React.FC = () => {
         id: s.id,
         name: `${s.lastName} ${s.firstName}`,
         matricule: s.matricule || `MAT-${s.id.slice(0, 6)}`,
-        className: s.className || 'Classe',
-        levelCode: (s.level || 'CP1') as any,
+        className: s.className || s.grade || 'Classe',
+        levelCode: ((s as any).level || s.grade || 'CP1') as any,
         parentSponsor: s.parentName,
         parentPhone: s.parentPhone,
       })));

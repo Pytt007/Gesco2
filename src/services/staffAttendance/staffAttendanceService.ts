@@ -7,7 +7,7 @@ import {
   StaffAttendanceSheetInput,
   StaffAttendanceItem,
   StaffAttendanceStats,
-  AttendanceHistoryFilter as StaffAttendanceHistoryFilter,
+  StaffAttendanceHistoryFilter,
   StaffAttendanceStatus,
 } from './types';
 import { ServiceResponse } from '../academic/academicYearsService';

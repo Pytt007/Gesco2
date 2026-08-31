@@ -121,7 +121,7 @@ export function useExpenses(academicYearId: string = 'ay-2026') {
 
   // Mettre à jour le budget annuel
   const updateBudget = useCallback(async (newBudget: number) => {
-    const res = expenseService.setBudget(academicYearId, newBudget);
+    const res = await expenseService.setBudget(academicYearId, newBudget);
     if (res.success) {
       showToast('Budget mis à jour.', 'success');
       await loadData();

@@ -110,6 +110,7 @@ export type TuitionPaymentStatus = 'VALIDATED' | 'CANCELLED';
 export interface TuitionPaymentRecord {
   id: string;
   enrollmentId: string;
+  academicYearId?: string;
   receiptNumber: string;
   amount: number;
   paymentDate: string;

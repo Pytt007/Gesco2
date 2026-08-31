@@ -8,7 +8,7 @@ import { createParent, Parent } from '../parents/parentsService';
 import { studentFinancialEnrollmentService } from '../finance/studentFinancialEnrollmentService';
 import { tuitionPaymentService } from '../finance/tuitionPaymentService';
 import { documentEngine } from '../documents/documentEngine';
-import { getClassroom } from '../academic/classroomsService';
+import { getClassroom, Classroom } from '../academic/classroomsService';
 import { logStudentEvent } from './studentHistoryService';
 import { Student } from '../../types';
 import { TuitionLevelCode } from '../finance/types';

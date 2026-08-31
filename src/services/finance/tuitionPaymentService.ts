@@ -124,6 +124,7 @@ export const tuitionPaymentService = {
     const paymentRecord: TuitionPaymentRecord = {
       id: paymentId,
       enrollmentId: input.enrollmentId,
+      academicYearId: input.academicYearId || enrollment.academicYearId,
       receiptNumber,
       amount: Number(input.amount),
       paymentDate: input.paymentDate || new Date().toISOString().split('T')[0],

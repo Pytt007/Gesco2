@@ -125,8 +125,8 @@ export default function StatisticsPage() {
         setRecoveryRate(totalDue > 0 ? Math.round((totalPaid / totalDue) * 100) : 0);
 
         // 1. Répartition par genre
-        const girls = students.filter((s) => s.gender === 'F' || s.gender === 'FEMALE').length;
-        const boys = students.filter((s) => s.gender === 'M' || s.gender === 'MALE').length;
+        const girls = students.filter((s) => s.gender === 'Féminin' || (s.gender as any) === 'F' || (s.gender as any) === 'FEMALE').length;
+        const boys = students.filter((s) => s.gender === 'Masculin' || (s.gender as any) === 'M' || (s.gender as any) === 'MALE').length;
         setGenderDistribution([
           { name: 'Filles', value: girls, color: '#ec4899' },
           { name: 'Garçons', value: boys, color: '#3b82f6' },
@@ -135,7 +135,7 @@ export default function StatisticsPage() {
         // 2. Répartition par niveau
         const levelMap: Record<string, number> = {};
         students.forEach((s) => {
-          const lvl = s.level || (s as any).grade || 'Classe';
+          const lvl = (s as any).level || s.grade || 'Classe';
           levelMap[lvl] = (levelMap[lvl] || 0) + 1;
         });
         const levelColors = ['#2563eb', '#0ea5e9', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];

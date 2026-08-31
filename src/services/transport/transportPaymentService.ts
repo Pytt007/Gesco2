@@ -1,4 +1,4 @@
-﻿/**
+/**
  * GESCO — Service Paiements Transport
  */
 
@@ -48,7 +48,7 @@ export const transportPaymentService = {
     if (!input.paymentMode) return { success: false, error: 'Le mode de paiement est obligatoire.' };
 
     // Récupération de l'inscription
-    const allEnrollments = await transportEnrollmentService.getEnrollmentsByYear(yearId || '');
+    const allEnrollments = await transportEnrollmentService.getEnrollmentsByYear(schoolSettings?.academicYear);
     const enrollment = allEnrollments.find((e) => e.id === input.enrollmentId);
     if (!enrollment) return { success: false, error: 'Inscription transport introuvable.' };
 

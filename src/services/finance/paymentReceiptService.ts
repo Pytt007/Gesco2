@@ -1,4 +1,4 @@
-﻿import {
+import {
   ReceiptData,
   PaymentReceiptFilter,
   TuitionPaymentRecord,
@@ -186,8 +186,8 @@ export const paymentReceiptService = {
   /**
    * Récupère la liste de tous les reçus officiels émis
    */
-  async getAllReceipts(): Promise<ReceiptData[]> {
-    const enrollments = await studentFinancialEnrollmentService.getEnrollmentsByYear(yearId || '');
+  async getAllReceipts(academicYearId?: string): Promise<ReceiptData[]> {
+    const enrollments = await studentFinancialEnrollmentService.getEnrollmentsByYear(academicYearId || '');
     const result: ReceiptData[] = [];
 
     for (const enrollment of enrollments) {

@@ -221,7 +221,7 @@ export async function getChildren(parentId: string): Promise<ServiceResponse<Lin
             firstName = stRes.data.firstName;
             lastName = stRes.data.lastName;
             matricule = stRes.data.matricule || matricule;
-            grade = stRes.data.className || stRes.data.level || grade;
+            grade = stRes.data.className || (stRes.data as any).level || stRes.data.grade || grade;
           }
         } catch { /* Fallback */ }
 

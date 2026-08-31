@@ -12,6 +12,20 @@ import { supabase } from '../common/supabaseClient';
 
 const localCanteenEnrollmentsStore: Map<string, CanteenEnrollment> = new Map();
 
+function generateDefaultPeriods(netAmountDue: number, periodsCount: number = 3): CanteenPeriod[] {
+  const count = Math.max(1, periodsCount);
+  const baseAmount = Math.floor(netAmountDue / count);
+  const remainder = netAmountDue - baseAmount * count;
+
+  return Array.from({ length: count }, (_, i) => ({
+    number: i + 1,
+    label: `Période ${i + 1}`,
+    amountDue: i === 0 ? baseAmount + remainder : baseAmount,
+    amountPaid: 0,
+    status: 'PENDING' as const,
+  }));
+}
+
 export function clearCanteenEnrollmentsStore() {
   localCanteenEnrollmentsStore.clear();
 }

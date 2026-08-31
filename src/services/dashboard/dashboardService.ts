@@ -140,8 +140,8 @@ export async function getMainKPIs(schoolYear: string): Promise<MainKPIs> {
   try {
     const studentsRes = await listStudents({ schoolYear, pageSize: 1000 });
     const students = studentsRes.data?.students || [];
-    girlsCount = students.filter((s) => s.gender === 'F' || s.gender === 'FEMALE').length;
-    boysCount = students.filter((s) => s.gender === 'M' || s.gender === 'MALE').length;
+    girlsCount = students.filter((s) => s.gender === 'Féminin' || (s.gender as any) === 'F' || (s.gender as any) === 'FEMALE').length;
+    boysCount = students.filter((s) => s.gender === 'Masculin' || (s.gender as any) === 'M' || (s.gender as any) === 'MALE').length;
   } catch { /* Silent */ }
 
   try {
@@ -233,12 +233,12 @@ export async function getStudentStatistics(schoolYear: string) {
     const studentsRes = await listStudents({ schoolYear, pageSize: 1000 });
     const students = studentsRes.data?.students || [];
     const total = students.length;
-    const girls = students.filter((s) => s.gender === 'F' || s.gender === 'FEMALE').length;
-    const boys = students.filter((s) => s.gender === 'M' || s.gender === 'MALE').length;
+    const girls = students.filter((s) => s.gender === 'Féminin' || (s.gender as any) === 'F' || (s.gender as any) === 'FEMALE').length;
+    const boys = students.filter((s) => s.gender === 'Masculin' || (s.gender as any) === 'M' || (s.gender as any) === 'MALE').length;
 
     const countByLevel: Record<string, number> = {};
     students.forEach((s) => {
-      const lvl = s.level || (s as any).grade || 'Classe';
+      const lvl = (s as any).level || s.grade || 'Classe';
       countByLevel[lvl] = (countByLevel[lvl] || 0) + 1;
     });
 
