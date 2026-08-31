@@ -147,8 +147,36 @@ function buildSubjectResults(
     }
 
     // ── Mode GRADE (Numérique) ────────────────────────────────────────────────
-    if (absent) {
-      // Élève absent : score = 0 pondéré (ou exclusion selon les règles)
+    const isExcusedOrDispensed =
+      absenceStatus === 'EXCUSED' ||
+      absenceStatus === 'EXCUSED_ABSENT' ||
+      absenceStatus === 'DISPENSED';
+
+    const isUnexcused = absenceStatus === 'ABSENT';
+
+    if (isExcusedOrDispensed) {
+      // Élève absent justifié ou dispensé : matière exclue du calcul de la moyenne (sans pénalité 0)
+      subjectResults.push({
+        subjectId: tplSubject.subjectId,
+        subjectName: tplSubject.subjectName,
+        displayOrder: tplSubject.displayOrder,
+        grade: null,
+        appreciation: null,
+        weightedScore: null,
+        maximumScore: tplSubject.maximumScore,
+        coefficient: tplSubject.coefficient,
+        absenceStatus,
+        assessmentMode: 'GRADE',
+        isRequired: tplSubject.isRequired,
+        warnings: [
+          `Élève ${absenceStatus === 'DISPENSED' ? 'dispensé(e)' : 'absent(e) justifié(e)'} — coefficient exclu du diviseur de moyenne.`,
+        ],
+      });
+      continue;
+    }
+
+    if (isUnexcused) {
+      // Élève absent non justifié : pénalité score = 0 pondéré comptabilisé dans le diviseur
       const weighted = 0;
       const weightedMax = tplSubject.maximumScore * tplSubject.coefficient;
       weightedGrades.push(weighted);
@@ -165,10 +193,10 @@ function buildSubjectResults(
         weightedScore: 0,
         maximumScore: tplSubject.maximumScore,
         coefficient: tplSubject.coefficient,
-        absenceStatus,
+        absenceStatus: 'ABSENT',
         assessmentMode: 'GRADE',
         isRequired: tplSubject.isRequired,
-        warnings: [`Élève ${absenceStatus === 'EXCUSED' ? 'absent (justifié)' : 'absent'} — score = 0.`],
+        warnings: ['Élève absent non justifié — note 0 comptabilisée dans la moyenne.'],
       });
       continue;
     }
@@ -342,12 +370,13 @@ export function buildResult(
     return emptyResult(allErrors, allWarnings, subjectResults, template.formula.formulaExpression);
   }
 
-  // Arrondir la moyenne finale à 2 décimales
-  const average = parseFloat(formulaResult.value.toFixed(2));
+  // Arrondir la moyenne finale à 2 décimales (ou null si aucune matière évaluée)
+  const average =
+    formulaInput.subjectCount === 0 ? null : parseFloat(formulaResult.value.toFixed(2));
 
   // Appréciation primaire
   const appreciation =
-    formulaResult.resultScale !== 'APPRECIATION'
+    average !== null && formulaResult.resultScale !== 'APPRECIATION'
       ? mapPrimaryAppreciation(average, formulaResult.resultScale)
       : null;
 

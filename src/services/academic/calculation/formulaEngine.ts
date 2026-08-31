@@ -146,7 +146,14 @@ export function executeFormula(formula: FormulaConfig, input: FormulaInput): For
     // ── AVERAGE : SUM(grades) / count ────────────────────────────────────────
     case 'AVERAGE': {
       if (input.subjectCount === 0) {
-        throw new Error(`[FormulaEngine] Impossible de calculer la moyenne : aucune matière présente.`);
+        return {
+          value: 0,
+          weightedSum: 0,
+          weightedMaximum: 0,
+          resultScale,
+          formulaCode: code,
+          computationTrace: 'Toutes les matières sont excusées ou dispensées : aucune note calculable.',
+        };
       }
       const value = parseFloat((weightedSum / input.subjectCount).toFixed(4));
       return {
@@ -173,35 +180,43 @@ export function executeFormula(formula: FormulaConfig, input: FormulaInput): For
 
     // ── SUM_DIVISOR : SUM(grades)/N ──────────────────────────────────────────
     case 'SUM_DIVISOR': {
-      const divisor = parseSumDivisor(formulaExpression);
-      if (divisor === 0) throw new Error(`[FormulaEngine] Diviseur égal à zéro dans : "${formulaExpression}"`);
-      const value = parseFloat((weightedSum / divisor).toFixed(4));
+      const nominalDivisor = parseSumDivisor(formulaExpression);
+      if (nominalDivisor === 0) throw new Error(`[FormulaEngine] Diviseur égal à zéro dans : "${formulaExpression}"`);
+
+      // Si des matières sont excusées, le diviseur s'adapte au nombre de matières réelles
+      const effectiveDivisor = (input.subjectCount > 0 && input.subjectCount < nominalDivisor)
+        ? input.subjectCount
+        : nominalDivisor;
+
+      const value = input.subjectCount === 0 ? 0 : parseFloat((weightedSum / effectiveDivisor).toFixed(4));
       return {
         value,
         weightedSum,
         weightedMaximum,
         resultScale,
         formulaCode: code,
-        computationTrace: `SUM_DIVISOR : ${weightedSum} / ${divisor} = ${value}`,
+        computationTrace: `SUM_DIVISOR : ${weightedSum} / ${effectiveDivisor} = ${value}`,
       };
     }
 
     // ── SUM_MULTIPLIER : (SUM(coeff*grade)/N)*M ──────────────────────────────
     case 'SUM_MULTIPLIER': {
-      const { divisor, multiplier } = parseSumMultiplier(formulaExpression);
-      if (divisor === 0) throw new Error(`[FormulaEngine] Diviseur égal à zéro dans : "${formulaExpression}"`);
-      const normalized = normalizeScore(weightedSum, divisor, resultScale as 'SCORE_10' | 'SCORE_20', {
-        capAtMax: false,
-      });
-      const value = parseFloat(((weightedSum / divisor) * multiplier).toFixed(4));
-      void normalized; // calculated via normalizeScore for consistency check
+      const { divisor: nominalDivisor, multiplier } = parseSumMultiplier(formulaExpression);
+      if (nominalDivisor === 0) throw new Error(`[FormulaEngine] Diviseur égal à zéro dans : "${formulaExpression}"`);
+
+      // Diviseur effectif : utilise le maximum pondéré réellement évalué si des matières sont excusées
+      const effectiveDivisor = (weightedMaximum > 0 && weightedMaximum < nominalDivisor)
+        ? weightedMaximum
+        : nominalDivisor;
+
+      const value = effectiveDivisor === 0 ? 0 : parseFloat(((weightedSum / effectiveDivisor) * multiplier).toFixed(4));
       return {
         value,
         weightedSum,
         weightedMaximum,
         resultScale,
         formulaCode: code,
-        computationTrace: `SUM_MULTIPLIER : (${weightedSum} / ${divisor}) × ${multiplier} = ${value}`,
+        computationTrace: `SUM_MULTIPLIER : (${weightedSum} / ${effectiveDivisor}) × ${multiplier} = ${value}`,
       };
     }
 
