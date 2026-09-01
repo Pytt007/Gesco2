@@ -19,6 +19,7 @@ import {
   setPrimaryParent,
   setPayerParent,
   updateRelationship,
+  validateStudentFamilyUnit,
   clearRelationshipsStore,
 } from '../../src/services/parents/parentRelationshipService';
 import {
@@ -219,14 +220,37 @@ describe('Parents Module Services Layer', () => {
       expect(childrenRes.data?.length).toBe(2);
     });
 
-    it('unlinkStudent removes relationship link', async () => {
-      const parentRes = await createParent({ firstName: 'Unlink', lastName: 'Test', phonePrimary: '+225 0909090909' });
-      const parentId = parentRes.data!.id;
-      const studentId = 'stu-unlink-test';
+    it('unlinkStudent removes relationship link and reassigns primary/payer if remaining parents exist', async () => {
+      const p1 = await createParent({ firstName: 'First', lastName: 'Parent', phonePrimary: '+225 0909090909' });
+      const p2 = await createParent({ firstName: 'Second', lastName: 'Parent', phonePrimary: '+225 0808080808' });
+      const studentId = 'stu-unlink-reassign-test';
 
-      await linkStudent(studentId, parentId, 'Tuteur Légal');
-      const unlinkRes = await unlinkStudent(studentId, parentId);
+      // 1er parent lié -> devient primary & payer automatiquement
+      const l1 = await linkStudent(studentId, p1.data!.id, 'Père');
+      expect(l1.data?.isPrimary).toBe(true);
+      expect(l1.data?.isPayer).toBe(true);
+
+      // 2ème parent lié
+      await linkStudent(studentId, p2.data!.id, 'Mère', false, false);
+
+      // Validation de l'unité familiale
+      const diagBefore = await validateStudentFamilyUnit(studentId);
+      expect(diagBefore.data?.isValid).toBe(true);
+      expect(diagBefore.data?.parentCount).toBe(2);
+
+      // Retrait du 1er parent (qui était primary & payer)
+      const unlinkRes = await unlinkStudent(studentId, p1.data!.id);
       expect(unlinkRes.success).toBe(true);
+
+      // Le 2ème parent hérite automatiquement des statuts primary et payer
+      const parentsRes = await getParentsOfStudent(studentId);
+      expect(parentsRes.data?.length).toBe(1);
+      expect(parentsRes.data?.[0].isPrimary).toBe(true);
+      expect(parentsRes.data?.[0].isPayer).toBe(true);
+
+      const diagAfter = await validateStudentFamilyUnit(studentId);
+      expect(diagAfter.data?.isValid).toBe(true);
+      expect(diagAfter.data?.parentCount).toBe(1);
     });
   });
 

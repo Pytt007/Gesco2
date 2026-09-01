@@ -106,18 +106,26 @@ export async function linkStudent(
       return createError(null, 'Identifiants élève et responsable obligatoires.');
     }
 
-    const existingRel = Array.from(localRelationshipsCache.values()).find(
-      (rel) => rel.studentId === studentId && rel.parentId === parentId
+    const studentRels = Array.from(localRelationshipsCache.values()).filter(
+      (rel) => rel.studentId === studentId
     );
+
+    const existingRel = studentRels.find((rel) => rel.parentId === parentId);
     if (existingRel) {
       return createError(null, 'Cet élève est déjà lié à ce responsable légal.');
     }
 
-    if (isPayer) {
+    // Si c'est le 1er parent lié à l'élève : activer par défaut isPrimary, isPayer et isEmergencyContact
+    const isFirstParent = studentRels.length === 0;
+    const finalPrimary = isFirstParent ? true : isPrimary;
+    const finalPayer = isFirstParent ? true : isPayer;
+    const finalEmergency = isEmergencyContact ?? true;
+
+    if (finalPayer) {
       await setPayerParent(studentId, parentId);
     }
 
-    if (isPrimary) {
+    if (finalPrimary) {
       await setPrimaryParent(studentId, parentId);
     }
 
@@ -129,11 +137,11 @@ export async function linkStudent(
       studentId,
       parentId,
       relationshipType,
-      isPrimary,
-      isPayer,
-      isEmergencyContact,
-      isFinancialEmergencyContact: isPayer,
-      canPickUpStudent: isEmergencyContact,
+      isPrimary: finalPrimary,
+      isPayer: finalPayer,
+      isEmergencyContact: finalEmergency,
+      isFinancialEmergencyContact: finalPayer,
+      canPickUpStudent: finalEmergency,
       createdAt: now,
       updatedAt: now,
     };
@@ -146,7 +154,7 @@ export async function linkStudent(
       studentName: `Élève (${studentId.slice(0, 8)})`,
       parentId,
       parentName: `Responsable (${parentId.slice(0, 8)})`,
-      action: `Ajout lien (${relationshipType})${isPayer ? ' — Responsable Payeur' : ''}${isEmergencyContact ? ' — Contact Urgence' : ''}`,
+      action: `Ajout lien (${relationshipType})${finalPayer ? ' — Responsable Payeur' : ''}${finalEmergency ? ' — Contact Urgence' : ''}`,
       date: new Date().toLocaleString('fr-FR'),
       author: 'Utilisateur Connecté',
     });
@@ -186,9 +194,29 @@ export async function setPrimaryParent(studentId: string, parentId: string): Pro
 
 export async function unlinkStudent(studentId: string, parentId: string): Promise<ServiceResponse<boolean>> {
   try {
+    let wasPrimary = false;
+    let wasPayer = false;
+
     for (const [key, rel] of localRelationshipsCache.entries()) {
       if (rel.studentId === studentId && rel.parentId === parentId) {
+        wasPrimary = rel.isPrimary;
+        wasPayer = rel.isPayer;
         localRelationshipsCache.delete(key);
+      }
+    }
+
+    // Réassigner isPrimary et/ou isPayer au premier parent restant si nécessaire
+    const remainingRels = Array.from(localRelationshipsCache.values()).filter(
+      (rel) => rel.studentId === studentId
+    );
+
+    if (remainingRels.length > 0) {
+      if (wasPrimary && !remainingRels.some((r) => r.isPrimary)) {
+        remainingRels[0].isPrimary = true;
+      }
+      if (wasPayer && !remainingRels.some((r) => r.isPayer)) {
+        remainingRels[0].isPayer = true;
+        remainingRels[0].isFinancialEmergencyContact = true;
       }
     }
 
@@ -206,6 +234,56 @@ export async function unlinkStudent(studentId: string, parentId: string): Promis
     return createSuccess(true, 'Lien de parenté supprimé avec succès.');
   } catch (err) {
     return createError(err, 'Erreur lors de la suppression.');
+  }
+}
+
+export interface FamilyUnitValidation {
+  studentId: string;
+  hasParents: boolean;
+  parentCount: number;
+  hasPrimary: boolean;
+  hasPayer: boolean;
+  hasEmergencyContact: boolean;
+  isValid: boolean;
+  issues: string[];
+}
+
+/**
+ * Valide la cohérence de l'unité familiale pour un élève
+ */
+export async function validateStudentFamilyUnit(studentId: string): Promise<ServiceResponse<FamilyUnitValidation>> {
+  try {
+    if (!studentId) return createError(null, 'Identifiant élève requis.');
+
+    const rels = Array.from(localRelationshipsCache.values()).filter(
+      (r) => r.studentId === studentId
+    );
+
+    const hasParents = rels.length > 0;
+    const hasPrimary = rels.some((r) => r.isPrimary);
+    const hasPayer = rels.some((r) => r.isPayer);
+    const hasEmergencyContact = rels.some((r) => r.isEmergencyContact);
+
+    const issues: string[] = [];
+    if (!hasParents) issues.push('Aucun responsable légal rattaché.');
+    if (hasParents && !hasPrimary) issues.push('Aucun responsable principal désigné.');
+    if (hasParents && !hasPayer) issues.push('Aucun responsable financier désigné.');
+    if (hasParents && !hasEmergencyContact) issues.push('Aucun contact d\'urgence désigné.');
+
+    const isValid = hasParents && hasPrimary && hasPayer && hasEmergencyContact;
+
+    return createSuccess({
+      studentId,
+      hasParents,
+      parentCount: rels.length,
+      hasPrimary,
+      hasPayer,
+      hasEmergencyContact,
+      isValid,
+      issues,
+    });
+  } catch (err) {
+    return createError(err, 'Erreur lors de la validation de l\'unité familiale.');
   }
 }
 
