@@ -141,6 +141,27 @@ export async function transferStudent(
   transferDate?: string
 ): Promise<ServiceResponse<StudentAssignment>> {
   try {
+    if (!studentId || !newClassroomId || !academicYearId) {
+      return createError(null, 'Élève, nouvelle classe et année scolaire sont obligatoires.');
+    }
+
+    // 1. Vérifier la capacité de la classe de destination avant d'altérer l'affectation existante
+    const classRes = await getClassroom(newClassroomId);
+    if (classRes.success && classRes.data) {
+      const cls = classRes.data;
+      const currentActive = Array.from(localAssignmentsCache.values()).filter(
+        (a) => a.classroomId === newClassroomId && a.status === 'Actif'
+      ).length;
+
+      if (currentActive >= cls.capacity) {
+        return createError(
+          null,
+          `La classe ${cls.name} a atteint sa capacité maximale (${cls.capacity} élèves). Transfert impossible.`
+        );
+      }
+    }
+
+    // 2. Marquer l'affectation précédente comme transférée
     const existingRes = await getStudentAssignment(studentId, academicYearId);
     if (existingRes.success && existingRes.data) {
       const date = transferDate || new Date().toISOString().split('T')[0];
@@ -155,7 +176,7 @@ export async function transferStudent(
       }
     }
 
-    return assignStudent(studentId, newClassroomId, academicYearId, transferDate);
+    return assignStudent(studentId, newClassroomId, academicYearId, transferDate, true);
   } catch (err) {
     return createError(err, 'Erreur lors du transfert de l\'élève.');
   }

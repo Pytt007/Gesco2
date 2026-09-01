@@ -219,6 +219,10 @@ export async function createClassroom(classroomData: Partial<Classroom>): Promis
       return createError(null, 'L\'année scolaire, le niveau et le nom de la classe sont obligatoires.');
     }
 
+    if (classroomData.capacity !== undefined && (typeof classroomData.capacity !== 'number' || isNaN(classroomData.capacity) || classroomData.capacity <= 0)) {
+      return createError(null, 'La capacité de la classe doit être un nombre supérieur à 0.');
+    }
+
     const className = classroomData.name.trim();
 
     // ANOMALIE-MAJ-02 FIX: Contrôle d'unicité du nom de classe par année scolaire
@@ -280,6 +284,10 @@ export async function updateClassroom(id: string, updates: Partial<Classroom>): 
 
     const cached = localClassroomsCache.get(id);
     if (!cached) return createError(null, 'Classe introuvable.');
+
+    if (updates.capacity !== undefined && (typeof updates.capacity !== 'number' || isNaN(updates.capacity) || updates.capacity <= 0)) {
+      return createError(null, 'La capacité de la classe doit être un nombre supérieur à 0.');
+    }
 
     if (updates.name && updates.name.trim() !== cached.name) {
       const className = updates.name.trim();
