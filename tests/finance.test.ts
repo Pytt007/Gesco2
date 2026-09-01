@@ -4,7 +4,25 @@
  * statuts de paiement, et calculs de solde.
  * Ces calculs sont critiques pour l'intégrité comptable de l'établissement.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import {
+  canteenPaymentService,
+  clearCanteenPaymentsStore,
+} from '../src/services/canteen/canteenPaymentService';
+import { canteenEnrollmentService, clearCanteenEnrollmentsStore } from '../src/services/canteen/canteenEnrollmentService';
+import { canteenFeesService, clearCanteenSchedulesStore } from '../src/services/canteen/canteenFeesService';
+import {
+  transportPaymentService,
+  clearTransportPaymentsStore,
+} from '../src/services/transport/transportPaymentService';
+import { transportEnrollmentService, clearTransportEnrollmentStore } from '../src/services/transport/transportEnrollmentService';
+import { transportLineService, clearTransportLineStore } from '../src/services/transport/transportLineService';
+import {
+  transportVehicleService,
+  transportDriverService,
+  clearTransportVehiclesStore,
+  clearTransportDriversStore,
+} from '../src/services/transport/transportVehicleDriverService';
 
 // ─── Helpers répliqués depuis la logique métier ────────────────────────────────
 
@@ -120,5 +138,135 @@ describe('Calcul des mensualités', () => {
 
   it('rejette un nombre de mois négatif', () => {
     expect(() => calculateInstalment(1000, -1)).toThrow('Nombre de mois invalide');
+  });
+});
+
+describe('File d\'attente Hors-Ligne (Offline Outbox) — Cantine & Transport (P2-06)', () => {
+  beforeEach(() => {
+    clearCanteenSchedulesStore();
+    clearCanteenEnrollmentsStore();
+    clearCanteenPaymentsStore();
+
+    clearTransportVehiclesStore();
+    clearTransportDriversStore();
+    clearTransportLineStore();
+    clearTransportEnrollmentStore();
+    clearTransportPaymentsStore();
+  });
+
+  it('gère la mise en file d\'attente hors-ligne et la synchronisation pour la Cantine', async () => {
+    await canteenFeesService.createSchedule({
+      academicYearId: 'ay-2026',
+      levelCode: 'CP1',
+      annualRate: 45000,
+      periodsCount: 3,
+    });
+
+    const enrollRes = await canteenEnrollmentService.createEnrollment({
+      studentId: 'st-cant-01',
+      studentName: 'Élève Cantine',
+      matricule: 'MAT-CANT-01',
+      className: 'CP1 A',
+      levelCode: 'CP1',
+      academicYearId: 'ay-2026',
+      discountType: 'NONE',
+      discountValue: 0,
+    });
+
+    expect(enrollRes.success).toBe(true);
+
+    // Simuler le mode hors-ligne
+    vi.spyOn(canteenPaymentService, 'isOnline').mockReturnValue(false);
+
+    const payRes = await canteenPaymentService.recordPayment({
+      enrollmentId: enrollRes.data!.id,
+      amount: 15000,
+      paymentDate: '2026-09-10',
+      paymentMode: 'CASH',
+    });
+
+    expect(payRes.success).toBe(true);
+    expect(payRes.data?.payment.status).toBe('PENDING_SYNC');
+    expect(canteenPaymentService.getPendingSyncCount()).toBe(1);
+
+    const pending = canteenPaymentService.getPendingPayments();
+    expect(pending.length).toBe(1);
+    expect(pending[0].amount).toBe(15000);
+
+    // Reçu immédiatement disponible
+    expect(payRes.data?.receipt.receiptNumber).toBeDefined();
+
+    // Rétablissement de la connexion et synchronisation
+    vi.spyOn(canteenPaymentService, 'isOnline').mockReturnValue(true);
+    const syncRes = await canteenPaymentService.syncPendingPayments();
+    expect(syncRes.syncedCount).toBe(1);
+    expect(canteenPaymentService.getPendingSyncCount()).toBe(0);
+  });
+
+  it('gère la mise en file d\'attente hors-ligne et la synchronisation pour le Transport', async () => {
+    const veh = await transportVehicleService.create({
+      name: 'Bus 01',
+      brand: 'Toyota',
+      model: 'Coaster',
+      licensePlate: '1234-AB-01',
+      capacity: 30,
+    });
+
+    const drv = await transportDriverService.create({
+      name: 'Kouassi Jean',
+      phone: '+225 07 00 00 00',
+      licenseNumber: 'PERMIS-123',
+    });
+
+    const lineRes = await transportLineService.createLine({
+      name: 'Ligne Abidjan Nord',
+      zone: 'Zone Nord',
+      vehicleId: veh.data!.id,
+      driverId: drv.data!.id,
+      annualFee: 60000,
+      periodsCount: 3,
+      academicYearId: 'ay-2026',
+    });
+
+    const enrollRes = await transportEnrollmentService.createEnrollment({
+      studentId: 'st-trp-01',
+      studentName: 'Élève Transport',
+      matricule: 'MAT-TRP-01',
+      className: 'CE1 B',
+      levelCode: 'CE1',
+      lineId: lineRes.data!.id,
+      academicYearId: 'ay-2026',
+      discountType: 'NONE',
+      discountValue: 0,
+    });
+
+    expect(enrollRes.success).toBe(true);
+
+    // Simuler le mode hors-ligne
+    vi.spyOn(transportPaymentService, 'isOnline').mockReturnValue(false);
+
+    const payRes = await transportPaymentService.recordPayment({
+      enrollmentId: enrollRes.data!.id,
+      amount: 20000,
+      paymentDate: '2026-09-12',
+      paymentMode: 'ORANGE_MONEY',
+    });
+
+    expect(payRes.success).toBe(true);
+    expect(payRes.data?.payment.status).toBe('PENDING_SYNC');
+    expect(transportPaymentService.getPendingSyncCount()).toBe(1);
+
+    const pending = transportPaymentService.getPendingPayments();
+    expect(pending.length).toBe(1);
+    expect(pending[0].amount).toBe(20000);
+
+    // Reçu immédiatement disponible
+    expect(payRes.data?.receipt.receiptNumber).toBeDefined();
+
+    // Rétablissement de la connexion et synchronisation
+    vi.spyOn(transportPaymentService, 'isOnline').mockReturnValue(true);
+    const syncRes = await transportPaymentService.syncPendingPayments();
+    expect(syncRes.syncedCount).toBe(1);
+    expect(transportPaymentService.getPendingSyncCount()).toBe(0);
   });
 });

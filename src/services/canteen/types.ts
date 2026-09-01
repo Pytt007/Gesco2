@@ -105,7 +105,7 @@ export interface CanteenPaymentRecord {
   referenceNumber?: string;
   remarks?: string;
   recordedBy: string;
-  status: 'VALIDATED' | 'CANCELLED';
+  status: 'VALIDATED' | 'CANCELLED' | 'PENDING_SYNC';
   createdAt: string;
   updatedAt: string;
 }
