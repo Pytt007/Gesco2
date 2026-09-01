@@ -104,6 +104,22 @@ export const templateValidator = {
           severity: 'error',
         });
       }
+
+      // 5. Détection de syntaxe de balises dynamiques {{variable}} mal formées
+      const textToValidate = cfg.customText || cfg.customTitle;
+      if (textToValidate && typeof textToValidate === 'string') {
+        const openBraces = (textToValidate.match(/\{\{/g) || []).length;
+        const closeBraces = (textToValidate.match(/\}\}/g) || []).length;
+        if (openBraces !== closeBraces) {
+          errors.push({
+            type: 'INVALID_CONFIGURATION',
+            blockId: b.id,
+            blockCode: b.blockCode,
+            message: `Syntaxe de balise invalide dans le bloc "${b.blockName}" : accolades orphelines {{...}} détectées.`,
+            severity: 'error',
+          });
+        }
+      }
     });
 
     return {

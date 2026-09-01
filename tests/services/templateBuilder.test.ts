@@ -363,4 +363,67 @@ describe('Template Builder Module Layer', () => {
       expect(preview.fullHtml).toContain('Amani Jean');
     });
   });
+
+  describe('Template Variables Interpolation & XSS Protection (P2-26)', () => {
+    it('interpolates dynamic variables in custom text and header blocks', () => {
+      const interpolated = previewEngine.interpolateVariables(
+        'Félicitations à {{studentName}} (Matricule : {{matricule}}) pour sa moyenne de {{average}}/20.',
+        {
+          studentName: 'Konan Koffi',
+          matricule: 'MAT-9988',
+          average: '17.50',
+        }
+      );
+
+      expect(interpolated).toBe('Félicitations à Konan Koffi (Matricule : MAT-9988) pour sa moyenne de 17.50/20.');
+    });
+
+    it('neutralizes XSS attempts and HTML injection in dynamic data', () => {
+      const dirtyData = {
+        studentName: '<script>alert("XSS")</script>Konan',
+        schoolName: '<img src=x onerror=alert(1)>',
+      };
+
+      const customBlock: any = {
+        blockCode: 'CUSTOM_TEXT',
+        blockName: 'Texte Perso',
+        visible: true,
+        configuration: {
+          customText: 'Élève : {{studentName}} | École : {{schoolName}}',
+        },
+      };
+
+      const rendered = previewEngine.renderBlockContent(customBlock, dirtyData);
+      expect(rendered).not.toContain('<script>');
+      expect(rendered).toContain('&lt;script&gt;');
+      expect(rendered).toContain('&lt;img src=x onerror=alert(1)&gt;');
+    });
+
+    it('detects unclosed template tags in templateValidator', () => {
+      const malformedBlock: any = {
+        id: 'blk-bad-syntax',
+        blockCode: 'CUSTOM_TEXT',
+        blockName: 'Bloc Invalide',
+        visible: true,
+        displayOrder: 15,
+        configuration: {
+          customText: 'Bienvenue {{studentName sans fermeture',
+        },
+      };
+
+      const validBlocks = [
+        templateBuilder.createInMemoryBlock('t-val', 'HEADER', 10),
+        templateBuilder.createInMemoryBlock('t-val', 'SCHOOL_INFORMATION', 20),
+        templateBuilder.createInMemoryBlock('t-val', 'STUDENT_INFORMATION', 30),
+        templateBuilder.createInMemoryBlock('t-val', 'RESULTS_TABLE', 40),
+        templateBuilder.createInMemoryBlock('t-val', 'SIGNATURES', 50),
+        templateBuilder.createInMemoryBlock('t-val', 'FOOTER', 60),
+        malformedBlock,
+      ];
+
+      const res = templateValidator.validateTemplate(validBlocks, 'BULLETIN');
+      expect(res.isValid).toBe(false);
+      expect(res.errors.some((e) => e.message.includes('accolades orphelines'))).toBe(true);
+    });
+  });
 });
