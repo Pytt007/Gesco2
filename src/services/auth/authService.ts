@@ -7,6 +7,7 @@
 import { supabase, createIsolatedClient, usernameToEmail, emailToUsername } from '../common/supabaseClient';
 import { GescoUser, UserAccount, UserRole } from '../../types';
 import { auditLogService } from '../common/auditLogService';
+import { sessionTimeoutService } from './sessionTimeoutService';
 
 const STORAGE_SESSION_KEY = 'gesco_auth_session';
 const STORAGE_USERS_KEY = 'gesco_memory_users';
@@ -67,10 +68,20 @@ export async function resolveUserFromSupabase(user: any): Promise<GescoUser> {
 }
 
 export async function fetchCurrentSession() {
+  // Vérification de sécurité de timeout d'inactivité
+  if (sessionTimeoutService.isSessionExpired()) {
+    try {
+      localStorage.removeItem(STORAGE_SESSION_KEY);
+      sessionTimeoutService.clearSessionActivity();
+    } catch {}
+    return { data: { session: null }, error: null };
+  }
+
   // 1. Tenter Supabase
   try {
     const res = await supabase.auth.getSession();
     if (res?.data?.session?.user) {
+      sessionTimeoutService.recordUserActivity();
       return res;
     }
   } catch {
@@ -83,6 +94,7 @@ export async function fetchCurrentSession() {
     if (saved) {
       const user = JSON.parse(saved);
       if (user?.id && user?.username) {
+        sessionTimeoutService.recordUserActivity();
         return {
           data: {
             session: {
@@ -154,6 +166,7 @@ export async function loginWithPassword(username: string, password: string): Pro
       try {
         localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(user));
       } catch {}
+      sessionTimeoutService.recordUserActivity();
       return user;
     }
   } catch {
@@ -167,6 +180,7 @@ export async function loginWithPassword(username: string, password: string): Pro
       try {
         localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(_ADMIN_USER));
       } catch {}
+      sessionTimeoutService.recordUserActivity();
       return _ADMIN_USER;
     }
   }
@@ -178,6 +192,7 @@ export async function loginWithPassword(username: string, password: string): Pro
 export async function logoutUser(): Promise<void> {
   try {
     localStorage.removeItem(STORAGE_SESSION_KEY);
+    sessionTimeoutService.clearSessionActivity();
   } catch {}
   try {
     await supabase.auth.signOut();

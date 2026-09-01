@@ -40,6 +40,8 @@ const DevPortalPage = import.meta.env.DEV
 
 import ErrorBoundary from './components/common/ErrorBoundary';
 import PwaUpdatePrompt from './components/common/PwaUpdatePrompt';
+import { useSessionTimeout } from './hooks/auth/useSessionTimeout';
+import { SessionTimeoutWarningModal } from './components/common/SessionTimeoutWarningModal';
 
 // ─── COMPOSANTS AUXILIAIRES PREMIUM ─────────────────────────────────────────
 
@@ -91,9 +93,22 @@ function AccessDenied() {
 // ─── APPLICATION PRINCIPALE ──────────────────────────────────────────────────
 
 function AppContent() {
-  const { currentUser, loading, canAccess } = useAuth();
+  const { currentUser, loading, canAccess, logout } = useAuth();
   const [currentView, setCurrentView] = useState('DASHBOARD');
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  // ── Surveillance d'inactivité & Expiration de session (P1-01) ─────────────
+  const {
+    showWarningModal,
+    remainingSeconds,
+    handleStayConnected,
+    handleManualLogout,
+  } = useSessionTimeout({
+    enabled: !!currentUser,
+    onLogout: logout,
+    username: currentUser?.username,
+  });
+
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('gesco-theme') === 'dark';
   });
@@ -275,6 +290,13 @@ function AppContent() {
       <ToastContainer />
       <Toaster />
       <PwaUpdatePrompt />
+      {showWarningModal && (
+        <SessionTimeoutWarningModal
+          remainingSeconds={remainingSeconds}
+          onStayConnected={handleStayConnected}
+          onLogout={handleManualLogout}
+        />
+      )}
     </div>
   );
 }
