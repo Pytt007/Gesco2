@@ -57,5 +57,63 @@ describe('Report Cards Service Unit Tests', () => {
     const res = await reportCardsService.generateClassReportCards('sess-unit-1', 'cls-1', 'CP1', 'Admin');
     expect(res.generatedCount).toBeGreaterThan(0);
     expect(res.combinedHtml).toContain('<!DOCTYPE html>');
+    expect(res.stats).toBeDefined();
+    expect(res.stats?.classAverage).toBe(8.5);
+    expect(res.stats?.highestAverage).toBe(8.5);
+    expect(res.stats?.successRate).toBe(100);
+  });
+
+  it('identifies incomplete student records and reasons accurately', async () => {
+    vi.spyOn(assessmentResultsService, 'getResultsBySession').mockResolvedValue({
+      success: true,
+      data: [
+        {
+          id: 'res-inc-1',
+          sessionId: 'sess-inc',
+          studentId: 'st-inc-1',
+          studentName: 'Incomplete Student',
+          isCompleted: false,
+          correctionStatus: 'IN_PROGRESS',
+          total: null,
+          average: null,
+          rank: null,
+          appreciation: null,
+          decision: null,
+          scores: [],
+        } as any,
+      ],
+    });
+
+    const val = await reportCardsService.validateClassReportCards('sess-inc');
+    expect(val.isReadyForGeneration).toBe(false);
+    expect(val.incompleteCount).toBe(1);
+    expect(val.incompleteStudents[0].reasons).toContain('MISSING_SCORES');
+    expect(val.incompleteStudents[0].reasons).toContain('CALCULATION_PENDING');
+    expect(val.incompleteStudents[0].reasons).toContain('RANK_MISSING');
+    expect(val.incompleteStudents[0].reasons).toContain('APPRECIATION_MISSING');
+    expect(val.incompleteStudents[0].reasons).toContain('DECISION_MISSING');
+  });
+
+  it('generates a preview document for an individual student', async () => {
+    vi.spyOn(assessmentResultsService, 'getResultsBySession').mockResolvedValue({
+      success: true,
+      data: [
+        {
+          id: 'res-preview-1',
+          sessionId: 'sess-prev',
+          studentId: 'st-prev-1',
+          studentName: 'Preview Student',
+          average: 14.5,
+          rank: 2,
+          appreciation: 'Bien',
+          decision: 'Passe',
+          scores: [],
+        } as any,
+      ],
+    });
+
+    const preview = await reportCardsService.previewStudentReportCard('sess-prev', 'st-prev-1', 'CM1');
+    expect(preview).toBeDefined();
+    expect(preview.fullHtml).toContain('Preview Student');
   });
 });

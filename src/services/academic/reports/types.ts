@@ -44,6 +44,13 @@ export interface StudentReportCardItem {
   generatedAt?: string;
 }
 
+export interface ClassReportCardStats {
+  classAverage: number;
+  highestAverage: number;
+  lowestAverage: number;
+  successRate: number; // % d'élèves ayant la moyenne (>= 10 ou >= 5 selon barème)
+}
+
 export interface ClassReportCardsResult {
   sessionId: string;
   classroomId: string;
@@ -52,4 +59,5 @@ export interface ClassReportCardsResult {
   generatedCount: number;
   reportCards: StudentReportCardItem[];
   combinedHtml: string;
+  stats?: ClassReportCardStats;
 }

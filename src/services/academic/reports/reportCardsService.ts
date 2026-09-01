@@ -12,6 +12,8 @@ import { pdfRenderer } from '../../documents/pdfRenderer';
 import { CompiledDocument } from '../../documents/types';
 import { supabase } from '../../common/supabaseClient';
 
+import { auditLogService } from '../../common/auditLogService';
+
 /**
  * Service de gestion et de génération automatique des Bulletins Scolaires GESCO
  */
@@ -213,6 +215,36 @@ export const reportCardsService = {
 
     const combinedHtml = htmlPages.join('<div style="page-break-after: always;"></div>\n');
 
+    // Calcul des statistiques de classe
+    const validAverages = reportCards.map((r) => r.average).filter((a): a is number => a !== null && typeof a === 'number');
+    let stats = undefined;
+    if (validAverages.length > 0) {
+      const sum = validAverages.reduce((acc, v) => acc + v, 0);
+      const classAverage = Number((sum / validAverages.length).toFixed(2));
+      const highestAverage = Math.max(...validAverages);
+      const lowestAverage = Math.min(...validAverages);
+      // Barème standard sur 10 en primaire CI ou 20
+      const threshold = classAverage <= 10 && highestAverage <= 10 ? 5 : 10;
+      const passing = validAverages.filter((v) => v >= threshold).length;
+      const successRate = Math.round((passing / validAverages.length) * 100);
+
+      stats = {
+        classAverage,
+        highestAverage,
+        lowestAverage,
+        successRate,
+      };
+    }
+
+    // Traçabilité d'audit
+    auditLogService.log({
+      action: 'BULLETIN_GENERATION',
+      module: 'ACADEMIC',
+      details: `Génération de ${reportCards.length} bulletin(s) pour la classe ${levelCode} (Session: ${sessionId})`,
+      severity: 'SUCCESS',
+      user: generatedBy,
+    });
+
     return {
       sessionId,
       classroomId,
@@ -221,6 +253,7 @@ export const reportCardsService = {
       generatedCount: reportCards.length,
       reportCards,
       combinedHtml,
+      stats,
     };
   },
 
