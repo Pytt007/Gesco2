@@ -277,6 +277,27 @@ async function persistAccountsToSupabase(accounts: UserAccount[]) {
   }
 }
 
+export function clearUserAccountsStore(): void {
+  deletedUserIds.clear();
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(STORAGE_USERS_KEY);
+    }
+  } catch {}
+}
+
+export async function isLastActiveAdmin(userId: string): Promise<boolean> {
+  const accounts = await syncAccountsFromSupabase();
+  const target = accounts.find((u) => u.id === userId);
+  if (!target || target.role !== 'ADMIN_GENERALE' || target.status !== 'ACTIF') {
+    return false;
+  }
+  const activeAdmins = accounts.filter(
+    (u) => u.role === 'ADMIN_GENERALE' && u.status === 'ACTIF' && !deletedUserIds.has(u.id)
+  );
+  return activeAdmins.length <= 1;
+}
+
 export async function fetchUserAccounts(): Promise<UserAccount[]> {
   return syncAccountsFromSupabase();
 }
@@ -287,7 +308,7 @@ export async function createAccount(
   role: UserRole,
   fullName: string
 ): Promise<{ error?: string }> {
-  const newId = `usr-created-${Date.now()}`;
+  const newId = `usr-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
   const newUser: UserAccount = {
     id: newId,
     username,
@@ -324,6 +345,10 @@ export async function createAccount(
 }
 
 export async function deleteAccount(userId: string): Promise<{ error?: string }> {
+  if (await isLastActiveAdmin(userId)) {
+    return { error: 'Impossible de supprimer le dernier compte administrateur actif du système.' };
+  }
+
   deletedUserIds.add(userId);
   const currentList = await syncAccountsFromSupabase();
   const deletedUser = currentList.find((u) => u.id === userId);
@@ -354,6 +379,10 @@ export async function updateUserPassword(newPassword: string): Promise<{ error?:
 }
 
 export async function updateAccountRole(userId: string, role: UserRole): Promise<{ error?: string }> {
+  if (role !== 'ADMIN_GENERALE' && (await isLastActiveAdmin(userId))) {
+    return { error: 'Impossible de rétrograder le dernier administrateur actif du système.' };
+  }
+
   const currentList = await syncAccountsFromSupabase();
   const updated = currentList.map((u) => (u.id === userId ? { ...u, role } : u));
   saveLocalUserAccounts(updated);
@@ -368,6 +397,34 @@ export async function updateAccountRole(userId: string, role: UserRole): Promise
     action: 'MODIFICATION_ROLE_UTILISATEUR',
     module: 'SYSTEM',
     details: `Attribution du rôle ${role} à l'utilisateur ID: ${userId}`,
+    severity: 'WARNING',
+  });
+
+  return {};
+}
+
+export async function updateAccountStatus(
+  userId: string,
+  status: 'ACTIF' | 'INACTIF' | 'ARCHIVE'
+): Promise<{ error?: string }> {
+  if (status !== 'ACTIF' && (await isLastActiveAdmin(userId))) {
+    return { error: 'Impossible de désactiver ou archiver le dernier administrateur actif du système.' };
+  }
+
+  const currentList = await syncAccountsFromSupabase();
+  const updated = currentList.map((u) => (u.id === userId ? { ...u, status } : u));
+  saveLocalUserAccounts(updated);
+  await persistAccountsToSupabase(updated);
+
+  try {
+    await supabase.from('profiles').update({ status }).eq('id', userId);
+  } catch {}
+
+  // Traçabilité d'audit
+  auditLogService.log({
+    action: 'MODIFICATION_STATUT_UTILISATEUR',
+    module: 'SYSTEM',
+    details: `Modification du statut à "${status}" pour l'utilisateur ID: ${userId}`,
     severity: 'WARNING',
   });
 

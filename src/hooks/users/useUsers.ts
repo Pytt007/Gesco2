@@ -10,6 +10,8 @@ import {
   createAccount,
   deleteAccount,
   updateAccountRole,
+  updateAccountStatus,
+  isLastActiveAdmin,
 } from '../../services/auth/authService';
 import { UserAccount, UserRole } from '../../types';
 
@@ -159,6 +161,30 @@ export function useUsers(options: UseUsersOptions = {}) {
     }
   }, [clearStatus]);
 
+  const updateUserStatus = useCallback(async (
+    userId: string,
+    status: 'ACTIF' | 'INACTIF' | 'ARCHIVE'
+  ): Promise<boolean> => {
+    setSaving(true);
+    clearStatus();
+    try {
+      const result = await updateAccountStatus(userId, status);
+      if (result.error) {
+        setError(result.error);
+        setSaving(false);
+        return false;
+      }
+      setSuccess(`Statut utilisateur mis à jour (${status}).`);
+      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, status: status as any } : u)));
+      setSaving(false);
+      return true;
+    } catch (err: any) {
+      setError(err.message || 'Erreur lors de la mise à jour du statut.');
+      setSaving(false);
+      return false;
+    }
+  }, [clearStatus]);
+
   return {
     users: paginatedUsers,
     allUsers: filteredUsers,
@@ -186,6 +212,8 @@ export function useUsers(options: UseUsersOptions = {}) {
     setSelectedUser,
     createUser,
     updateUserRole,
+    updateUserStatus,
     archiveUser,
+    isLastAdmin: isLastActiveAdmin,
   };
 }
