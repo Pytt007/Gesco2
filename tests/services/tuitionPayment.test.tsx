@@ -113,6 +113,47 @@ describe('Tuition Fee Payment Module Layer (Paiement de la scolarité)', () => {
       }
     });
 
+    it('handles offline payments with PENDING_SYNC status and outbox queue sync (P1-06)', async () => {
+      clearTuitionPaymentsStore();
+
+      const enrollmentRes = await studentFinancialEnrollmentService.createEnrollment({
+        studentId: 'st-offline-01',
+        academicYearId: 'ay-2026',
+        classroomId: 'cls-1',
+        discountType: 'NONE',
+        discountValue: 0,
+      });
+
+      // Mock isOnline to false
+      vi.spyOn(tuitionPaymentService, 'isOnline').mockReturnValue(false);
+
+      const payRes = await tuitionPaymentService.recordPayment({
+        enrollmentId: enrollmentRes.data!.id,
+        amount: 25000,
+        paymentDate: '2026-08-01',
+        paymentMode: 'CASH',
+      });
+
+      expect(payRes.success).toBe(true);
+      expect(payRes.data?.payment.status).toBe('PENDING_SYNC');
+      expect(tuitionPaymentService.getPendingSyncCount()).toBe(1);
+
+      const pendingList = tuitionPaymentService.getPendingPayments();
+      expect(pendingList.length).toBe(1);
+      expect(pendingList[0].amount).toBe(25000);
+
+      // Parent still immediately receives valid receipt and QR code
+      expect(payRes.data?.receipt.receiptNumber).toBeDefined();
+      expect(payRes.data?.receipt.qrCodeUrl).toContain('data:image/');
+
+      // Now restore online status and trigger sync
+      vi.spyOn(tuitionPaymentService, 'isOnline').mockReturnValue(true);
+      const syncResult = await tuitionPaymentService.syncPendingPayments();
+
+      expect(syncResult.syncedCount).toBe(1);
+      expect(tuitionPaymentService.getPendingSyncCount()).toBe(0);
+    });
+
     it('rejects negative or zero payment amounts', async () => {
       const enrollmentRes = await studentFinancialEnrollmentService.createEnrollment({
         studentId: 'st-001',

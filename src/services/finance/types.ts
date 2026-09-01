@@ -105,7 +105,7 @@ export interface FinancialEnrollmentInput {
 
 export type PaymentMode = 'CASH' | 'ORANGE_MONEY' | 'MTN_MONEY' | 'WAVE' | 'TRANSFER' | 'CHECK';
 
-export type TuitionPaymentStatus = 'VALIDATED' | 'CANCELLED';
+export type TuitionPaymentStatus = 'VALIDATED' | 'CANCELLED' | 'PENDING_SYNC';
 
 export interface TuitionPaymentRecord {
   id: string;

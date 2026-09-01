@@ -12,12 +12,72 @@ import { supabase } from '../common/supabaseClient';
 import { generateSecureReceiptNumber } from './receiptSequenceService';
 import { auditLogService } from '../common/auditLogService';
 
-const localPaymentsStore: Map<string, TuitionPaymentRecord> = new Map();
+const STORAGE_KEY_PAYMENTS = 'gesco_tuition_payments_store';
+const STORAGE_KEY_OUTBOX = 'gesco_tuition_offline_outbox';
+
+function loadPersistedPayments(): Map<string, TuitionPaymentRecord> {
+  const store = new Map<string, TuitionPaymentRecord>();
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem(STORAGE_KEY_PAYMENTS);
+      if (raw) {
+        const parsed: TuitionPaymentRecord[] = JSON.parse(raw);
+        parsed.forEach((p) => store.set(p.id, p));
+      }
+    }
+  } catch { /* Silent */ }
+  return store;
+}
+
+function persistPayments(store: Map<string, TuitionPaymentRecord>) {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY_PAYMENTS, JSON.stringify(Array.from(store.values())));
+    }
+  } catch { /* Silent */ }
+}
+
+function loadPersistedOutbox(): string[] {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem(STORAGE_KEY_OUTBOX);
+      if (raw) return JSON.parse(raw);
+    }
+  } catch { /* Silent */ }
+  return [];
+}
+
+function persistOutbox(queue: string[]) {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY_OUTBOX, JSON.stringify(queue));
+    }
+  } catch { /* Silent */ }
+}
+
+let localPaymentsStore: Map<string, TuitionPaymentRecord> = loadPersistedPayments();
+let offlineOutboxQueue: string[] = loadPersistedOutbox();
 let receiptCounter = 1001;
+
+// Écouteur global pour reprise automatique dès retour de connexion
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    tuitionPaymentService.syncPendingPayments().catch((err) => {
+      console.warn('[tuitionPaymentService] Échec sync automatique hors-ligne:', err);
+    });
+  });
+}
 
 export function clearTuitionPaymentsStore() {
   localPaymentsStore.clear();
+  offlineOutboxQueue = [];
   receiptCounter = 1001;
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEY_PAYMENTS);
+      localStorage.removeItem(STORAGE_KEY_OUTBOX);
+    }
+  } catch { /* Silent */ }
 }
 
 export const PAYMENT_MODE_LABELS: Record<PaymentMode, string> = {
@@ -31,11 +91,97 @@ export const PAYMENT_MODE_LABELS: Record<PaymentMode, string> = {
 
 export const tuitionPaymentService = {
   /**
+   * Vérifie si le client est connecté au réseau
+   */
+  isOnline(): boolean {
+    return typeof navigator !== 'undefined' ? navigator.onLine : true;
+  },
+
+  /**
+   * Retourne le nombre d'encaissements en attente de synchronisation distante
+   */
+  getPendingSyncCount(): number {
+    return offlineOutboxQueue.length;
+  },
+
+  /**
+   * Retourne la liste des versements en attente de synchronisation
+   */
+  getPendingPayments(): TuitionPaymentRecord[] {
+    return offlineOutboxQueue
+      .map((id) => localPaymentsStore.get(id))
+      .filter((p): p is TuitionPaymentRecord => Boolean(p));
+  },
+
+  /**
+   * Synchronise l'ensemble de la file d'attente hors-ligne avec Supabase
+   */
+  async syncPendingPayments(): Promise<{ syncedCount: number; failedCount: number; errors: string[] }> {
+    if (offlineOutboxQueue.length === 0) {
+      return { syncedCount: 0, failedCount: 0, errors: [] };
+    }
+
+    let syncedCount = 0;
+    let failedCount = 0;
+    const errors: string[] = [];
+    const remainingQueue: string[] = [];
+
+    for (const paymentId of offlineOutboxQueue) {
+      const payment = localPaymentsStore.get(paymentId);
+      if (!payment) continue;
+
+      try {
+        if (supabase) {
+          const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(payment.id);
+          const dbId = isUUID ? payment.id : crypto.randomUUID();
+
+          const { error } = await supabase.from('tuition_payments').insert({
+            id: dbId,
+            receipt_number: payment.receiptNumber,
+            amount: payment.amount,
+            payment_method: payment.paymentMode || 'CASH',
+            payment_date: payment.paymentDate || new Date().toISOString(),
+            payer_name: 'Parent',
+            notes: payment.remarks || payment.referenceNumber || null,
+          });
+
+          if (error) {
+            failedCount++;
+            remainingQueue.push(paymentId);
+            errors.push(error.message);
+          } else {
+            payment.status = 'VALIDATED';
+            payment.updatedAt = new Date().toISOString();
+            localPaymentsStore.set(paymentId, payment);
+            syncedCount++;
+          }
+        } else {
+          // Mode local/test : validation directe
+          payment.status = 'VALIDATED';
+          payment.updatedAt = new Date().toISOString();
+          localPaymentsStore.set(paymentId, payment);
+          syncedCount++;
+        }
+      } catch (err: any) {
+        failedCount++;
+        remainingQueue.push(paymentId);
+        errors.push(err?.message || 'Erreur de synchronisation');
+      }
+    }
+
+    offlineOutboxQueue = remainingQueue;
+    persistOutbox(offlineOutboxQueue);
+    persistPayments(localPaymentsStore);
+
+    return { syncedCount, failedCount, errors };
+  },
+
+  /**
    * Récupère la liste des versements effectués pour un dossier financier
    */
   async getPaymentsByEnrollment(enrollmentId: string): Promise<TuitionPaymentRecord[]> {
     try {
-      if (supabase) {
+      if (supabase && this.isOnline()) {
         const { data, error } = await supabase
           .from('tuition_payments')
           .select('*')
@@ -85,7 +231,6 @@ export const tuitionPaymentService = {
     }
 
     // 2. Chargement du dossier financier de l'élève
-    // ✅ INT-005 P1 : Utiliser l'année scolaire depuis l'input, sinon fallback
     const academicYearId = input.academicYearId || '';
     const enrollments = await studentFinancialEnrollmentService.getEnrollmentsByYear(academicYearId);
     const enrollment = enrollments.find((e) => e.id === input.enrollmentId);
@@ -110,6 +255,9 @@ export const tuitionPaymentService = {
     const receiptNumber = await generateSecureReceiptNumber('REC');
     const paymentId = `pay-${Date.now()}`;
     const recordedBy = input.recordedBy || 'Comptabilité GESCO';
+    const isOnlineMode = this.isOnline();
+
+    let initialStatus: TuitionPaymentStatus = 'VALIDATED';
 
     const paymentRecord: TuitionPaymentRecord = {
       id: paymentId,
@@ -122,15 +270,15 @@ export const tuitionPaymentService = {
       referenceNumber: input.referenceNumber,
       remarks: input.remarks,
       recordedBy,
-      status: 'VALIDATED',
+      status: initialStatus,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    localPaymentsStore.set(paymentId, paymentRecord);
+    let remoteInserted = false;
 
-    try {
-      if (supabase) {
+    if (isOnlineMode && supabase) {
+      try {
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(paymentRecord.id);
         const dbId = isUUID ? paymentRecord.id : crypto.randomUUID();
         
@@ -144,7 +292,7 @@ export const tuitionPaymentService = {
           receivedByUuid = paymentRecord.recordedBy;
         }
 
-        await supabase.from('tuition_payments').insert({
+        const { error } = await supabase.from('tuition_payments').insert({
           id: dbId,
           receipt_number: paymentRecord.receiptNumber,
           student_id: studentDbId,
@@ -155,10 +303,26 @@ export const tuitionPaymentService = {
           payer_name: enrollment.parentSponsor || enrollment.studentName || 'Parent',
           notes: paymentRecord.remarks || paymentRecord.referenceNumber || null,
         });
+
+        if (!error) {
+          remoteInserted = true;
+        }
+      } catch (err) {
+        console.warn('[tuitionPaymentService] Échec insertion distante, bascule outbox hors-ligne:', err);
       }
-    } catch (err) {
-      console.warn('[tuitionPaymentService] Supabase insert fallback:', err);
     }
+
+    // Si nous sommes hors-ligne ou si l'insertion distante a échoué : mise en file d'attente Outbox
+    if (!isOnlineMode || (!remoteInserted && supabase)) {
+      paymentRecord.status = 'PENDING_SYNC';
+      if (!offlineOutboxQueue.includes(paymentId)) {
+        offlineOutboxQueue.push(paymentId);
+        persistOutbox(offlineOutboxQueue);
+      }
+    }
+
+    localPaymentsStore.set(paymentId, paymentRecord);
+    persistPayments(localPaymentsStore);
 
     // 5. Mise à jour de la répartition du solde sur les 8 échéances
     let remainingPaymentToDistribute = input.amount;
