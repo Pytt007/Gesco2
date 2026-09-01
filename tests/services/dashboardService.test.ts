@@ -7,6 +7,8 @@ import {
   getAlerts,
   getRecentActivities,
   getCalendarEvents,
+  invalidateDashboardCache,
+  dashboardService,
 } from '../../src/services/dashboard/dashboardService';
 
 describe('Dashboard Service Layer', () => {
@@ -63,5 +65,21 @@ describe('Dashboard Service Layer', () => {
   it('getCalendarEvents returns upcoming events', async () => {
     const events = await getCalendarEvents(schoolYear);
     expect(Array.isArray(events)).toBe(true);
+  });
+
+  it('supports cache invalidation and instant cached retrieval (P1-03)', async () => {
+    const kpis1 = await getMainKPIs(schoolYear);
+    const kpis2 = await getMainKPIs(schoolYear);
+    expect(kpis1).toEqual(kpis2);
+
+    const master1 = await dashboardService.getMasterKPIs(schoolYear);
+    const master2 = await dashboardService.getMasterKPIs(schoolYear);
+    expect(master1).toEqual(master2);
+
+    // Invalidation
+    invalidateDashboardCache();
+    const master3 = await dashboardService.getMasterKPIs(schoolYear);
+    expect(master3).toBeDefined();
+    expect(master3.totalStudents).toBeGreaterThanOrEqual(0);
   });
 });

@@ -122,6 +122,34 @@ export interface GlobalSearchResult {
   targetView: string;
 }
 
+// ─── Cache Mémoire Dashboard avec TTL (30s) ──────────────────────────────────
+
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+const DASHBOARD_CACHE_TTL_MS = 30_000;
+const dashboardCache = new Map<string, CacheEntry<any>>();
+
+function getFromCache<T>(key: string): T | null {
+  const entry = dashboardCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > DASHBOARD_CACHE_TTL_MS) {
+    dashboardCache.delete(key);
+    return null;
+  }
+  return entry.data as T;
+}
+
+function setInCache<T>(key: string, data: T): T {
+  dashboardCache.set(key, { data, timestamp: Date.now() });
+  return data;
+}
+
+export function invalidateDashboardCache(): void {
+  dashboardCache.clear();
+}
+
 // ─── Données Statiques / Fallback ───────────────────────────────────────────
 
 const STATIC_CALENDAR_EVENTS: CalendarEventMaster[] = [];
@@ -132,25 +160,24 @@ const FALLBACK_ACTIVITIES: ActivityItem[] = [];
 // ─── Export Rétro-Compatibilité ──────────────────────────────────────────────
 
 export async function getMainKPIs(schoolYear: string): Promise<MainKPIs> {
-  const master = await dashboardService.getMasterKPIs(schoolYear);
-  let girlsCount = 0;
-  let boysCount = 0;
-  let teachersCount = 0;
+  const cacheKey = `mainKPIs_${schoolYear}`;
+  const cached = getFromCache<MainKPIs>(cacheKey);
+  if (cached) return cached;
 
-  try {
-    const studentsRes = await listStudents({ schoolYear, pageSize: 1000 });
-    const students = studentsRes.data?.students || [];
-    girlsCount = students.filter((s) => s.gender === 'Féminin' || (s.gender as any) === 'F' || (s.gender as any) === 'FEMALE').length;
-    boysCount = students.filter((s) => s.gender === 'Masculin' || (s.gender as any) === 'M' || (s.gender as any) === 'MALE').length;
-  } catch { /* Silent */ }
+  const [master, studentsRes, staffRes] = await Promise.all([
+    dashboardService.getMasterKPIs(schoolYear),
+    listStudents({ schoolYear, pageSize: 1000 }).catch(() => ({ data: { students: [] } })),
+    listStaff({ pageSize: 500 }).catch(() => ({ data: { staffMembers: [] } })),
+  ]);
 
-  try {
-    const staffRes = await listStaff({ pageSize: 500 });
-    const staff = staffRes.data?.staffMembers || [];
-    teachersCount = staff.filter((s) => s.role === 'Enseignant' || (s as any).role === 'TEACHER').length;
-  } catch { /* Silent */ }
+  const students = studentsRes.data?.students || [];
+  const girlsCount = students.filter((s) => s.gender === 'Féminin' || (s.gender as any) === 'F' || (s.gender as any) === 'FEMALE').length;
+  const boysCount = students.filter((s) => s.gender === 'Masculin' || (s.gender as any) === 'M' || (s.gender as any) === 'MALE').length;
 
-  return {
+  const staff = staffRes.data?.staffMembers || [];
+  const teachersCount = staff.filter((s) => s.role === 'Enseignant' || (s as any).role === 'TEACHER').length;
+
+  const result: MainKPIs = {
     totalStudents: master.totalStudents,
     girlsCount,
     boysCount,
@@ -160,19 +187,24 @@ export async function getMainKPIs(schoolYear: string): Promise<MainKPIs> {
     todayAttendances: 0,
     todayAbsences: 0,
   };
+
+  return setInCache(cacheKey, result);
 }
 
 export async function getFinancialKPIs(schoolYear: string): Promise<FinancialKPIs> {
-  const master = await dashboardService.getMasterKPIs(schoolYear);
-  let payrollAmount = 0;
+  const cacheKey = `financialKPIs_${schoolYear}`;
+  const cached = getFromCache<FinancialKPIs>(cacheKey);
+  if (cached) return cached;
 
-  try {
-    const staffRes = await listStaff({ pageSize: 500 });
-    const staff = staffRes.data?.staffMembers || [];
-    payrollAmount = staff.reduce((sum, s) => sum + ((s as any).baseSalary || 0), 0);
-  } catch { /* Silent */ }
+  const [master, staffRes] = await Promise.all([
+    dashboardService.getMasterKPIs(schoolYear),
+    listStaff({ pageSize: 500 }).catch(() => ({ data: { staffMembers: [] } })),
+  ]);
 
-  return {
+  const staff = staffRes.data?.staffMembers || [];
+  const payrollAmount = staff.reduce((sum, s) => sum + ((s as any).baseSalary || 0), 0);
+
+  const result: FinancialKPIs = {
     expectedAmount: master.collectedAmount + master.remainingAmount,
     collectedAmount: master.collectedAmount,
     remainingAmount: master.remainingAmount,
@@ -181,9 +213,15 @@ export async function getFinancialKPIs(schoolYear: string): Promise<FinancialKPI
     netProfit: master.collectedAmount - master.monthlyExpenses,
     collectionRatePercent: master.recoveryRatePercent,
   };
+
+  return setInCache(cacheKey, result);
 }
 
 export async function getFinancialCharts(schoolYear: string): Promise<FinancialChartData> {
+  const cacheKey = `financialCharts_${schoolYear}`;
+  const cached = getFromCache<FinancialChartData>(cacheKey);
+  if (cached) return cached;
+
   const months = ['Sept', 'Oct', 'Nov', 'Déc', 'Janv', 'Fév', 'Mars', 'Avr', 'Mai', 'Juin'];
   let expenses: any[] = [];
   try {
@@ -199,12 +237,14 @@ export async function getFinancialCharts(schoolYear: string): Promise<FinancialC
     return { mois, Revenus: 0, Dépenses: expForMonth };
   });
 
-  return {
+  const result: FinancialChartData = {
     chartSeries,
     monthlyRevenues: chartSeries.map((s) => ({ mois: s.mois, montant: s.Revenus, periodLabel: s.mois, amount: s.Revenus, value: s.Revenus })),
     monthlyExpenses: chartSeries.map((s) => ({ mois: s.mois, montant: s.Dépenses, periodLabel: s.mois, amount: s.Dépenses, value: s.Dépenses })),
     revenueDistribution: [],
   };
+
+  return setInCache(cacheKey, result);
 }
 
 export async function getAlerts(schoolYear: string): Promise<DashboardAlertItem[]> {
@@ -229,6 +269,10 @@ export async function getCalendarEvents(schoolYear?: string): Promise<CalendarEv
 }
 
 export async function getStudentStatistics(schoolYear: string) {
+  const cacheKey = `studentStats_${schoolYear}`;
+  const cached = getFromCache<any>(cacheKey);
+  if (cached) return cached;
+
   try {
     const studentsRes = await listStudents({ schoolYear, pageSize: 1000 });
     const students = studentsRes.data?.students || [];
@@ -242,13 +286,15 @@ export async function getStudentStatistics(schoolYear: string) {
       countByLevel[lvl] = (countByLevel[lvl] || 0) + 1;
     });
 
-    return {
+    const result = {
       genderRatio: {
         girls: total > 0 ? Math.round((girls / total) * 100) : 0,
         boys: total > 0 ? Math.round((boys / total) * 100) : 0,
       },
       countByLevel,
     };
+
+    return setInCache(cacheKey, result);
   } catch {
     return { genderRatio: { girls: 0, boys: 0 }, countByLevel: {} };
   }
@@ -259,28 +305,40 @@ export async function getStudentStatistics(schoolYear: string) {
 export const dashboardService = {
 
   /**
-   * Calcule dynamiquement tous les indicateurs principaux du Dashboard
+   * Calcule dynamiquement et en parallèle tous les indicateurs principaux du Dashboard
    */
   async getMasterKPIs(academicYearId: string): Promise<DashboardKPIsMaster> {
+    const cacheKey = `masterKPIs_${academicYearId}`;
+    const cached = getFromCache<DashboardKPIsMaster>(cacheKey);
+    if (cached) return cached;
+
     try {
-      const scolarEnrollments = await studentFinancialEnrollmentService.getEnrollmentsByYear(academicYearId);
+      const [
+        scolarEnrollments,
+        canteenEnrollments,
+        transportEnrollments,
+        expenseKpis,
+        studentsRes,
+        staffRes,
+        classroomsRes,
+      ] = await Promise.all([
+        studentFinancialEnrollmentService.getEnrollmentsByYear(academicYearId).catch(() => []),
+        canteenEnrollmentService.getEnrollmentsByYear(academicYearId).catch(() => []),
+        transportEnrollmentService.getEnrollmentsByYear(academicYearId).catch(() => []),
+        expenseService.getKPIs(academicYearId).catch(() => ({ totalMonth: 0 })),
+        listStudents({ schoolYear: academicYearId, pageSize: 1 }).catch(() => ({ data: { totalCount: 0 } })),
+        listStaff({ pageSize: 1 }).catch(() => ({ data: { totalCount: 0 } })),
+        getClassrooms({ schoolYearId: academicYearId }).catch(() => ({ data: [] })),
+      ]);
+
       const collectedAmount = scolarEnrollments.reduce((s, e) => s + (e.totalPaid || 0), 0);
       const remainingAmount = scolarEnrollments.reduce((s, e) => s + (e.remainingBalance || 0), 0);
       const totalDue = collectedAmount + remainingAmount;
       const recoveryRatePercent = totalDue > 0 ? Math.round((collectedAmount / totalDue) * 100) : 0;
 
-      const canteenEnrollments = await canteenEnrollmentService.getEnrollmentsByYear(academicYearId);
       const canteenSubscribersCount = canteenEnrollments.filter((e) => e.status === 'ACTIVE').length;
-
-      const transportEnrollments = await transportEnrollmentService.getEnrollmentsByYear(academicYearId);
       const transportEnrolledCount = transportEnrollments.filter((e) => e.status === 'ACTIVE').length;
-
-      const expenseKpis = await expenseService.getKPIs(academicYearId);
-      const monthlyExpenses = expenseKpis.totalMonth || 0;
-
-      const studentsRes = await listStudents({ schoolYear: academicYearId, pageSize: 1 });
-      const staffRes = await listStaff({ pageSize: 1 });
-      const classroomsRes = await getClassrooms({ schoolYearId: academicYearId });
+      const monthlyExpenses = (expenseKpis as any).totalMonth || 0;
 
       const totalStudents = studentsRes.data?.totalCount ?? 0;
       const totalStaff = staffRes.data?.totalCount ?? 0;
@@ -288,7 +346,7 @@ export const dashboardService = {
       const totalClasses = classroomsList.length;
       const lastAverageGrade = 0;
 
-      return {
+      const result: DashboardKPIsMaster = {
         totalStudents,
         totalStaff,
         totalClasses,
@@ -300,6 +358,8 @@ export const dashboardService = {
         monthlyExpenses,
         lastAverageGrade,
       };
+
+      return setInCache(cacheKey, result);
     } catch {
       return {
         totalStudents: 0,
@@ -318,15 +378,26 @@ export const dashboardService = {
 
 
   /**
-   * Génère les alertes du système de façon strictement conditionnelle
+   * Génère les alertes du système de façon strictement conditionnelle et parallélisée
    */
   async getDashboardAlerts(academicYearId: string): Promise<AlertMasterItem[]> {
+    const cacheKey = `dashboardAlerts_${academicYearId}`;
+    const cached = getFromCache<AlertMasterItem[]>(cacheKey);
+    if (cached) return cached;
+
     const alerts: AlertMasterItem[] = [];
 
+    const [scolarRes, sessionsRes, transportLinesRes, canteenRes, yearsRes] = await Promise.allSettled([
+      studentFinancialEnrollmentService.getEnrollmentsByYear(academicYearId),
+      getSessionsByYear(academicYearId),
+      transportLineService.getLinesByYear(academicYearId),
+      canteenEnrollmentService.getEnrollmentsByYear(academicYearId),
+      getAcademicYears(),
+    ]);
+
     // 🔴 1. Élèves avec impayés
-    try {
-      const scolarEnrollments = await studentFinancialEnrollmentService.getEnrollmentsByYear(academicYearId);
-      const unpaidCount = scolarEnrollments.filter((e) => e.remainingBalance > 0).length;
+    if (scolarRes.status === 'fulfilled') {
+      const unpaidCount = scolarRes.value.filter((e) => e.remainingBalance > 0).length;
       if (unpaidCount > 0) {
         alerts.push({
           id: 'alt-unpaid',
@@ -338,12 +409,11 @@ export const dashboardService = {
           actionView: 'SCOLARITY',
         });
       }
-    } catch { /* Fallback silent */ }
+    }
 
-    // 🟠 2. Sessions d'évaluation non publiées (Conditionnelle)
-    try {
-      const sessionsRes = await getSessionsByYear(academicYearId);
-      const sessions = sessionsRes.data || [];
+    // 🟠 2. Sessions d'évaluation non publiées
+    if (sessionsRes.status === 'fulfilled') {
+      const sessions = sessionsRes.value.data || [];
       const unpublishedCount = sessions.filter((s) => s.status !== 'PUBLISHED').length;
       if (unpublishedCount > 0) {
         alerts.push({
@@ -356,12 +426,11 @@ export const dashboardService = {
           actionView: 'NOTES',
         });
       }
-    } catch { /* Fallback silent */ }
+    }
 
-    // 🟡 3. Lignes de transport complètes (Conditionnelle)
-    try {
-      const transportLines = await transportLineService.getLinesByYear(academicYearId);
-      const fullLines = transportLines.filter((l) => l.availableSeats === 0);
+    // 🟡 3. Lignes de transport complètes
+    if (transportLinesRes.status === 'fulfilled') {
+      const fullLines = transportLinesRes.value.filter((l) => l.availableSeats === 0);
       if (fullLines.length > 0) {
         alerts.push({
           id: 'alt-transport-full',
@@ -373,12 +442,11 @@ export const dashboardService = {
           actionView: 'TRANSPORT',
         });
       }
-    } catch { /* Fallback silent */ }
+    }
 
-    // 🟡 4. Cantine : abonnements suspendus (Conditionnelle)
-    try {
-      const canteenEnrollments = await canteenEnrollmentService.getEnrollmentsByYear(academicYearId);
-      const suspendedCanteen = canteenEnrollments.filter((e) => e.status === 'SUSPENDED').length;
+    // 🟡 4. Cantine : abonnements suspendus
+    if (canteenRes.status === 'fulfilled') {
+      const suspendedCanteen = canteenRes.value.filter((e) => e.status === 'SUSPENDED').length;
       if (suspendedCanteen > 0) {
         alerts.push({
           id: 'alt-canteen-suspended',
@@ -390,12 +458,11 @@ export const dashboardService = {
           actionView: 'CANTEEN',
         });
       }
-    } catch { /* Fallback silent */ }
+    }
 
-    // 🟢 5. Nouvelle année scolaire disponible (Conditionnelle)
-    try {
-      const yearsRes = await getAcademicYears();
-      const years = yearsRes.data || [];
+    // 🟢 5. Nouvelle année scolaire disponible
+    if (yearsRes.status === 'fulfilled') {
+      const years = yearsRes.value.data || [];
       const hasUpcomingYear = years.some((y) => !y.isCurrent);
       if (hasUpcomingYear) {
         alerts.push({
@@ -408,89 +475,91 @@ export const dashboardService = {
           actionView: 'SETTINGS',
         });
       }
-    } catch { /* Fallback silent */ }
+    }
 
-    return alerts;
+    return setInCache(cacheKey, alerts);
   },
 
   /**
-   * Activités récentes 100% dynamiques générées depuis les entités réelles
+   * Activités récentes 100% dynamiques générées en parallèle
    */
   async getRecentActivities(academicYearId: string = ''): Promise<ActivityItem[]> {
+    const cacheKey = `recentActivities_${academicYearId}`;
+    const cached = getFromCache<ActivityItem[]>(cacheKey);
+    if (cached) return cached;
+
     const activities: ActivityItem[] = [];
 
-    try {
-      // 1. Paiements de scolarité récents
-      if (academicYearId) {
-        const scolarList = await studentFinancialEnrollmentService.getEnrollmentsByYear(academicYearId);
-        const paidEnrolls = scolarList.filter((e) => e.totalPaid > 0);
-        paidEnrolls.slice(0, 4).forEach((e, idx) => {
-          activities.push({
-            id: `act-pay-${e.id}`,
-            type: 'PAYMENT',
-            title: 'Paiement scolarité enregistré',
-            description: `${e.studentName} (${e.className}) — ${e.totalPaid.toLocaleString('fr-FR')} FCFA`,
-            timestamp: `Il y a ${10 + idx * 15} min`,
-            badgeColor: '#16a34a',
-            iconName: 'CreditCard',
-          });
-        });
-      }
+    const [scolarRes, studentsRes, expensesRes, staffRes] = await Promise.allSettled([
+      academicYearId ? studentFinancialEnrollmentService.getEnrollmentsByYear(academicYearId) : Promise.resolve([]),
+      listStudents({ pageSize: 3 }),
+      expenseService.getExpenses({ schoolYearId: academicYearId || '' }),
+      listStaff({ pageSize: 2 }),
+    ]);
 
-      // 2. Inscriptions d'élèves récentes
-      const studentsRes = await listStudents({ pageSize: 3 });
-      if (studentsRes.data?.students && studentsRes.data.students.length > 0) {
-        studentsRes.data.students.slice(0, 3).forEach((s, idx) => {
-          activities.push({
-            id: `act-stu-${s.id}`,
-            type: 'ENROLLMENT',
-            title: 'Nouvel élève inscrit',
-            description: `${s.firstName} ${s.lastName} inscrit(e) en ${s.className || 'Classe'}`,
-            timestamp: `Il y a ${35 + idx * 25} min`,
-            badgeColor: '#2563eb',
-            iconName: 'UserPlus',
-          });
+    // 1. Paiements de scolarité récents
+    if (scolarRes.status === 'fulfilled') {
+      const paidEnrolls = scolarRes.value.filter((e) => e.totalPaid > 0);
+      paidEnrolls.slice(0, 4).forEach((e, idx) => {
+        activities.push({
+          id: `act-pay-${e.id}`,
+          type: 'PAYMENT',
+          title: 'Paiement scolarité enregistré',
+          description: `${e.studentName} (${e.className}) — ${e.totalPaid.toLocaleString('fr-FR')} FCFA`,
+          timestamp: `Il y a ${10 + idx * 15} min`,
+          badgeColor: '#16a34a',
+          iconName: 'CreditCard',
         });
-      }
-
-      // 3. Dépenses récentes
-      const expenses = await expenseService.getExpenses({ schoolYearId: academicYearId || '' });
-      if (expenses.length > 0) {
-        expenses.slice(0, 3).forEach((exp, idx) => {
-          activities.push({
-            id: `act-exp-${exp.id}`,
-            type: 'EXPENSE',
-            title: 'Nouvelle dépense validée',
-            description: `${exp.description} — ${exp.amount.toLocaleString('fr-FR')} FCFA`,
-            timestamp: `Il y a ${2 + idx} heures`,
-            badgeColor: '#dc2626',
-            iconName: 'TrendingDown',
-          });
-        });
-      }
-
-      // 4. Membres du personnel récents
-      const staffRes = await listStaff({ pageSize: 2 });
-      if (staffRes.data?.staff && staffRes.data.staff.length > 0) {
-        staffRes.data.staff.forEach((stf, idx) => {
-          activities.push({
-            id: `act-stf-${stf.id}`,
-            type: 'STAFF',
-            title: 'Membre du personnel actif',
-            description: `${stf.firstName} ${stf.lastName} (${stf.positionName})`,
-            timestamp: `Hier, ${16 - idx}h40`,
-            badgeColor: '#0ea5e9',
-            iconName: 'Briefcase',
-          });
-        });
-      }
-    } catch { /* Fallback */ }
-
-    if (activities.length === 0) {
-      return [];
+      });
     }
 
-    return activities.slice(0, 10);
+    // 2. Inscriptions d'élèves récentes
+    if (studentsRes.status === 'fulfilled' && studentsRes.value.data?.students) {
+      studentsRes.value.data.students.slice(0, 3).forEach((s, idx) => {
+        activities.push({
+          id: `act-stu-${s.id}`,
+          type: 'ENROLLMENT',
+          title: 'Nouvel élève inscrit',
+          description: `${s.firstName} ${s.lastName} inscrit(e) en ${s.className || 'Classe'}`,
+          timestamp: `Il y a ${35 + idx * 25} min`,
+          badgeColor: '#2563eb',
+          iconName: 'UserPlus',
+        });
+      });
+    }
+
+    // 3. Dépenses récentes
+    if (expensesRes.status === 'fulfilled') {
+      expensesRes.value.slice(0, 3).forEach((exp, idx) => {
+        activities.push({
+          id: `act-exp-${exp.id}`,
+          type: 'EXPENSE',
+          title: 'Nouvelle dépense validée',
+          description: `${exp.description} — ${exp.amount.toLocaleString('fr-FR')} FCFA`,
+          timestamp: `Il y a ${2 + idx} heures`,
+          badgeColor: '#dc2626',
+          iconName: 'TrendingDown',
+        });
+      });
+    }
+
+    // 4. Membres du personnel récents
+    if (staffRes.status === 'fulfilled' && staffRes.value.data?.staffMembers) {
+      staffRes.value.data.staffMembers.forEach((stf, idx) => {
+        activities.push({
+          id: `act-stf-${stf.id}`,
+          type: 'STAFF',
+          title: 'Membre du personnel actif',
+          description: `${stf.firstName} ${stf.lastName} (${(stf as any).positionName || stf.role})`,
+          timestamp: `Hier, ${16 - idx}h40`,
+          badgeColor: '#0ea5e9',
+          iconName: 'Briefcase',
+        });
+      });
+    }
+
+    const result = activities.slice(0, 10);
+    return setInCache(cacheKey, result);
   },
 
   /**
