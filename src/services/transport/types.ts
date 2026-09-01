@@ -61,6 +61,30 @@ export interface TransportDriverInput {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Arrêts & Étapes de Transport
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface TransportStop {
+  id: string;
+  lineId: string;
+  name: string;
+  orderIndex: number;
+  pickupTime?: string;
+  dropoffTime?: string;
+  zone?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface TransportStopInput {
+  name: string;
+  orderIndex: number;
+  pickupTime?: string;
+  dropoffTime?: string;
+  zone?: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Ligne de Transport
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -80,6 +104,7 @@ export interface TransportLine {
   enrolledCount: number;    // Nombre d'élèves inscrits (calculé)
   availableSeats: number;   // Places restantes (calculé)
   occupancyRate: number;    // Taux d'occupation en % (calculé)
+  stops?: TransportStop[];  // Arrêts ordonnés desservis par la ligne
   academicYearId: string;
   status: TransportLineStatus;
   createdAt: string;
@@ -93,6 +118,7 @@ export interface TransportLineInput {
   driverId: string;
   annualFee: number;
   periodsCount?: number;
+  stops?: TransportStopInput[];
   academicYearId: string;
 }
 

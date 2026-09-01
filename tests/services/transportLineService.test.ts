@@ -167,4 +167,127 @@ describe('Transport Line Capacity & Enrollment Control (P2-14)', () => {
     expect(updateRes.success).toBe(false);
     expect(updateRes.error).toContain('est inférieure au nombre d\'élèves déjà inscrits');
   });
+
+  describe('Transport Stops & Routes Sequencing (P2-27)', () => {
+    it('adds ordered stops and validates 24h pickup and dropoff times', async () => {
+      const vehicles = await transportVehicleService.getAll();
+      const drivers = await transportDriverService.getAll();
+
+      const lineRes = await transportLineService.createLine({
+        name: 'Ligne Plateau-Marcory',
+        zone: 'Plateau, Marcory',
+        vehicleId: vehicles[0].id,
+        driverId: drivers[0].id,
+        annualFee: 180000,
+        academicYearId: 'ay-2026',
+      });
+      const lineId = lineRes.data!.id;
+
+      // 1. Ajouter le 1er arrêt
+      const stop1 = await transportLineService.addStop(lineId, {
+        name: 'Arrêt Carrefour Solibra',
+        orderIndex: 1,
+        pickupTime: '06:45',
+        dropoffTime: '16:30',
+        zone: 'Marcory',
+      });
+      expect(stop1.success).toBe(true);
+      expect(stop1.data?.orderIndex).toBe(1);
+
+      // 2. Ajouter le 2ème arrêt
+      const stop2 = await transportLineService.addStop(lineId, {
+        name: 'Arrêt Immeuble CCIA',
+        orderIndex: 2,
+        pickupTime: '07:15',
+        dropoffTime: '17:00',
+        zone: 'Plateau',
+      });
+      expect(stop2.success).toBe(true);
+
+      // 3. Récupérer les arrêts ordonnés
+      const stopsRes = await transportLineService.getStops(lineId);
+      expect(stopsRes.success).toBe(true);
+      expect(stopsRes.data?.length).toBe(2);
+      expect(stopsRes.data?.[0].name).toBe('Arrêt Carrefour Solibra');
+      expect(stopsRes.data?.[1].name).toBe('Arrêt Immeuble CCIA');
+    });
+
+    it('rejects invalid stop time formats or negative orderIndex', async () => {
+      const vehicles = await transportVehicleService.getAll();
+      const drivers = await transportDriverService.getAll();
+
+      const lineRes = await transportLineService.createLine({
+        name: 'Ligne Test Validation',
+        zone: 'Zone Test',
+        vehicleId: vehicles[0].id,
+        driverId: drivers[0].id,
+        annualFee: 100000,
+        academicYearId: 'ay-2026',
+      });
+      const lineId = lineRes.data!.id;
+
+      // Nom manquant
+      const noName = await transportLineService.addStop(lineId, {
+        name: '',
+        orderIndex: 1,
+      });
+      expect(noName.success).toBe(false);
+
+      // Ordre <= 0
+      const badOrder = await transportLineService.addStop(lineId, {
+        name: 'Arrêt Invalide',
+        orderIndex: 0,
+      });
+      expect(badOrder.success).toBe(false);
+
+      // Heure invalide
+      const badTime = await transportLineService.addStop(lineId, {
+        name: 'Arrêt Heure Invalide',
+        orderIndex: 1,
+        pickupTime: '25:99',
+      });
+      expect(badTime.success).toBe(false);
+      expect(badTime.error).toContain('Format d\'heure de ramassage invalide');
+    });
+
+    it('updates and removes stops maintaining route consistency', async () => {
+      const vehicles = await transportVehicleService.getAll();
+      const drivers = await transportDriverService.getAll();
+
+      const lineRes = await transportLineService.createLine({
+        name: 'Ligne Modif Arrêt',
+        zone: 'Zone Modif',
+        vehicleId: vehicles[0].id,
+        driverId: drivers[0].id,
+        annualFee: 100000,
+        academicYearId: 'ay-2026',
+      });
+      const lineId = lineRes.data!.id;
+
+      const stop1 = await transportLineService.addStop(lineId, {
+        name: 'Arrêt A',
+        orderIndex: 1,
+      });
+      const stop2 = await transportLineService.addStop(lineId, {
+        name: 'Arrêt B',
+        orderIndex: 2,
+      });
+
+      // Mise à jour
+      const updateRes = await transportLineService.updateStop(lineId, stop1.data!.id, {
+        name: 'Arrêt A Modifié',
+        pickupTime: '06:50',
+      });
+      expect(updateRes.success).toBe(true);
+      expect(updateRes.data?.name).toBe('Arrêt A Modifié');
+
+      // Suppression
+      const removeRes = await transportLineService.removeStop(lineId, stop2.data!.id);
+      expect(removeRes.success).toBe(true);
+
+      const remainingStops = await transportLineService.getStops(lineId);
+      expect(remainingStops.data?.length).toBe(1);
+      expect(remainingStops.data?.[0].id).toBe(stop1.data!.id);
+    });
+  });
 });
