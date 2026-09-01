@@ -71,11 +71,43 @@ function createError<T>(error: any, fallbackMessage: string): ServiceResponse<T>
   return { success: false, error: errMsg };
 }
 
+export function normalizePhoneNumber(phone?: string): string {
+  if (!phone) return '';
+  let cleaned = phone.trim().replace(/[\s.\-_/()]/g, '');
+  if (cleaned.startsWith('00225')) {
+    cleaned = '+225' + cleaned.slice(5);
+  }
+  if (/^0[1-9]\d{8}$/.test(cleaned)) {
+    return `+225${cleaned}`;
+  }
+  if (/^225\d{10}$/.test(cleaned)) {
+    return `+${cleaned}`;
+  }
+  return cleaned;
+}
+
+export function isValidPhoneNumber(phone?: string): boolean {
+  if (!phone || typeof phone !== 'string') return false;
+  const cleaned = phone.trim().replace(/[\s.\-_/()]/g, '');
+  if (!cleaned) return false;
+  
+  if (/^\+\d{8,15}$/.test(cleaned)) {
+    return true;
+  }
+  if (/^\d{8,15}$/.test(cleaned)) {
+    return true;
+  }
+  return false;
+}
+
 // Données initiales vierges
 const INITIAL_PARENTS: Parent[] = [];
 
 let localParentsStore: Parent[] = [...INITIAL_PARENTS];
 
+export function clearParentsStore(): void {
+  localParentsStore = [];
+}
 
 /**
  * Crée un nouveau responsable légal
@@ -88,15 +120,27 @@ export async function createParent(parentData: Partial<Parent>): Promise<Service
     if (!parentData.phonePrimary?.trim()) {
       return createError(null, 'Le numéro de téléphone principal est obligatoire.');
     }
+    if (!isValidPhoneNumber(parentData.phonePrimary)) {
+      return createError(null, 'Le format du numéro de téléphone principal est invalide.');
+    }
+    if (parentData.phoneSecondary && !isValidPhoneNumber(parentData.phoneSecondary)) {
+      return createError(null, 'Le format du numéro de téléphone secondaire est invalide.');
+    }
+    if (parentData.whatsapp && !isValidPhoneNumber(parentData.whatsapp)) {
+      return createError(null, 'Le format du numéro WhatsApp est invalide.');
+    }
 
-    const phoneNum = parentData.phonePrimary.trim();
-    const existingParent = localParentsStore.find(
-      (p) => p.phonePrimary === phoneNum || (p.phoneSecondary && p.phoneSecondary === phoneNum)
-    );
+    const normPrimary = normalizePhoneNumber(parentData.phonePrimary);
+    const existingParent = localParentsStore.find((p) => {
+      const pNormPrimary = normalizePhoneNumber(p.phonePrimary);
+      const pNormSecondary = normalizePhoneNumber(p.phoneSecondary);
+      return pNormPrimary === normPrimary || (pNormSecondary && pNormSecondary === normPrimary);
+    });
+
     if (existingParent && existingParent.id !== parentData.id) {
       return createError(
         null,
-        `Un responsable avec le numéro de téléphone ${phoneNum} existe déjà (${existingParent.lastName} ${existingParent.firstName}).`
+        `Un responsable avec le numéro de téléphone ${parentData.phonePrimary} existe déjà (${existingParent.lastName} ${existingParent.firstName}).`
       );
     }
 
@@ -150,6 +194,35 @@ export async function createParent(parentData: Partial<Parent>): Promise<Service
 export async function updateParent(id: string, updates: Partial<Parent>): Promise<ServiceResponse<Parent>> {
   try {
     if (!id) return createError(null, 'Identifiant du responsable légal manquant.');
+
+    if (updates.phonePrimary !== undefined) {
+      if (!updates.phonePrimary?.trim()) {
+        return createError(null, 'Le numéro de téléphone principal ne peut pas être vide.');
+      }
+      if (!isValidPhoneNumber(updates.phonePrimary)) {
+        return createError(null, 'Le format du numéro de téléphone principal est invalide.');
+      }
+      const normPrimary = normalizePhoneNumber(updates.phonePrimary);
+      const existing = localParentsStore.find(
+        (p) =>
+          p.id !== id &&
+          (normalizePhoneNumber(p.phonePrimary) === normPrimary ||
+            (p.phoneSecondary && normalizePhoneNumber(p.phoneSecondary) === normPrimary))
+      );
+      if (existing) {
+        return createError(
+          null,
+          `Un responsable avec le numéro de téléphone ${updates.phonePrimary} existe déjà (${existing.lastName} ${existing.firstName}).`
+        );
+      }
+    }
+
+    if (updates.phoneSecondary && !isValidPhoneNumber(updates.phoneSecondary)) {
+      return createError(null, 'Le format du numéro de téléphone secondaire est invalide.');
+    }
+    if (updates.whatsapp && !isValidPhoneNumber(updates.whatsapp)) {
+      return createError(null, 'Le format du numéro WhatsApp est invalide.');
+    }
 
     const idx = localParentsStore.findIndex((p) => p.id === id);
     if (idx !== -1) {

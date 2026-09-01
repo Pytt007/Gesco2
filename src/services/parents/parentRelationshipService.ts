@@ -72,6 +72,11 @@ export interface RelationshipHistoryLog {
 const localRelationshipsCache: Map<string, StudentParentRelationship> = new Map();
 const localHistoryLogs: RelationshipHistoryLog[] = [];
 
+export function clearRelationshipsStore(): void {
+  localRelationshipsCache.clear();
+  localHistoryLogs.length = 0;
+}
+
 
 function createSuccess<T>(data: T, message?: string): ServiceResponse<T> {
   return { success: true, data, message };
