@@ -311,4 +311,56 @@ describe('Template Builder Module Layer', () => {
       });
     });
   });
+
+  describe('Document Engine Validation & Public Façade (P2-07)', () => {
+    it('validates mandatory generation options in documentEngine', async () => {
+      const { documentEngine } = await import('../../src/services/documents');
+
+      await expect(
+        documentEngine.generateDocument(null as any)
+      ).rejects.toThrow('Options de génération manquantes.');
+
+      await expect(
+        documentEngine.generateDocument({} as any)
+      ).rejects.toThrow('Le type de document est obligatoire.');
+
+      await expect(
+        documentEngine.generateDocument({ documentType: 'BULLETIN' } as any)
+      ).rejects.toThrow("L'identifiant de l'entité cible est obligatoire.");
+
+      await expect(
+        documentEngine.generateDocument({ documentType: 'BULLETIN', entityId: 'ent-1' } as any)
+      ).rejects.toThrow("Le type d'entité cible est obligatoire.");
+
+      await expect(
+        documentEngine.generateDocument({
+          documentType: 'BULLETIN',
+          entityId: 'ent-1',
+          entityType: 'STUDENT',
+          generatedBy: 'Admin',
+          data: null as any,
+        })
+      ).rejects.toThrow('Les données du document sont obligatoires.');
+    });
+
+    it('successfully generates document preview with valid options', async () => {
+      const { documentEngine } = await import('../../src/services/documents');
+
+      const preview = await documentEngine.previewDocument({
+        documentType: 'BULLETIN',
+        entityId: 'stu-1',
+        entityType: 'STUDENT',
+        generatedBy: 'Admin',
+        data: {
+          studentName: 'Amani Jean',
+          matricule: 'MAT-2026-001',
+          className: '6ème A',
+        },
+      });
+
+      expect(preview).toBeDefined();
+      expect(preview.documentType).toBe('BULLETIN');
+      expect(preview.fullHtml).toContain('Amani Jean');
+    });
+  });
 });

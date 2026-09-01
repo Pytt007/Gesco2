@@ -15,6 +15,24 @@ import { supabase } from '../common/supabaseClient';
 const templatesStore: DocumentTemplate[] = [...templateEngine.getDefaultTemplates()];
 const sectionsStore: Record<string, TemplateSection[]> = {};
 
+function validateGenerationOptions(options: DocumentGenerationOptions): void {
+  if (!options) {
+    throw new Error('Options de génération manquantes.');
+  }
+  if (!options.documentType) {
+    throw new Error('Le type de document est obligatoire.');
+  }
+  if (!options.entityId) {
+    throw new Error("L'identifiant de l'entité cible est obligatoire.");
+  }
+  if (!options.entityType) {
+    throw new Error("Le type d'entité cible est obligatoire.");
+  }
+  if (!options.data || typeof options.data !== 'object') {
+    throw new Error('Les données du document sont obligatoires.');
+  }
+}
+
 /**
  * GESCO Document Engine
  * Orchestrateur central de génération, versionning, rendu PDF, QR Code et historisation des documents.
@@ -28,6 +46,8 @@ export const documentEngine = {
     pdfResult: PDFRenderResult;
     historyRecord: GeneratedDocument;
   }> {
+    validateGenerationOptions(options);
+
     // 1. Charger le modèle et les sections
     const template = await this.getTemplateById(options.templateId || '');
     const sections = template ? await this.getTemplateSections(template.id) : undefined;
@@ -60,6 +80,7 @@ export const documentEngine = {
    * Génère un aperçu en direct d'un document (Compilation sans historisation)
    */
   async previewDocument(options: DocumentGenerationOptions): Promise<CompiledDocument> {
+    validateGenerationOptions(options);
     const template = await this.getTemplateById(options.templateId || '');
     const sections = template ? await this.getTemplateSections(template.id) : undefined;
     return templateEngine.compileDocument(options, template || undefined, sections);
@@ -69,6 +90,7 @@ export const documentEngine = {
    * Génère et télécharge directement le document au format PDF / HTML
    */
   async downloadPDF(options: DocumentGenerationOptions, fileName?: string): Promise<void> {
+    validateGenerationOptions(options);
     const { compiled } = await this.generateDocument(options);
     pdfRenderer.downloadDocument(compiled, fileName);
   },
@@ -77,6 +99,7 @@ export const documentEngine = {
    * Génère et ouvre la boîte de dialogue d'impression du navigateur
    */
   async print(options: DocumentGenerationOptions): Promise<void> {
+    validateGenerationOptions(options);
     const { compiled } = await this.generateDocument(options);
     pdfRenderer.printHtml(compiled.fullHtml);
   },

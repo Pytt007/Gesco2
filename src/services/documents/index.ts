@@ -9,3 +9,4 @@ export * from './pdfRenderer';
 export * from './documentHistory';
 export * from './documentEngine';
 export * from './DocumentEngine/index';
+export * from './builder';
