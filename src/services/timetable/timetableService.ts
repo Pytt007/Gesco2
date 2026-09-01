@@ -20,6 +20,10 @@ import { getSubjects } from '../academic/catalog/subjectsService';
 
 const scheduleStore: Map<string, ScheduleSlotRecord> = new Map();
 
+export function clearTimetableStore(): void {
+  scheduleStore.clear();
+}
+
 export function normalizeDayKey(day: string): DayOfWeek {
   if (!day) return 'MONDAY';
   const u = day.toUpperCase();
@@ -155,6 +159,20 @@ export const timetableService = {
       };
     }
 
+    // 5. Conflit de Salle : Deux classes affectées à la même salle sur le même créneau
+    if (input.room && input.room.trim()) {
+      const trimmedRoom = input.room.trim().toLowerCase();
+      const roomConflict = allSlots.find(
+        (s) => s.room && s.room.trim().toLowerCase() === trimmedRoom && intervalsOverlap(s.startTime, s.endTime, input.startTime, input.endTime)
+      );
+      if (roomConflict) {
+        return {
+          success: false,
+          error: `Conflit de salle : la salle "${input.room.trim()}" est déjà occupée par la classe ${roomConflict.className} sur ce créneau (${roomConflict.startTime} - ${roomConflict.endTime}).`,
+        };
+      }
+    }
+
     // Extraction métadonnées dynamiques
     let className = 'Classe';
     try {
@@ -214,12 +232,14 @@ export const timetableService = {
       return { success: false, error: 'L\'heure de fin doit être postérieure à l\'heure de début.' };
     }
 
-    if (startMins < timeToMinutes('07:00') || endMins > timeToMinutes('18:00')) {
-      return { success: false, error: 'Créneau en dehors des heures d\'ouverture (07h00 - 18h00).' };
+    if (startMins < timeToMinutes('06:00') || endMins > timeToMinutes('22:00')) {
+      return { success: false, error: 'Le créneau doit être compris entre 06h00 et 22h00.' };
     }
 
+    const normalizedDay = normalizeDayKey(input.dayOfWeek);
+
     const otherSlots = Array.from(scheduleStore.values()).filter(
-      (s) => s.id !== id && s.academicYearId === input.academicYearId && s.dayOfWeek === input.dayOfWeek
+      (s) => s.id !== id && s.academicYearId === input.academicYearId && normalizeDayKey(s.dayOfWeek) === normalizedDay
     );
 
     const classConflict = otherSlots.find(
@@ -236,11 +256,24 @@ export const timetableService = {
       return { success: false, error: `Conflit d'enseignant : ${teacherConflict.teacherName} est déjà affecté à ${teacherConflict.className}.` };
     }
 
+    if (input.room && input.room.trim()) {
+      const trimmedRoom = input.room.trim().toLowerCase();
+      const roomConflict = otherSlots.find(
+        (s) => s.room && s.room.trim().toLowerCase() === trimmedRoom && intervalsOverlap(s.startTime, s.endTime, input.startTime, input.endTime)
+      );
+      if (roomConflict) {
+        return {
+          success: false,
+          error: `Conflit de salle : la salle "${input.room.trim()}" est déjà occupée par la classe ${roomConflict.className} sur ce créneau.`,
+        };
+      }
+    }
+
     existing.classId = input.classId;
     existing.subjectId = input.subjectId;
     existing.teacherId = input.teacherId;
     existing.room = input.room?.trim() || undefined;
-    existing.dayOfWeek = input.dayOfWeek;
+    existing.dayOfWeek = normalizedDay;
     existing.startTime = input.startTime;
     existing.endTime = input.endTime;
     existing.updatedAt = new Date().toISOString();
