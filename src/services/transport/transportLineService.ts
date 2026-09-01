@@ -15,7 +15,10 @@ import { supabase } from '../common/supabaseClient';
 
 const lineStore: Map<string, TransportLine> = new Map();
 
-export function clearTransportLineStore() { lineStore.clear(); }
+export function clearTransportLineStore() {
+  lineStore.clear();
+  enrollmentCountByLine.clear();
+}
 
 // Compteur d'inscriptions par ligne (mis à jour par le service d'inscription)
 const enrollmentCountByLine: Map<string, number> = new Map();

@@ -59,8 +59,8 @@ export const transportVehicleService = {
     const vehicle: TransportVehicle = {
       id,
       name: input.name.trim(),
-      brand: input.brand.trim(),
-      model: input.model.trim(),
+      brand: input.brand?.trim() || '',
+      model: input.model?.trim() || '',
       licensePlate: input.licensePlate.trim().toUpperCase(),
       capacity: Number(input.capacity),
       createdAt: new Date().toISOString(),

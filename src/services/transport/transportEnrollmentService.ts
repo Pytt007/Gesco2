@@ -208,4 +208,27 @@ export const transportEnrollmentService = {
     await persistEnrollmentsToSupabase();
     return true;
   },
+
+  /**
+   * Annule une inscription et libère la place dans le véhicule
+   */
+  async cancelEnrollment(enrollmentId: string): Promise<ServiceResponse<TransportEnrollment>> {
+    await syncEnrollmentsFromSupabase();
+    const enrollment = enrollmentStore.get(enrollmentId);
+    if (!enrollment) return { success: false, error: 'Inscription transport introuvable.' };
+
+    if (enrollment.status === 'CANCELLED') {
+      return { success: false, error: 'Cette inscription est déjà annulée.' };
+    }
+
+    enrollment.status = 'CANCELLED';
+    enrollment.updatedAt = new Date().toISOString();
+    enrollmentStore.set(enrollmentId, enrollment);
+    await persistEnrollmentsToSupabase();
+
+    // Libérer la place sur la ligne
+    updateLineEnrollmentCount(enrollment.lineId, -1);
+
+    return { success: true, data: enrollment, message: 'Inscription transport annulée et place libérée.' };
+  },
 };
