@@ -14,9 +14,15 @@ import { ServiceResponse } from '../academic/academicYearsService';
 import { supabase } from '../common/supabaseClient';
 import { getClassroom } from '../academic/classroomsService';
 
+import { statsCalculationService } from '../stats';
+
 // ─── Stockage Local (Feuilles de présence) ────────────────────────────────────
 
 const attendanceStore: Map<string, AttendanceSheet> = new Map(); // Clef : `classId_date`
+
+export function clearAttendanceStore(): void {
+  attendanceStore.clear();
+}
 
 // ─── Service ─────────────────────────────────────────────────────────────────
 
@@ -92,6 +98,29 @@ export const attendanceService = {
     if (!input.classId || !input.date) {
       return { success: false, error: 'Classe et date obligatoires.' };
     }
+
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(input.date) || isNaN(Date.parse(input.date))) {
+      return { success: false, error: 'Format de date invalide. Utilisez AAAA-MM-JJ.' };
+    }
+
+    const sheetDate = new Date(input.date + 'T00:00:00');
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    if (sheetDate.getTime() > today.getTime()) {
+      return { success: false, error: 'Impossible d\'enregistrer une feuille de présence pour une date future.' };
+    }
+
+    if (!input.items || !Array.isArray(input.items) || input.items.length === 0) {
+      return { success: false, error: 'La feuille de présence doit contenir au moins un élève.' };
+    }
+
+    const validStatuses: AttendanceStatus[] = ['PRESENT', 'ABSENT', 'ABSENT_JUSTIFIED'];
+    input.items.forEach((item) => {
+      if (!validStatuses.includes(item.status)) {
+        item.status = 'PRESENT';
+      }
+    });
 
     const key = `${input.classId}_${input.date}`;
     let className = 'Classe';
@@ -201,7 +230,7 @@ export const attendanceService = {
     const presentCount = items.filter((i) => i.status === 'PRESENT').length;
     const absentCount = items.filter((i) => i.status === 'ABSENT').length;
     const justifiedCount = items.filter((i) => i.status === 'ABSENT_JUSTIFIED').length;
-    const presenceRate = totalStudents > 0 ? Math.round((presentCount / totalStudents) * 100) : 0;
+    const presenceRate = statsCalculationService.calculateAttendanceRate(presentCount, totalStudents, 0);
 
     return {
       totalStudents,
