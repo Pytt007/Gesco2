@@ -21,6 +21,7 @@ import { listStudents } from '../services/students/studentsService';
 import { listStaff } from '../services/staff/staffService';
 import { getClassrooms } from '../services/academic/classroomsService';
 import { dashboardService } from '../services/dashboard/dashboardService';
+import { statsCalculationService } from '../services/stats';
 
 // ─── TYPES & ONGLET ──────────────────────────────────────────────────────────
 
@@ -117,19 +118,16 @@ export default function StatisticsPage() {
         setTeachersCount(teachers.length);
         setAdminStaffCount(staff.length - teachers.length);
 
-        const totalPaid = scolarEnrollments.reduce((sum, e) => sum + (e.totalPaid || 0), 0);
-        const totalRem = scolarEnrollments.reduce((sum, e) => sum + (e.remainingBalance || 0), 0);
-        const totalDue = totalPaid + totalRem;
-        setCollectedAmount(totalPaid);
-        setRemainingAmount(totalRem);
-        setRecoveryRate(totalDue > 0 ? Math.round((totalPaid / totalDue) * 100) : 0);
+        const finKPIs = statsCalculationService.calculateFinancialKPIs(scolarEnrollments);
+        setCollectedAmount(finKPIs.totalPaid);
+        setRemainingAmount(finKPIs.remainingBalance);
+        setRecoveryRate(finKPIs.recoveryRate);
 
         // 1. Répartition par genre
-        const girls = students.filter((s) => s.gender === 'Féminin' || (s.gender as any) === 'F' || (s.gender as any) === 'FEMALE').length;
-        const boys = students.filter((s) => s.gender === 'Masculin' || (s.gender as any) === 'M' || (s.gender as any) === 'MALE').length;
+        const genderDist = statsCalculationService.calculateGenderDistribution(students);
         setGenderDistribution([
-          { name: 'Filles', value: girls, color: '#ec4899' },
-          { name: 'Garçons', value: boys, color: '#3b82f6' },
+          { name: 'Filles', value: genderDist.girls, color: '#ec4899' },
+          { name: 'Garçons', value: genderDist.boys, color: '#3b82f6' },
         ]);
 
         // 2. Répartition par niveau
