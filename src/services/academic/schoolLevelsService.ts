@@ -1,10 +1,6 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// GESCO — Service Niveaux Scolaires (src/services/academic/schoolLevelsService.ts)
-// Couche de gestion des niveaux scolaires (PS, MS, GS, CP1, CP2, CE1, CE2, CM1, CM2)
-// ─────────────────────────────────────────────────────────────────────────────
-
 import { supabase } from '../common/supabaseClient';
 import { ServiceResponse } from './academicYearsService';
+import { getClassrooms } from './classroomsService';
 
 export interface SchoolLevel {
   id: string;
@@ -30,6 +26,10 @@ function createError<T>(error: any, fallbackMessage: string): ServiceResponse<T>
 }
 
 const localLevelsCache: Map<string, SchoolLevel> = new Map();
+
+export function clearLevelsCache(): void {
+  localLevelsCache.clear();
+}
 
 /**
  * Récupère la liste de tous les niveaux scolaires ordonnés par sort_order
@@ -116,6 +116,10 @@ export async function getLevel(id: string): Promise<ServiceResponse<SchoolLevel>
       return createSuccess(level);
     }
 
+    if (localLevelsCache.size === 0) {
+      await getLevels();
+    }
+
     const cached = localLevelsCache.get(id);
     if (cached) return createSuccess(cached);
 
@@ -156,7 +160,20 @@ export async function createLevel(levelData: Partial<SchoolLevel>): Promise<Serv
     }
 
     const newId = levelData.id || crypto.randomUUID();
-    const code = levelData.code || levelData.shortName || levelData.name.toUpperCase().replace(/[^A_Z0-9]/g, '_').slice(0, 10);
+    const code = (levelData.code || levelData.shortName || levelData.name)
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '_')
+      .slice(0, 10);
+
+    // Vérifier l'unicité du code parmi les niveaux existants
+    const existingLevelsRes = await getLevels();
+    if (existingLevelsRes.success && existingLevelsRes.data) {
+      const duplicate = existingLevelsRes.data.find((l) => l.code === code && l.id !== newId);
+      if (duplicate) {
+        return createError(null, `Un niveau avec le code "${code}" existe déjà (${duplicate.name}).`);
+      }
+    }
+
     const now = new Date().toISOString();
 
     const createdLevel: SchoolLevel = {
@@ -244,6 +261,22 @@ export async function archiveLevel(id: string): Promise<ServiceResponse<boolean>
   try {
     if (!id) return createError(null, 'Identifiant manquant.');
 
+    const existingRes = await getLevel(id);
+    const existing = existingRes.data;
+    if (!existing) return createError(null, 'Niveau introuvable.');
+
+    // Intégrité référentielle : vérifier s'il existe des classes actives rattachées
+    const clsRes = await getClassrooms({ pageSize: 500 });
+    const linkedClasses = (clsRes.data || []).filter(
+      (c) => c.isActive && (c.levelId === id || (existing.code && c.levelCode === existing.code))
+    );
+    if (linkedClasses.length > 0) {
+      return createError(
+        null,
+        `Impossible d'archiver ce niveau : ${linkedClasses.length} classe(s) active(s) y sont rattachées.`
+      );
+    }
+
     const { error } = await supabase
       .from('school_levels')
       .update({ is_active: false, updated_at: new Date().toISOString() })
@@ -261,5 +294,41 @@ export async function archiveLevel(id: string): Promise<ServiceResponse<boolean>
     return createSuccess(true, 'Niveau scolaire archivé / désactivé.');
   } catch (err) {
     return createError(err, 'Erreur lors de l\'archivage du niveau.');
+  }
+}
+
+/**
+ * Supprime définitivement un niveau scolaire si aucune classe n'y est rattachée
+ * @param id Identifiant
+ */
+export async function deleteLevel(id: string): Promise<ServiceResponse<boolean>> {
+  try {
+    if (!id) return createError(null, 'Identifiant manquant.');
+
+    const existingRes = await getLevel(id);
+    const existing = existingRes.data;
+    if (!existing) return createError(null, 'Niveau introuvable.');
+
+    // Intégrité référentielle : vérifier s'il existe des classes rattachées
+    const clsRes = await getClassrooms({ pageSize: 500 });
+    const linkedClasses = (clsRes.data || []).filter(
+      (c) => c.levelId === id || (existing.code && c.levelCode === existing.code)
+    );
+    if (linkedClasses.length > 0) {
+      return createError(
+        null,
+        `Impossible de supprimer ce niveau : ${linkedClasses.length} classe(s) y sont rattachées.`
+      );
+    }
+
+    const { error } = await supabase.from('school_levels').delete().eq('id', id);
+    if (error) {
+      console.warn('[schoolLevelsService:deleteLevel] Fallback local:', error.message);
+    }
+
+    localLevelsCache.delete(id);
+    return createSuccess(true, 'Niveau scolaire supprimé avec succès.');
+  } catch (err) {
+    return createError(err, 'Erreur lors de la suppression du niveau.');
   }
 }
