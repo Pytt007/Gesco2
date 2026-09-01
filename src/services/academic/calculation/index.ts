@@ -32,8 +32,14 @@ export type {
 } from './calculationEngine';
 
 // ── Sous-modules (accès avancé pour tests et extensions) ─────────────────────
-export { executeFormula, detectFormulaType, isFormulaValid } from './formulaEngine';
-export type { FormulaInput, FormulaResult } from './formulaEngine';
+export {
+  executeFormula,
+  detectFormulaType,
+  isFormulaValid,
+  validateFormulaExpression,
+  evaluateCustomMath,
+} from './formulaEngine';
+export type { FormulaInput, FormulaResult, FormulaValidationResult } from './formulaEngine';
 
 export {
   normalizeScore,

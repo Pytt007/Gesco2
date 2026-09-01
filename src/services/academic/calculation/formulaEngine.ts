@@ -41,32 +41,274 @@ export interface FormulaResult {
   computationTrace: string;
 }
 
-// ─── Parseur de l'expression de formule ──────────────────────────────────────
+// ─── Validation et Parseur d'Expression de Formule ──────────────────────────
+
+export interface FormulaValidationResult {
+  isValid: boolean;
+  formulaType: FormulaType;
+  error?: string;
+  warning?: string;
+  isCustom: boolean;
+  nominalDivisor?: number;
+  nominalMultiplier?: number;
+}
+
+/**
+ * Valide syntaxiquement une expression de formule et extrait ses métadonnées.
+ */
+export function validateFormulaExpression(expression: string): FormulaValidationResult {
+  if (!expression || expression.trim() === '') {
+    return {
+      isValid: false,
+      formulaType: 'CUSTOM',
+      isCustom: true,
+      error: "L'expression de la formule ne peut pas être vide.",
+    };
+  }
+
+  const expr = expression.trim();
+
+  // 1. APPRECIATION_ENGINE
+  if (expr === 'APPRECIATION_ENGINE') {
+    return { isValid: true, formulaType: 'APPRECIATION', isCustom: false };
+  }
+
+  // 2. AVERAGE(grades)
+  if (/^AVERAGE\(grades\)$/i.test(expr)) {
+    return { isValid: true, formulaType: 'AVERAGE', isCustom: false };
+  }
+
+  // 3. SUM(grades)
+  if (/^SUM\(grades\)$/i.test(expr)) {
+    return { isValid: true, formulaType: 'SUM', isCustom: false };
+  }
+
+  // 4. SUM(grades)/N
+  const sumDivMatch = expr.match(/^SUM\(grades\)\/(\d+(?:\.\d+)?)$/i);
+  if (sumDivMatch) {
+    const divisor = parseFloat(sumDivMatch[1]);
+    if (divisor === 0) {
+      return {
+        isValid: false,
+        formulaType: 'SUM_DIVISOR',
+        isCustom: false,
+        error: 'Division par zéro interdite dans la formule SUM_DIVISOR.',
+      };
+    }
+    return {
+      isValid: true,
+      formulaType: 'SUM_DIVISOR',
+      nominalDivisor: divisor,
+      isCustom: false,
+    };
+  }
+
+  // 5. (SUM(coeff*grade)/N)*M
+  const sumMultMatch = expr.match(/^\(SUM\(coeff\*grade\)\/(\d+(?:\.\d+)?)\)\*(\d+(?:\.\d+)?)$/i);
+  if (sumMultMatch) {
+    const divisor = parseFloat(sumMultMatch[1]);
+    const multiplier = parseFloat(sumMultMatch[2]);
+    if (divisor === 0) {
+      return {
+        isValid: false,
+        formulaType: 'SUM_MULTIPLIER',
+        isCustom: false,
+        error: 'Division par zéro interdite dans la formule SUM_MULTIPLIER.',
+      };
+    }
+    return {
+      isValid: true,
+      formulaType: 'SUM_MULTIPLIER',
+      nominalDivisor: divisor,
+      nominalMultiplier: multiplier,
+      isCustom: false,
+    };
+  }
+
+  // 6. Formule CUSTOM : Validation de sécurité et de syntaxe arithmétique
+  // Contrôle des parenthèses
+  let parenDepth = 0;
+  for (const ch of expr) {
+    if (ch === '(') parenDepth++;
+    if (ch === ')') parenDepth--;
+    if (parenDepth < 0) {
+      return {
+        isValid: false,
+        formulaType: 'CUSTOM',
+        isCustom: true,
+        error: 'Parenthèses mal équilibrées dans la formule personnalisée.',
+      };
+    }
+  }
+  if (parenDepth !== 0) {
+    return {
+      isValid: false,
+      formulaType: 'CUSTOM',
+      isCustom: true,
+      error: 'Parenthèses non fermées dans la formule personnalisée.',
+    };
+  }
+
+  // Validation des tokens autorisés
+  const tempSanitized = expr
+    .replace(/SUM\(coeff\*grade\)/gi, '0')
+    .replace(/SUM\(grades\)/gi, '0')
+    .replace(/AVERAGE\(grades\)/gi, '0')
+    .replace(/COUNT\(grades\)/gi, '0');
+
+  // Vérification de sécurité contre les injections de script et mots-clés dangereux
+  if (/\b(alert|eval|window|document|function|console|require|import|process|global|script)\b/i.test(expr)) {
+    return {
+      isValid: false,
+      formulaType: 'CUSTOM',
+      isCustom: true,
+      error: 'Mots-clés interdits ou potentiellement dangereux détectés dans la formule personnalisée.',
+    };
+  }
+
+  // Vérifier la division par zéro littérale
+  if (/\/\s*0(?![0-9.])/.test(tempSanitized)) {
+    return {
+      isValid: false,
+      formulaType: 'CUSTOM',
+      isCustom: true,
+      error: 'Division statique par zéro détectée dans la formule personnalisée.',
+    };
+  }
+
+  // Si des lettres ou caractères suspects subsistent en dehors des chiffres et opérateurs de base
+  if (/[a-zA-Z_$]/.test(tempSanitized)) {
+    return {
+      isValid: true,
+      formulaType: 'CUSTOM',
+      isCustom: true,
+      warning: 'Identifiant personnalisé détecté dans l\'expression CUSTOM. Un fallback sur la moyenne sera utilisé si l\'expression n\'est pas directement calculable.',
+    };
+  }
+
+  return {
+    isValid: true,
+    formulaType: 'CUSTOM',
+    isCustom: true,
+    warning: 'Formule personnalisée non-standard détectée. Vérifiez attentivement les résultats de calcul.',
+  };
+}
 
 /**
  * Détermine le type de formule depuis l'expression stockée en BD.
- *
- * Expressions reconnues :
- * - `'APPRECIATION_ENGINE'`             → FormulaType.APPRECIATION
- * - `'SUM(grades)/N'`                   → FormulaType.SUM_DIVISOR (N = entier)
- * - `'(SUM(coeff*grade)/N)*M'`          → FormulaType.SUM_MULTIPLIER (N, M = entiers)
- * - `'SUM(grades)'`                     → FormulaType.SUM
- * - `'AVERAGE(grades)'`                 → FormulaType.AVERAGE
- * - Autre                               → FormulaType.CUSTOM
- *
- * @param expression - Expression de formule telle que stockée en base.
- * @returns Type de formule détecté.
  */
 export function detectFormulaType(expression: string): FormulaType {
-  const expr = expression.trim();
+  const res = validateFormulaExpression(expression);
+  return res.formulaType;
+}
 
-  if (expr === 'APPRECIATION_ENGINE') return 'APPRECIATION';
-  if (/^AVERAGE\(grades\)$/i.test(expr)) return 'AVERAGE';
-  if (/^SUM\(grades\)$/i.test(expr)) return 'SUM';
-  if (/^SUM\(grades\)\/\d+(\.\d+)?$/i.test(expr)) return 'SUM_DIVISOR';
-  if (/^\(SUM\(coeff\*grade\)\/\d+(\.\d+)?\)\*\d+(\.\d+)?$/i.test(expr)) return 'SUM_MULTIPLIER';
+/**
+ * Évalue une expression arithmétique CUSTOM de manière strictement sandboxée (sans eval).
+ */
+export function evaluateCustomMath(
+  expression: string,
+  variables: {
+    sumGrades: number;
+    avgGrades: number;
+    countGrades: number;
+    sumCoeffGrades: number;
+  }
+): { value: number; trace: string } {
+  let sanitized = expression
+    .replace(/SUM\(coeff\*grade\)/gi, `${variables.sumCoeffGrades}`)
+    .replace(/SUM\(grades\)/gi, `${variables.sumGrades}`)
+    .replace(/AVERAGE\(grades\)/gi, `${variables.avgGrades}`)
+    .replace(/COUNT\(grades\)/gi, `${variables.countGrades}`);
 
-  return 'CUSTOM';
+  const tokens: (string | number)[] = [];
+  const regex = /\s*([0-9]+(?:\.[0-9]+)?|[+\-*/()]|[^0-9+\-*/()\s]+)\s*/g;
+  let match;
+  while ((match = regex.exec(sanitized)) !== null) {
+    const token = match[1];
+    if (/^[0-9]+(?:\.[0-9]+)?$/.test(token)) {
+      tokens.push(parseFloat(token));
+    } else if (['+', '-', '*', '/', '(', ')'].includes(token)) {
+      tokens.push(token);
+    } else {
+      throw new Error(`[FormulaEngine] Token non autorisé dans l'expression CUSTOM : "${token}"`);
+    }
+  }
+
+  let pos = 0;
+
+  function peek(): string | number | undefined {
+    return tokens[pos];
+  }
+
+  function consume(): string | number {
+    return tokens[pos++];
+  }
+
+  function parseFactor(): number {
+    const token = peek();
+    if (typeof token === 'number') {
+      consume();
+      return token;
+    }
+    if (token === '(') {
+      consume();
+      const result = parseExpression();
+      if (peek() !== ')') {
+        throw new Error('[FormulaEngine] Parenthèse fermante manquante.');
+      }
+      consume();
+      return result;
+    }
+    if (token === '-') {
+      consume();
+      return -parseFactor();
+    }
+    if (token === '+') {
+      consume();
+      return parseFactor();
+    }
+    throw new Error(`[FormulaEngine] Facteur inattendu : "${token}"`);
+  }
+
+  function parseTerm(): number {
+    let left = parseFactor();
+    while (peek() === '*' || peek() === '/') {
+      const op = consume();
+      const right = parseFactor();
+      if (op === '*') {
+        left = left * right;
+      } else if (op === '/') {
+        if (right === 0) throw new Error('[FormulaEngine] Division par zéro dans la formule CUSTOM.');
+        left = left / right;
+      }
+    }
+    return left;
+  }
+
+  function parseExpression(): number {
+    let left = parseTerm();
+    while (peek() === '+' || peek() === '-') {
+      const op = consume();
+      const right = parseTerm();
+      if (op === '+') {
+        left = left + right;
+      } else if (op === '-') {
+        left = left - right;
+      }
+    }
+    return left;
+  }
+
+  const calculated = parseExpression();
+  if (pos < tokens.length) {
+    throw new Error(`[FormulaEngine] Caractères résiduels dans l'expression CUSTOM.`);
+  }
+
+  const rounded = parseFloat(calculated.toFixed(4));
+  return {
+    value: rounded,
+    trace: `CUSTOM : ${expression} → ${sanitized} = ${rounded}`,
+  };
 }
 
 /**
@@ -101,23 +343,6 @@ function parseSumMultiplier(expression: string): { divisor: number; multiplier: 
 
 /**
  * Exécute une formule de calcul sur les données d'entrée.
- *
- * @param formula - Configuration de la formule (depuis la BD).
- * @param input   - Données calculées (scores pondérés, maxima, etc.).
- * @returns Résultat détaillé du calcul.
- *
- * @throws Error si la formule est absente, si l'expression est invalide,
- *              ou si les données d'entrée sont incohérentes.
- *
- * @example
- * // CP1 Mensuelle : SUM(grades)/9, 9 notes de 8/10
- * executeFormula(formula, { weightedGrades: [8,8,8,8,8,8,8,8,8], subjectCount: 9, ... })
- * // → { value: 8.00, resultScale: 'SCORE_10', ... }
- *
- * @example
- * // CM1 : (SUM(coeff*grade)/170)*20, pondérations appliquées
- * executeFormula(formula, { weightedGrades: [...], weightedMaximums: [...], ... })
- * // → { value: 14.12, resultScale: 'SCORE_20', ... }
  */
 export function executeFormula(formula: FormulaConfig, input: FormulaInput): FormulaResult {
   const { formulaExpression, resultScale, code } = formula;
@@ -126,7 +351,12 @@ export function executeFormula(formula: FormulaConfig, input: FormulaInput): For
     throw new Error(`[FormulaEngine] L'expression de la formule "${code}" est vide.`);
   }
 
-  const formulaType = detectFormulaType(formulaExpression);
+  const validation = validateFormulaExpression(formulaExpression);
+  if (!validation.isValid) {
+    throw new Error(`[FormulaEngine] Expression de formule invalide pour "${code}" : ${validation.error}`);
+  }
+
+  const formulaType = validation.formulaType;
   const weightedSum = input.weightedGrades.reduce((acc, g) => acc + g, 0);
   const weightedMaximum = input.weightedMaximums.reduce((acc, m) => acc + m, 0);
 
@@ -213,32 +443,46 @@ export function executeFormula(formula: FormulaConfig, input: FormulaInput): For
       };
     }
 
-    // ── CUSTOM : expression personnalisée ─────────────────────────────────────
+    // ── CUSTOM : expression personnalisée évaluée en sandbox ───────────────────
     case 'CUSTOM': {
-      // Pour l'instant, CUSTOM utilise la moyenne simple comme fallback sécurisé.
-      // Le moteur peut être étendu pour interpréter des expressions plus complexes.
       const count = input.subjectCount > 0 ? input.subjectCount : 1;
-      const value = parseFloat((weightedSum / count).toFixed(4));
-      console.warn(
-        `[FormulaEngine] Formule CUSTOM "${formulaExpression}" : fallback sur AVERAGE.`,
-      );
-      return {
-        value,
-        weightedSum,
-        weightedMaximum,
-        resultScale,
-        formulaCode: code,
-        computationTrace: `CUSTOM (fallback AVERAGE) : ${weightedSum} / ${count} = ${value}`,
-      };
+      const avg = input.subjectCount > 0 ? weightedSum / input.subjectCount : 0;
+
+      try {
+        const { value, trace } = evaluateCustomMath(formulaExpression, {
+          sumGrades: weightedSum,
+          avgGrades: avg,
+          countGrades: input.subjectCount,
+          sumCoeffGrades: weightedSum,
+        });
+
+        return {
+          value,
+          weightedSum,
+          weightedMaximum,
+          resultScale,
+          formulaCode: code,
+          computationTrace: trace,
+        };
+      } catch (err: any) {
+        // Fallback sécurisé sur AVERAGE si expression descriptive non-arithmétique
+        const fallbackValue = parseFloat((weightedSum / count).toFixed(4));
+        console.warn(`[FormulaEngine] Formule CUSTOM "${formulaExpression}" non-arithmétique : fallback sur AVERAGE.`);
+        return {
+          value: fallbackValue,
+          weightedSum,
+          weightedMaximum,
+          resultScale,
+          formulaCode: code,
+          computationTrace: `CUSTOM (fallback AVERAGE) : ${weightedSum} / ${count} = ${fallbackValue}`,
+        };
+      }
     }
   }
 }
 
 /**
  * Valide qu'une configuration de formule est complète et utilisable.
- *
- * @param formula - Configuration de formule à valider.
- * @returns true si la formule est valide et exécutable.
  */
 export function isFormulaValid(formula: FormulaConfig | null | undefined): boolean {
   if (!formula) return false;

@@ -15,6 +15,8 @@ import {
   formatAverage,
   detectFormulaType,
   executeFormula,
+  validateFormulaExpression,
+  evaluateCustomMath,
   normalizeScore,
   scoreOn10ToOn20,
   computePercentage,
@@ -455,6 +457,47 @@ describe('FormulaEngine', () => {
       const f: FormulaConfig = { ...FORMULA_SUM9, formulaExpression: 'SUM(grades)', code: 'SUM' };
       const r = executeFormula(f, input);
       expect(r.value).toBe(24);
+    });
+  });
+
+  describe('executeFormula — CUSTOM & validateFormulaExpression (P2-03)', () => {
+    it('valide la syntaxe des formules standard et personnalisées', () => {
+      expect(validateFormulaExpression('AVERAGE(grades)').isValid).toBe(true);
+      expect(validateFormulaExpression('SUM(grades)/9').isValid).toBe(true);
+      expect(validateFormulaExpression('(SUM(coeff*grade)/170)*20').isValid).toBe(true);
+      expect(validateFormulaExpression('APPRECIATION_ENGINE').isValid).toBe(true);
+
+      // Custom valid
+      const customRes = validateFormulaExpression('(SUM(grades) + 10) / 2');
+      expect(customRes.isValid).toBe(true);
+      expect(customRes.isCustom).toBe(true);
+      expect(customRes.warning).toBeDefined();
+
+      // Custom invalid (unbalanced parens)
+      expect(validateFormulaExpression('(SUM(grades) + 10').isValid).toBe(false);
+
+      // Custom invalid (forbidden tokens)
+      expect(validateFormulaExpression('SUM(grades) + alert(1)').isValid).toBe(false);
+
+      // Custom invalid (division by zero)
+      expect(validateFormulaExpression('SUM(grades) / 0').isValid).toBe(false);
+    });
+
+    it('évalue arithmétiquement une formule CUSTOM avec précision', () => {
+      const input = { weightedGrades: [10, 12, 14], weightedMaximums: [20, 20, 20], rawGrades: [10, 12, 14], subjectCount: 3 };
+      // SUM(grades) = 36. (36 + 4) / 2 = 20
+      const f: FormulaConfig = { ...FORMULA_SUM9, formulaExpression: '(SUM(grades) + 4) / 2', code: 'CUSTOM_BONUS' };
+      const r = executeFormula(f, input);
+      expect(r.value).toBe(20);
+      expect(r.computationTrace).toContain('CUSTOM');
+    });
+
+    it('évalue une formule CUSTOM avec AVERAGE(grades)', () => {
+      const input = { weightedGrades: [10, 14], weightedMaximums: [20, 20], rawGrades: [10, 14], subjectCount: 2 };
+      // AVERAGE(grades) = 12. 12 * 1.5 = 18
+      const f: FormulaConfig = { ...FORMULA_SUM9, formulaExpression: 'AVERAGE(grades) * 1.5', code: 'CUSTOM_COEFF' };
+      const r = executeFormula(f, input);
+      expect(r.value).toBe(18);
     });
   });
 
