@@ -19,6 +19,8 @@ import {
   getSessionsByClass,
   getSessionsByYear,
   getSessionsByType,
+  getSessionsByPeriod,
+  getChronologicalSessions,
   clearSessionsCache,
   AssessmentSession,
 } from '../../src/services/academic/sessions';
@@ -330,8 +332,45 @@ describe('Assessment Sessions Service Layer', () => {
       const resSortedCreatedAt = await searchSessions({ sortBy: 'createdAt', sortOrder: 'asc' });
       expect(resSortedCreatedAt.success).toBe(true);
 
+      const resSortedEndDate = await searchSessions({ sortBy: 'endDate', sortOrder: 'asc' });
+      expect(resSortedEndDate.success).toBe(true);
+
       const resFilteredLocked = await searchSessions({ locked: false, published: false, status: 'OPEN' });
       expect(resFilteredLocked.success).toBe(true);
+    });
+
+    it('filtre avec précision par période d\'évaluation et trie chronologiquement (P2-04)', async () => {
+      await createSession({
+        id: 's-t1',
+        academicYearId: 'ay-2026',
+        classroomId: 'cls-1',
+        assessmentTypeId: 'MONTHLY',
+        assessmentPeriodId: 'period-trim1',
+        title: 'Session Trimestre 1',
+        startDate: '2026-09-15',
+        endDate: '2026-09-20',
+      });
+
+      await createSession({
+        id: 's-t2',
+        academicYearId: 'ay-2026',
+        classroomId: 'cls-1',
+        assessmentTypeId: 'MONTHLY',
+        assessmentPeriodId: 'period-trim2',
+        title: 'Session Trimestre 2',
+        startDate: '2027-01-10',
+        endDate: '2027-01-15',
+      });
+
+      const periodRes = await getSessionsByPeriod('ay-2026', 'period-trim1');
+      expect(periodRes.success).toBe(true);
+      expect(periodRes.data?.length).toBe(1);
+      expect(periodRes.data?.[0].assessmentPeriodId).toBe('period-trim1');
+
+      const chronoRes = await getChronologicalSessions('ay-2026', 'cls-1');
+      expect(chronoRes.success).toBe(true);
+      const dates = chronoRes.data?.map((s) => s.startDate) || [];
+      expect(dates).toEqual([...dates].sort());
     });
 
     it('gère correctement les paramètres d\'erreur et IDs inexistants', async () => {

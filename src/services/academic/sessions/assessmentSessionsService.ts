@@ -83,6 +83,7 @@ export async function searchSessions(
     // Filtrage complémentaire en mémoire (au cas où fallback local)
     if (academicYearId) rawList = rawList.filter((s) => s.academicYearId === academicYearId);
     if (assessmentTypeId) rawList = rawList.filter((s) => s.assessmentTypeId === assessmentTypeId);
+    if (assessmentPeriodId) rawList = rawList.filter((s) => s.assessmentPeriodId === assessmentPeriodId);
     if (classroomId) rawList = rawList.filter((s) => s.classroomId === classroomId);
     if (status !== 'all') rawList = rawList.filter((s) => s.status === status);
     if (locked !== 'all') rawList = rawList.filter((s) => s.locked === locked);
@@ -95,24 +96,43 @@ export async function searchSessions(
       );
     }
 
-    // Tri
+    // Tri déterministe avec critère secondaire systématique
     rawList.sort((a, b) => {
-      let valA: any = a.startDate;
-      let valB: any = b.startDate;
+      let comparison = 0;
       if (sortBy === 'title') {
-        valA = a.title;
-        valB = b.title;
+        comparison = (a.title || '').localeCompare(b.title || '', 'fr', { sensitivity: 'base' });
+        if (comparison === 0) {
+          comparison = (a.startDate || '').localeCompare(b.startDate || '');
+        }
       } else if (sortBy === 'status') {
-        valA = a.status;
-        valB = b.status;
+        comparison = (a.status || '').localeCompare(b.status || '');
+        if (comparison === 0) {
+          comparison = (a.startDate || '').localeCompare(b.startDate || '');
+        }
+      } else if (sortBy === 'endDate') {
+        comparison = (a.endDate || '').localeCompare(b.endDate || '');
+        if (comparison === 0) {
+          comparison = (a.startDate || '').localeCompare(b.startDate || '');
+        }
+        if (comparison === 0) {
+          comparison = (a.title || '').localeCompare(b.title || '', 'fr', { sensitivity: 'base' });
+        }
       } else if (sortBy === 'createdAt') {
-        valA = a.createdAt || '';
-        valB = b.createdAt || '';
+        comparison = (a.createdAt || '').localeCompare(b.createdAt || '');
+      } else {
+        // 'startDate' par défaut
+        comparison = (a.startDate || '').localeCompare(b.startDate || '');
+        if (comparison === 0) {
+          comparison = (a.endDate || '').localeCompare(b.endDate || '');
+        }
+        if (comparison === 0) {
+          comparison = (a.title || '').localeCompare(b.title || '', 'fr', { sensitivity: 'base' });
+        }
       }
-      return sortOrder === 'asc' ? String(valA).localeCompare(String(valB)) : String(valB).localeCompare(String(valA));
+      return sortOrder === 'asc' ? comparison : -comparison;
     });
 
-    const totalCount = count || rawList.length;
+    const totalCount = rawList.length;
     const totalPages = Math.ceil(totalCount / pageSize) || 1;
     const start = (page - 1) * pageSize;
     const paginated = rawList.slice(start, start + pageSize);
@@ -470,6 +490,20 @@ export async function getSessionsByYear(academicYearId: string): Promise<Service
 
 export async function getSessionsByType(assessmentTypeId: string): Promise<ServiceResponse<AssessmentSession[]>> {
   return getSessions({ assessmentTypeId });
+}
+
+export async function getSessionsByPeriod(
+  academicYearId: string,
+  assessmentPeriodId: string
+): Promise<ServiceResponse<AssessmentSession[]>> {
+  return getSessions({ academicYearId, assessmentPeriodId });
+}
+
+export async function getChronologicalSessions(
+  academicYearId: string,
+  classroomId?: string
+): Promise<ServiceResponse<AssessmentSession[]>> {
+  return getSessions({ academicYearId, classroomId, sortBy: 'startDate', sortOrder: 'asc' });
 }
 
 // ─── Helpers Interne ─────────────────────────────────────────────────────────

@@ -17,6 +17,8 @@ export {
   getSessionsByClass,
   getSessionsByYear,
   getSessionsByType,
+  getSessionsByPeriod,
+  getChronologicalSessions,
   clearSessionsCache,
 } from './assessmentSessionsService';
 
