@@ -172,6 +172,91 @@ export const reportService = {
         };
       }
 
+      case 'rpt-fin-03': { // Recettes de scolarité
+        const enrollments = await studentFinancialEnrollmentService.getEnrollmentsByYear(yearId);
+        const paidList = enrollments.filter((e) => e.totalPaid > 0);
+        const totalCollected = paidList.reduce((s, e) => s + e.totalPaid, 0);
+
+        return {
+          reportId,
+          title: 'Registre des Recettes de Scolarité',
+          subtitle: `Historique des encaissements de scolarité — Année ${yearId}`,
+          generatedAt: new Date().toLocaleString('fr-FR'),
+          academicYear: yearId,
+          summaryCards: [
+            { label: 'Total Encaissé Scolarité', value: `${totalCollected.toLocaleString('fr-FR')} FCFA`, color: '#16a34a' },
+            { label: 'Nombre d\'élèves cotisants', value: `${paidList.length}`, color: '#2563eb' },
+          ],
+          headers: ['Matricule', 'Élève', 'Classe', 'Responsable', 'Net Dû', 'Montant Encaissé', 'Solde Restant'],
+          rows: paidList.map((e) => [
+            e.matricule,
+            e.studentName,
+            e.className,
+            e.parentSponsor || e.parentSponsorName || '—',
+            `${e.netTotalDue.toLocaleString('fr-FR')} FCFA`,
+            `${e.totalPaid.toLocaleString('fr-FR')} FCFA`,
+            `${e.remainingBalance.toLocaleString('fr-FR')} FCFA`,
+          ]),
+        };
+      }
+
+      case 'rpt-fin-04': { // Recettes cantine
+        const enrollments = await canteenEnrollmentService.getEnrollmentsByYear(yearId);
+        const paidList = enrollments.filter((e) => e.totalPaid > 0);
+        const totalCollected = paidList.reduce((s, e) => s + e.totalPaid, 0);
+
+        return {
+          reportId,
+          title: 'Registre des Recettes de Cantine',
+          subtitle: `Historique des encaissements cantine — Année ${yearId}`,
+          generatedAt: new Date().toLocaleString('fr-FR'),
+          academicYear: yearId,
+          summaryCards: [
+            { label: 'Total Encaissé Cantine', value: `${totalCollected.toLocaleString('fr-FR')} FCFA`, color: '#16a34a' },
+            { label: 'Abonnés cotisants', value: `${paidList.length}`, color: '#f59e0b' },
+          ],
+          headers: ['Matricule', 'Élève', 'Classe', 'Formule', 'Net Dû', 'Montant Encaissé', 'Solde Restant'],
+          rows: paidList.map((e) => [
+            e.matricule,
+            e.studentName,
+            e.className,
+            e.planLabel || 'Standard',
+            `${e.netAmountDue.toLocaleString('fr-FR')} FCFA`,
+            `${e.totalPaid.toLocaleString('fr-FR')} FCFA`,
+            `${e.remainingBalance.toLocaleString('fr-FR')} FCFA`,
+          ]),
+        };
+      }
+
+      case 'rpt-trp-03':
+      case 'rpt-fin-05': { // Recettes transport
+        const enrollments = await transportEnrollmentService.getEnrollmentsByYear(yearId);
+        const paidList = enrollments.filter((e) => e.totalPaid > 0);
+        const totalCollected = paidList.reduce((s, e) => s + e.totalPaid, 0);
+
+        return {
+          reportId,
+          title: 'Registre des Recettes de Transport',
+          subtitle: `Historique des encaissements transport scolaire — Année ${yearId}`,
+          generatedAt: new Date().toLocaleString('fr-FR'),
+          academicYear: yearId,
+          summaryCards: [
+            { label: 'Total Encaissé Transport', value: `${totalCollected.toLocaleString('fr-FR')} FCFA`, color: '#16a34a' },
+            { label: 'Élèves transportés cotisants', value: `${paidList.length}`, color: '#0ea5e9' },
+          ],
+          headers: ['Matricule', 'Élève', 'Classe', 'Ligne', 'Tarif Net', 'Montant Encaissé', 'Solde Restant'],
+          rows: paidList.map((e) => [
+            e.matricule,
+            e.studentName,
+            e.className,
+            e.lineName,
+            `${e.netAmountDue.toLocaleString('fr-FR')} FCFA`,
+            `${e.totalPaid.toLocaleString('fr-FR')} FCFA`,
+            `${e.remainingBalance.toLocaleString('fr-FR')} FCFA`,
+          ]),
+        };
+      }
+
       case 'rpt-fin-06': { // Dépenses
         const exps = await expenseService.getExpenses({ academicYearId: yearId });
         const totalExps = exps.filter((e) => e.status !== 'CANCELLED').reduce((s, e) => s + e.amount, 0);
