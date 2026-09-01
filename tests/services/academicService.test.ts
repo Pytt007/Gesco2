@@ -52,6 +52,14 @@ describe('Academic Module Services Layer', () => {
 
   describe('academicYearsService', () => {
     it('manages academic years and enforces single active current year rule', async () => {
+      const createRes = await createAcademicYear({
+        name: '2026-2027',
+        startDate: '2026-09-15',
+        endDate: '2027-06-30',
+        isCurrent: true,
+      });
+      expect(createRes.success).toBe(true);
+
       const listRes = await getAcademicYears();
       expect(listRes.success).toBe(true);
       expect(listRes.data?.length).toBeGreaterThan(0);
@@ -60,14 +68,14 @@ describe('Academic Module Services Layer', () => {
       expect(currentRes.success).toBe(true);
       expect(currentRes.data?.isCurrent).toBe(true);
 
-      const createRes = await createAcademicYear({
+      const createRes2 = await createAcademicYear({
         name: '2027-2028',
         startDate: '2027-09-15',
         endDate: '2028-06-30',
-        isCurrent: true,
+        isCurrent: false,
       });
-      expect(createRes.success).toBe(true);
-      const newYearId = createRes.data!.id;
+      expect(createRes2.success).toBe(true);
+      const newYearId = createRes2.data!.id;
 
       const activateRes = await activateAcademicYear(newYearId);
       expect(activateRes.success).toBe(true);

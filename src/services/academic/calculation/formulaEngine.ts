@@ -146,14 +146,7 @@ export function executeFormula(formula: FormulaConfig, input: FormulaInput): For
     // ── AVERAGE : SUM(grades) / count ────────────────────────────────────────
     case 'AVERAGE': {
       if (input.subjectCount === 0) {
-        return {
-          value: 0,
-          weightedSum: 0,
-          weightedMaximum: 0,
-          resultScale,
-          formulaCode: code,
-          computationTrace: 'Toutes les matières sont excusées ou dispensées : aucune note calculable.',
-        };
+        throw new Error('[FormulaEngine] Impossible de calculer une moyenne AVERAGE avec 0 matière');
       }
       const value = parseFloat((weightedSum / input.subjectCount).toFixed(4));
       return {

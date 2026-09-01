@@ -596,7 +596,7 @@ describe('CalculationEngine — CP1 IEP (SUM/8)', () => {
     expect(result.average).toBeDefined();
   });
 
-  it('gère l\'absence justifiée — score = 0 pour la matière concernée', () => {
+  it('gère l\'absence justifiée — neutre pour la moyenne et pas de note pénalisante', () => {
     const inputs: SubjectGradeInput[] = CP1_IEP_IDS.map((id) => ({
       subjectId: id, grade: 8, appreciation: null,
       absenceStatus: id === 'lecture' ? 'EXCUSED' : 'PRESENT',
@@ -605,7 +605,7 @@ describe('CalculationEngine — CP1 IEP (SUM/8)', () => {
     expect(result.isValid).toBe(true);
     const lectureResult = result.subjectResults.find((r) => r.subjectId === 'lecture');
     expect(lectureResult?.absenceStatus).toBe('EXCUSED');
-    expect(lectureResult?.grade).toBe(0);
+    expect(lectureResult?.grade).toBeNull();
   });
 
   it('gère l\'absence non justifiée — score = 0', () => {

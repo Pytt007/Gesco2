@@ -180,11 +180,14 @@ async function syncStaffFromSupabase(): Promise<StaffMember[]> {
     }
 
     // Mettre à jour le cache local
-    localStaffCache.clear();
-    for (const item of fullList) {
-      localStaffCache.set(item.id, item);
+    if (fullList.length > 0) {
+      localStaffCache.clear();
+      for (const item of fullList) {
+        localStaffCache.set(item.id, item);
+      }
+      return fullList;
     }
-    return fullList;
+    return Array.from(localStaffCache.values());
   } catch (err) {
     console.warn('[staffService] syncStaffFromSupabase warning:', err);
     return Array.from(localStaffCache.values());
@@ -329,8 +332,9 @@ export async function archiveStaff(id: string): Promise<ServiceResponse<boolean>
     const updated = { ...cached, status: 'Archivé' as StaffStatus, archivedAt: new Date().toISOString() };
     localStaffCache.set(id, updated);
     await persistStaffToSupabase(updated);
+    return createSuccess(true, 'Archivé.');
   }
-  return createSuccess(true, 'Archivé.');
+  return createError(null, 'Introuvable.');
 }
 
 export async function restoreStaff(id: string): Promise<ServiceResponse<boolean>> {
@@ -341,8 +345,9 @@ export async function restoreStaff(id: string): Promise<ServiceResponse<boolean>
     const updated = { ...cached, status: 'Actif' as StaffStatus };
     localStaffCache.set(id, updated);
     await persistStaffToSupabase(updated);
+    return createSuccess(true, 'Restauré.');
   }
-  return createSuccess(true, 'Restauré.');
+  return createError(null, 'Introuvable.');
 }
 
 export async function deleteStaff(id: string): Promise<ServiceResponse<boolean>> {
@@ -365,6 +370,7 @@ export async function deleteStaff(id: string): Promise<ServiceResponse<boolean>>
 }
 
 export async function getStaffById(id: string): Promise<ServiceResponse<StaffMember>> {
+  if (!id?.trim()) return createError(null, 'Identifiant manquant.');
   await syncStaffFromSupabase();
   const cached = localStaffCache.get(id);
   if (cached) return createSuccess(cached);
@@ -429,7 +435,7 @@ export const getStaffMembers = listStaff;
 
 export async function getStaffByEmployeeNumber(empNum: string): Promise<ServiceResponse<StaffMember>> {
   if (!empNum) return { success: false, error: 'Matricule d\'employé obligatoire' };
-  const res = await listStaff({});
+  const res = await listStaff({ status: 'all' });
   const found = (res.data?.staffMembers || []).find((s) => s.employeeNumber === empNum);
   if (!found) return { success: false, error: 'Employé non trouvé' };
   return createSuccess(found);

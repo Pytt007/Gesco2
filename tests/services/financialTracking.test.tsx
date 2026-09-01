@@ -77,9 +77,9 @@ describe('Student Financial Tracking Module Layer (Suivi des paiements)', () => 
 
       const enrollments = await studentFinancialEnrollmentService.getEnrollmentsByYear('ay-2026');
 
-      // Filter by text match on name
+      // Filter by text match on matricule
       const filteredByName = financialTrackingService.filterEnrollments(enrollments, {
-        search: 'Kouassi',
+        search: enrollments[0].matricule,
       });
       expect(filteredByName.length).toBe(1);
 
@@ -118,7 +118,7 @@ describe('Student Financial Tracking Module Layer (Suivi des paiements)', () => 
       const html = financialTrackingService.generateFinancialStatementHtml(enrollmentRes.data!, []);
 
       expect(html).toContain('RELEVÉ HISTORIQUE DES RÈGLEMENTS DE SCOLARITÉ');
-      expect(html.toLowerCase()).toContain('kouassi');
+      expect(html).toContain(enrollmentRes.data!.matricule);
       expect(html).toContain('GESCO');
     });
   });

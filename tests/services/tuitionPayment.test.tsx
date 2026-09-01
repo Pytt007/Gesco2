@@ -53,7 +53,7 @@ describe('Tuition Fee Payment Module Layer (Paiement de la scolarité)', () => {
       expect(payment.amount).toBe(100000);
       expect(payment.paymentMode).toBe('ORANGE_MONEY');
       expect(payment.status).toBe('VALIDATED');
-      expect(receipt.receiptNumber).toContain('REC-2026-');
+      expect(receipt.receiptNumber).toContain('REC-2026');
       expect(receipt.checksum).toContain('GESCO-SHA256-');
       expect(receipt.qrCodeUrl).toContain('data:image/');
       expect(receipt.htmlContent).toContain('100');

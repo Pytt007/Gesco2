@@ -78,6 +78,10 @@ export async function getAcademicYears(): Promise<ServiceResponse<AcademicYear[]
       return createSuccess(mappedYears);
     }
 
+    if (localYearsCache.size > 0) {
+      return createSuccess(Array.from(localYearsCache.values()));
+    }
+
     // Aucun résultat Supabase — liste vide
     return createSuccess([]);
 

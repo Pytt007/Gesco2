@@ -24,10 +24,14 @@ describe('Students Module Services Layer', () => {
       expect(res.data?.students).toBeDefined();
     });
 
-    it('deleteStudent returns an error forbidding hard deletion', async () => {
-      const res = await deleteStudent('stu-123');
-      expect(res.success).toBe(false);
-      expect(res.error).toContain('suppression physique d\'un élève est interdite');
+    it('deleteStudent performs permanent deletion cleanly', async () => {
+      const createRes = await createStudent({ firstName: 'Kofi', lastName: 'Kouassi', gender: 'Masculin' });
+      expect(createRes.success).toBe(true);
+      const studentId = createRes.data!.id;
+
+      const res = await deleteStudent(studentId);
+      expect(res.success).toBe(true);
+      expect(res.message).toContain('supprimé');
     });
 
     it('createStudent and archiveStudent handle workflow cleanly', async () => {

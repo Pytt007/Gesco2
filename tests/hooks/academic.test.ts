@@ -19,13 +19,6 @@ describe('Academic Module Hooks Layer', () => {
     it('initializes reactive state, list, current year and CRUD actions', async () => {
       const { result: listHook } = renderHook(() => useAcademicYears(), { wrapper: AllProviders });
 
-      await act(async () => {
-        await listHook.current.refresh();
-      });
-
-      expect(listHook.current.academicYears.length).toBeGreaterThan(0);
-      expect(listHook.current.currentAcademicYear).toBeDefined();
-
       let createOk = false;
       await act(async () => {
         createOk = await listHook.current.create({
@@ -36,7 +29,14 @@ describe('Academic Module Hooks Layer', () => {
       });
       expect(createOk).toBe(true);
 
-      const targetId = 'ay-2026';
+      await act(async () => {
+        await listHook.current.refresh();
+      });
+
+      expect(listHook.current.academicYears.length).toBeGreaterThan(0);
+      expect(listHook.current.currentAcademicYear).toBeDefined();
+
+      const targetId = listHook.current.academicYears[0].id;
 
       let updateListOk = false;
       await act(async () => {
@@ -159,6 +159,18 @@ describe('Academic Module Hooks Layer', () => {
     it('manages classrooms search, filters, pagination and single classroom details', async () => {
       const { result: classroomsHook } = renderHook(() => useClassrooms());
 
+      let createOk = false;
+      await act(async () => {
+        createOk = await classroomsHook.current.createClassroom({
+          academicYearId: 'ay-2026',
+          levelId: 'lvl-cp1',
+          name: 'CP1 D',
+          roomName: 'Salle 104',
+          capacity: 35,
+        });
+      });
+      expect(createOk).toBe(true);
+
       await act(async () => {
         await classroomsHook.current.refresh();
       });
@@ -173,18 +185,6 @@ describe('Academic Module Hooks Layer', () => {
         classroomsHook.current.setSortBy('name');
         classroomsHook.current.setSortOrder('desc');
       });
-
-      let createOk = false;
-      await act(async () => {
-        createOk = await classroomsHook.current.createClassroom({
-          academicYearId: 'ay-2026',
-          levelId: 'lvl-cp1',
-          name: 'CP1 D',
-          roomName: 'Salle 104',
-          capacity: 35,
-        });
-      });
-      expect(createOk).toBe(true);
 
       const classId = classroomsHook.current.classrooms[0].id;
 

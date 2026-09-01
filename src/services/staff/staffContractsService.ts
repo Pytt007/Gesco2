@@ -223,7 +223,7 @@ export async function getCurrentContract(staffId: string): Promise<ServiceRespon
       .from('staff_contracts')
       .select('*')
       .eq('staff_id', staffId)
-      .eq('status', 'ACTIF')
+      .in('status', ['ACTIF', 'RENOUVELÉ'])
       .maybeSingle();
 
     if (!error && data) {
@@ -245,7 +245,7 @@ export async function getCurrentContract(staffId: string): Promise<ServiceRespon
     }
 
     for (const c of localContractsCache.values()) {
-      if (c.staffId === staffId && c.status === 'ACTIF') {
+      if (c.staffId === staffId && (c.status === 'ACTIF' || c.status === 'RENOUVELÉ')) {
         return createSuccess(c);
       }
     }
