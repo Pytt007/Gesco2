@@ -30,14 +30,38 @@ export interface AuditLogItem {
   details: string;
 }
 
+export interface AuditLogFilter {
+  limit?: number;
+  module?: AuditModule | 'ALL';
+  severity?: AuditSeverity | 'ALL';
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  user?: string;
+}
+
 const STORAGE_KEY = 'gesco_audit_logs';
+let inMemoryAuditLogs: AuditLogItem[] = [];
+
+export function clearAuditLogs(): void {
+  inMemoryAuditLogs = [];
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  } catch {}
+}
 
 function getStoredLogs(): AuditLogItem[] {
+  if (inMemoryAuditLogs.length > 0) return [...inMemoryAuditLogs];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) {
+        inMemoryAuditLogs = [...parsed];
+        return parsed;
+      }
     }
   } catch {
     // Ignorer
@@ -46,8 +70,9 @@ function getStoredLogs(): AuditLogItem[] {
 }
 
 function saveStoredLogs(logs: AuditLogItem[]): void {
+  inMemoryAuditLogs = logs.slice(0, 500);
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(logs.slice(0, 500)));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(inMemoryAuditLogs));
   } catch {
     // Ignorer
   }
@@ -102,19 +127,44 @@ export const auditLogService = {
   },
 
   /**
-   * Récupère les entrées du journal d'audit
+   * Récupère les entrées du journal d'audit avec filtres
    */
-  async getLogs(limit: number = 200): Promise<AuditLogItem[]> {
+  async getLogs(filterOrLimit: AuditLogFilter | number = 200): Promise<AuditLogItem[]> {
+    const filter: AuditLogFilter = typeof filterOrLimit === 'number'
+      ? { limit: filterOrLimit }
+      : (filterOrLimit || {});
+    const limit = filter.limit || 200;
+
+    let items: AuditLogItem[] = [];
+
     if (supabase) {
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('audit_logs')
           .select('*')
-          .order('created_at', { ascending: false })
-          .limit(limit);
+          .order('created_at', { ascending: false });
 
+        if (filter.module && filter.module !== 'ALL') {
+          query = query.eq('module', filter.module);
+        }
+        if (filter.severity && filter.severity !== 'ALL') {
+          query = query.eq('severity', filter.severity);
+        }
+        if (filter.startDate) {
+          query = query.gte('created_at', `${filter.startDate}T00:00:00`);
+        }
+        if (filter.endDate) {
+          query = query.lte('created_at', `${filter.endDate}T23:59:59`);
+        }
+        if (filter.user) {
+          query = query.ilike('user_name', `%${filter.user}%`);
+        }
+
+        query = query.limit(limit);
+
+        const { data, error } = await query;
         if (!error && Array.isArray(data) && data.length > 0) {
-          const mapped: AuditLogItem[] = data.map((d: any) => ({
+          items = data.map((d: any) => ({
             id: d.id,
             timestamp: d.created_at || new Date().toISOString(),
             user: d.user_name || d.user_email || d.user_id || 'Administrateur',
@@ -125,15 +175,31 @@ export const auditLogService = {
             severity: (d.severity || 'INFO').toUpperCase() as AuditSeverity,
             details: d.details || d.description || '',
           }));
-
-          saveStoredLogs(mapped);
-          return mapped;
+          saveStoredLogs(items);
         }
       } catch {
         // Fallback local
       }
     }
 
-    return getStoredLogs().slice(0, limit);
+    if (items.length === 0) {
+      items = getStoredLogs();
+    }
+
+    return items.filter((log) => {
+      if (filter.module && filter.module !== 'ALL' && log.module !== filter.module) return false;
+      if (filter.severity && filter.severity !== 'ALL' && log.severity !== filter.severity) return false;
+      if (filter.user && !log.user.toLowerCase().includes(filter.user.toLowerCase())) return false;
+      if (filter.startDate && log.timestamp < `${filter.startDate}T00:00:00`) return false;
+      if (filter.endDate && log.timestamp > `${filter.endDate}T23:59:59`) return false;
+      if (filter.search) {
+        const q = filter.search.toLowerCase();
+        const matches = log.action.toLowerCase().includes(q) ||
+          log.details.toLowerCase().includes(q) ||
+          log.user.toLowerCase().includes(q);
+        if (!matches) return false;
+      }
+      return true;
+    }).slice(0, limit);
   },
 };
