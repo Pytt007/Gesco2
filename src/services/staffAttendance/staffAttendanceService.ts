@@ -14,9 +14,15 @@ import { ServiceResponse } from '../academic/academicYearsService';
 import { supabase } from '../common/supabaseClient';
 import { listStaff } from '../staff/staffService';
 
+import { statsCalculationService } from '../stats';
+
 // ─── Stockage Local (Feuilles de présence personnel) ─────────────────────────
 
 const staffAttendanceStore: Map<string, StaffAttendanceSheet> = new Map(); // Clef : `date`
+
+export function clearStaffAttendanceStore(): void {
+  staffAttendanceStore.clear();
+}
 
 // ─── Service ─────────────────────────────────────────────────────────────────
 
@@ -77,6 +83,32 @@ export const staffAttendanceService = {
       return { success: false, error: 'La date est obligatoire.' };
     }
 
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(input.date) || isNaN(Date.parse(input.date))) {
+      return { success: false, error: 'Format de date invalide. Utilisez AAAA-MM-JJ.' };
+    }
+
+    const sheetDate = new Date(input.date + 'T00:00:00');
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    if (sheetDate.getTime() > today.getTime()) {
+      return { success: false, error: 'Impossible d\'enregistrer une feuille de présence pour une date future.' };
+    }
+
+    if (!input.items || !Array.isArray(input.items) || input.items.length === 0) {
+      return { success: false, error: 'La feuille de présence doit contenir au moins un employé.' };
+    }
+
+    const validStatuses: StaffAttendanceStatus[] = ['PRESENT', 'LATE', 'ON_LEAVE', 'ABSENT', 'SICK_LEAVE'];
+    input.items.forEach((item) => {
+      if (!validStatuses.includes(item.status)) {
+        item.status = 'PRESENT';
+      }
+      if (item.status === 'LATE' && item.arrivalTime && !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.arrivalTime)) {
+        item.arrivalTime = undefined;
+      }
+    });
+
     const sheet: StaffAttendanceSheet = {
       id: staffAttendanceStore.has(input.date) ? staffAttendanceStore.get(input.date)!.id : `sheet-staff-${Date.now()}`,
       academicYearId: input.academicYearId || 'ay-2026',
@@ -133,7 +165,7 @@ export const staffAttendanceService = {
     const sickCount = items.filter((i) => i.status === 'SICK_LEAVE').length;
 
     // Le taux de présence inclut les présents et les retards
-    const presenceRate = totalStaff > 0 ? Math.round(((presentCount + lateCount) / totalStaff) * 100) : 0;
+    const presenceRate = statsCalculationService.calculateAttendanceRate(presentCount + lateCount, totalStaff, 0);
 
     return {
       totalStaff,
