@@ -196,5 +196,59 @@ describe('Timetable Service & Conflict Detection (P2-11)', () => {
       expect(updateConflict.success).toBe(false);
       expect(updateConflict.error).toContain('Conflit de salle');
     });
+
+    it('rejects missing required fields, invalid time formats and excessive/too short durations', async () => {
+      // 1. Champs obligatoires
+      const resMissing = await timetableService.addSlot({
+        academicYearId: 'ay-2026',
+        classId: '',
+        subjectId: 'sub-math',
+        teacherId: 'tch-01',
+        dayOfWeek: 'MONDAY',
+        startTime: '08:00',
+        endTime: '10:00',
+      });
+      expect(resMissing.success).toBe(false);
+      expect(resMissing.error).toContain('champs obligatoires');
+
+      // 2. Format d'heure invalide
+      const resBadFormat = await timetableService.addSlot({
+        academicYearId: 'ay-2026',
+        classId: 'cls-6a',
+        subjectId: 'sub-math',
+        teacherId: 'tch-01',
+        dayOfWeek: 'MONDAY',
+        startTime: '8:00',
+        endTime: '10:00',
+      });
+      expect(resBadFormat.success).toBe(false);
+      expect(resBadFormat.error).toContain('Format d\'heure invalide');
+
+      // 3. Durée trop courte (< 15 min)
+      const resTooShort = await timetableService.addSlot({
+        academicYearId: 'ay-2026',
+        classId: 'cls-6a',
+        subjectId: 'sub-math',
+        teacherId: 'tch-01',
+        dayOfWeek: 'MONDAY',
+        startTime: '08:00',
+        endTime: '08:10',
+      });
+      expect(resTooShort.success).toBe(false);
+      expect(resTooShort.error).toContain('durée minimale');
+
+      // 4. Durée excessive (> 4 heures)
+      const resTooLong = await timetableService.addSlot({
+        academicYearId: 'ay-2026',
+        classId: 'cls-6a',
+        subjectId: 'sub-math',
+        teacherId: 'tch-01',
+        dayOfWeek: 'MONDAY',
+        startTime: '08:00',
+        endTime: '13:00',
+      });
+      expect(resTooLong.success).toBe(false);
+      expect(resTooLong.error).toContain('durée maximale');
+    });
   });
 });

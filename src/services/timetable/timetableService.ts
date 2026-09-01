@@ -118,12 +118,37 @@ export const timetableService = {
    * Ajoute un créneau de cours avec contrôles de conflit stricts
    */
   async addSlot(input: ScheduleSlotInput): Promise<ServiceResponse<ScheduleSlotRecord>> {
+    if (
+      !input.academicYearId?.trim() ||
+      !input.classId?.trim() ||
+      !input.subjectId?.trim() ||
+      !input.teacherId?.trim() ||
+      !input.startTime?.trim() ||
+      !input.endTime?.trim() ||
+      !input.dayOfWeek?.trim()
+    ) {
+      return { success: false, error: 'Tous les champs obligatoires doivent être renseignés (classe, matière, enseignant, jour, heures).' };
+    }
+
+    const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
+    if (!timeRegex.test(input.startTime) || !timeRegex.test(input.endTime)) {
+      return { success: false, error: 'Format d\'heure invalide. Utilisez le format 24h HH:mm (ex: 08:00, 14:30).' };
+    }
+
     const startMins = timeToMinutes(input.startTime);
     const endMins = timeToMinutes(input.endTime);
 
     // 1. Validation de l'heure
     if (endMins <= startMins) {
       return { success: false, error: 'L\'heure de fin doit être postérieure à l\'heure de début.' };
+    }
+
+    const durationMins = endMins - startMins;
+    if (durationMins < 15) {
+      return { success: false, error: 'La durée minimale d\'un cours est de 15 minutes.' };
+    }
+    if (durationMins > 240) {
+      return { success: false, error: 'La durée maximale d\'un cours ne peut pas dépasser 4 heures (240 minutes).' };
     }
 
     const normalizedDay = normalizeDayKey(input.dayOfWeek);
@@ -225,11 +250,36 @@ export const timetableService = {
     const existing = scheduleStore.get(id);
     if (!existing) return { success: false, error: 'Créneau introuvable.' };
 
+    if (
+      !input.academicYearId?.trim() ||
+      !input.classId?.trim() ||
+      !input.subjectId?.trim() ||
+      !input.teacherId?.trim() ||
+      !input.startTime?.trim() ||
+      !input.endTime?.trim() ||
+      !input.dayOfWeek?.trim()
+    ) {
+      return { success: false, error: 'Tous les champs obligatoires doivent être renseignés (classe, matière, enseignant, jour, heures).' };
+    }
+
+    const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
+    if (!timeRegex.test(input.startTime) || !timeRegex.test(input.endTime)) {
+      return { success: false, error: 'Format d\'heure invalide. Utilisez le format 24h HH:mm (ex: 08:00, 14:30).' };
+    }
+
     const startMins = timeToMinutes(input.startTime);
     const endMins = timeToMinutes(input.endTime);
 
     if (endMins <= startMins) {
       return { success: false, error: 'L\'heure de fin doit être postérieure à l\'heure de début.' };
+    }
+
+    const durationMins = endMins - startMins;
+    if (durationMins < 15) {
+      return { success: false, error: 'La durée minimale d\'un cours est de 15 minutes.' };
+    }
+    if (durationMins > 240) {
+      return { success: false, error: 'La durée maximale d\'un cours ne peut pas dépasser 4 heures (240 minutes).' };
     }
 
     if (startMins < timeToMinutes('06:00') || endMins > timeToMinutes('22:00')) {
