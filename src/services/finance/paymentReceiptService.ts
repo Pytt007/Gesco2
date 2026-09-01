@@ -155,7 +155,7 @@ export const paymentReceiptService = {
       schoolName: 'ÉTABLISSEMENT GESCO',
       schoolAddress: "Abidjan, Côte d'Ivoire",
       schoolPhone: '+225 07 00 00 00 00',
-      academicYear: '2026-2027',
+      academicYear: enrollment.academicYearId || payment.academicYearId || '',
       studentName: enrollment.studentName,
       matricule: enrollment.matricule,
       className: enrollment.className,

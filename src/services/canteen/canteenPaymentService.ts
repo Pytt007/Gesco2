@@ -122,7 +122,7 @@ export const canteenPaymentService = {
       schoolName: schoolSettings?.name || 'École Privée GESCO',
       schoolAddress: schoolSettings?.address || 'Abidjan, Côte d\'Ivoire',
       schoolPhone: schoolSettings?.phone || '+225 00 00 00 00',
-      academicYear: schoolSettings?.academicYear || '2026-2027',
+      academicYear: enrollment.academicYearId || schoolSettings?.academicYear || '',
       studentName: enrollment.studentName,
       matricule: enrollment.matricule,
       className: enrollment.className,

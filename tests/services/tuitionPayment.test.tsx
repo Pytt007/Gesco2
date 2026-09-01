@@ -54,6 +54,8 @@ describe('Tuition Fee Payment Module Layer (Paiement de la scolarité)', () => {
       expect(payment.paymentMode).toBe('ORANGE_MONEY');
       expect(payment.status).toBe('VALIDATED');
       expect(receipt.receiptNumber).toContain('REC-2026');
+      expect(receipt.academicYear).toBe('ay-2026');
+      expect(receipt.htmlContent).toContain('ay-2026');
       expect(receipt.checksum).toContain('GESCO-SHA256-');
       expect(receipt.qrCodeUrl).toContain('data:image/');
       expect(receipt.htmlContent).toContain('100');
@@ -66,6 +68,27 @@ describe('Tuition Fee Payment Module Layer (Paiement de la scolarité)', () => {
 
       // Verify installment 1 status is marked PAID
       expect(updatedEnrollment.installments[0].status).toBe('PAID');
+    });
+
+    it('dynamically adapts receipt academic year to future or custom school years (P2-08)', async () => {
+      const enrollmentRes = await studentFinancialEnrollmentService.createEnrollment({
+        studentId: 'st-custom-year',
+        academicYearId: '2027-2028',
+        classroomId: 'cls-1',
+        discountType: 'NONE',
+        discountValue: 0,
+      });
+
+      const payRes = await tuitionPaymentService.recordPayment({
+        enrollmentId: enrollmentRes.data!.id,
+        amount: 50000,
+        paymentDate: '2027-10-15',
+        paymentMode: 'CASH',
+      });
+
+      expect(payRes.success).toBe(true);
+      expect(payRes.data?.receipt.academicYear).toBe('2027-2028');
+      expect(payRes.data?.receipt.htmlContent).toContain('2027-2028');
     });
 
     it('supports all 6 payment modes: CASH, ORANGE_MONEY, MTN_MONEY, WAVE, TRANSFER, CHECK', async () => {

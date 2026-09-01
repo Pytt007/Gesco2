@@ -282,7 +282,7 @@ export const tuitionPaymentService = {
       studentName: enrollment.studentName,
       matricule: enrollment.matricule,
       className: enrollment.className,
-      academicYear: enrollment.academicYearId || payment.academicYearId || '2026-2027',
+      academicYear: enrollment.academicYearId || payment.academicYearId || '',
       parentSponsor: enrollment.parentSponsor || 'Parent d’Élève',
       paymentDate: payment.paymentDate,
       amountPaid: payment.amount,

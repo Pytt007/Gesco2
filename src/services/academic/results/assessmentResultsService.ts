@@ -506,7 +506,7 @@ async function recalculateSessionResults(
       rank: rankInfo?.rank ?? null,
       level,
       assessmentType,
-      academicYear: '2026-2027',
+      academicYear: (r as any).academicYearId || '',
       studentId: r.studentId,
     });
 
