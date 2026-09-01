@@ -423,19 +423,26 @@ async function recalculateSessionResults(
 
   for (const r of allResults) {
     let totalObtained = 0;
+    let totalNormalized = 0;
     let validScoreCount = 0;
-    let hasAbsence = false;
+    let totalMaxPossible = 0;
 
     for (const scoreObj of r.scores) {
-      if (scoreObj.absenceStatus === 'ABSENT' || scoreObj.absenceStatus === 'EXCUSED_ABSENT') {
-        hasAbsence = true;
-      } else if (scoreObj.score !== null) {
+      if (scoreObj.absenceStatus === 'ABSENT' || scoreObj.absenceStatus === 'EXCUSED_ABSENT' || scoreObj.absenceStatus === 'DISPENSED') {
+        continue;
+      }
+      if (scoreObj.score !== null) {
+        const max = (typeof scoreObj.maxScore === 'number' && scoreObj.maxScore > 0) ? scoreObj.maxScore : 20;
         totalObtained += scoreObj.score;
+        totalMaxPossible += max;
+        // Normalisation sur 20
+        const normalized = (scoreObj.score / max) * 20;
+        totalNormalized += normalized;
         validScoreCount++;
       }
     }
 
-    const average = validScoreCount > 0 ? Number((totalObtained / validScoreCount).toFixed(2)) : null;
+    const average = validScoreCount > 0 ? Number((totalNormalized / validScoreCount).toFixed(2)) : null;
     const appreciationText = average !== null ? mapPrimaryAppreciation(average, 'SCORE_20') : 'Non évalué';
 
     (r as any)._calcTotal = totalObtained;
@@ -445,7 +452,7 @@ async function recalculateSessionResults(
     const calcResult: CalculationResult = {
       average: average,
       totalObtained: totalObtained,
-      totalMaximum: Math.max(20, r.scores.length * 20),
+      totalMaximum: Math.max(20, totalMaxPossible || (r.scores.length * 20)),
       resultScale: 'SCORE_20',
       appreciation: appreciationText as any,
       subjectResults: r.scores.map((s, idx) => ({
@@ -457,9 +464,9 @@ async function recalculateSessionResults(
         weightedScore: s.score,
         maximumScore: s.maxScore ?? 20,
         coefficient: 1,
-        absenceStatus: s.absenceStatus === 'ABSENT' ? 'ABSENT' : s.absenceStatus === 'EXCUSED_ABSENT' ? 'EXCUSED' : 'PRESENT',
+        absenceStatus: s.absenceStatus === 'ABSENT' ? 'ABSENT' : s.absenceStatus === 'EXCUSED_ABSENT' ? 'EXCUSED' : s.absenceStatus === 'DISPENSED' ? 'DISPENSED' : 'PRESENT',
         assessmentMode: 'GRADE',
-        isRequired: true,
+        isRequired: s.absenceStatus !== 'DISPENSED',
         warnings: [],
       })),
       formulaUsed: 'AVERAGE',

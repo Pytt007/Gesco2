@@ -17,18 +17,33 @@ export function validateScoreInput(
 ): ServiceResponse<boolean> {
   const max = input.maxScore ?? defaultMaxScore;
 
-  // 1. Validation de présence
+  // 1. Validation du barème maximum
+  if (typeof max !== 'number' || isNaN(max) || max <= 0) {
+    return {
+      success: false,
+      error: `Le barème maximum doit être un nombre strictement positif (valeur : ${max}).`,
+    };
+  }
+
+  // 2. Validation de présence / dispense
   const absence = input.absenceStatus ?? 'PRESENT';
-  if (absence === 'ABSENT' || absence === 'EXCUSED_ABSENT') {
+  if (absence === 'ABSENT' || absence === 'EXCUSED_ABSENT' || absence === 'DISPENSED') {
     return { success: true, data: true };
   }
 
-  // 2. Si présent, vérifier si la note est fournie
+  // 3. Si présent, vérifier si la note est fournie
   if (input.score === null || input.score === undefined) {
     return { success: true, data: true };
   }
 
-  // 3. Empêcher les notes négatives
+  if (typeof input.score !== 'number' || isNaN(input.score)) {
+    return {
+      success: false,
+      error: 'La note doit être une valeur numérique valide.',
+    };
+  }
+
+  // 4. Empêcher les notes négatives
   if (input.score < 0) {
     return {
       success: false,
@@ -36,7 +51,7 @@ export function validateScoreInput(
     };
   }
 
-  // 4. Empêcher une note supérieure au barème
+  // 5. Empêcher une note supérieure au barème
   if (input.score > max) {
     return {
       success: false,
@@ -55,11 +70,11 @@ export function sanitizeScore(
   resultId: string,
   existingScoreId?: string
 ): AssessmentScore {
-  const max = input.maxScore ?? 20;
+  const max = (typeof input.maxScore === 'number' && input.maxScore > 0) ? input.maxScore : 20;
   const absence = input.absenceStatus ?? 'PRESENT';
 
   let finalScore: number | null = input.score ?? null;
-  if (absence === 'ABSENT' || absence === 'EXCUSED_ABSENT') {
+  if (absence === 'ABSENT' || absence === 'EXCUSED_ABSENT' || absence === 'DISPENSED') {
     finalScore = null;
   } else if (finalScore !== null) {
     finalScore = Math.min(Math.max(0, finalScore), max);

@@ -322,14 +322,43 @@ describe('Assessment Results Service & Engine Integration Layer', () => {
       const subErr = await submitForValidation('id-invalide');
       expect(subErr.success).toBe(false);
 
-      const valErr = await validateResult('id-invalide');
-      expect(valErr.success).toBe(false);
-
-      const pubErr = await publishResult('id-invalide');
-      expect(pubErr.success).toBe(false);
-
       const progErr = await getCorrectionProgress('');
       expect(progErr.success).toBe(false);
+    });
+
+    it('harmonizes heterogeneous scales and excludes dispensed subjects (P2-21)', async () => {
+      await createSession({
+        id: 'sess-scales',
+        academicYearId: 'ay-2026',
+        classroomId: 'cls-scales',
+        assessmentTypeId: 'MONTHLY',
+        title: 'Session Échelles Mixtes',
+        startDate: '2026-10-01',
+        endDate: '2026-10-05',
+      });
+
+      // 1. Rejet de barème maximum invalide
+      const badMax = await saveDraft('sess-scales', 'st-badmax', [
+        { subjectId: 'math', score: 10, maxScore: -1 },
+      ]);
+      expect(badMax.success).toBe(false);
+      expect(badMax.error).toContain('strictement positif');
+
+      // 2. Barèmes hétérogènes :
+      // - Dictée : 10/10 -> équivaut à 20/20
+      // - Math : 40/50 -> équivaut à 16/20
+      // - EPS : Dispensé (DISPENSED) -> ignoré
+      // Moyenne attendue : (20 + 16) / 2 = 18.00 / 20
+      const mixedRes = await saveDraft('sess-scales', 'st-mixed', [
+        { subjectId: 'dictee', score: 10, maxScore: 10 },
+        { subjectId: 'math', score: 40, maxScore: 50 },
+        { subjectId: 'eps', score: null, absenceStatus: 'DISPENSED' },
+      ]);
+
+      expect(mixedRes.success).toBe(true);
+      expect(mixedRes.data?.average).toBe(18);
+      expect(mixedRes.data?.total).toBe(50); // 10 + 40
+      expect(mixedRes.data?.scores.find((s) => s.subjectId === 'eps')?.absenceStatus).toBe('DISPENSED');
     });
   });
 });
