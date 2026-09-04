@@ -58,11 +58,30 @@ export const ClassAssignmentStep: React.FC<Props> = ({ data, onChange, errors })
   const isFull = currentCount >= capacity;
   const fillPercentage = Math.min(100, Math.round((currentCount / capacity) * 100));
 
+  const isUnassigned = !data.classId || data.className === 'Non affecté';
+
   const handleSelectClass = (cls: Classroom) => {
+    if (data.classId === cls.id) {
+      // Désélectionner si déjà cliqué
+      onChange({
+        classId: '',
+        className: 'Non affecté',
+        levelId: '',
+      });
+    } else {
+      onChange({
+        classId: cls.id,
+        className: cls.name,
+        levelId: cls.levelId,
+      });
+    }
+  };
+
+  const handleSelectUnassigned = () => {
     onChange({
-      classId: cls.id,
-      className: cls.name,
-      levelId: cls.levelId,
+      classId: '',
+      className: 'Non affecté',
+      levelId: '',
     });
   };
 
@@ -79,20 +98,52 @@ export const ClassAssignmentStep: React.FC<Props> = ({ data, onChange, errors })
               <h5 style={{ margin: 0, fontWeight: 800, color: '#0f172a', fontSize: '0.9375rem' }}>Année Scolaire {data.schoolYear}</h5>
             </div>
           </div>
-          <span className="badge badge-primary" style={{ fontSize: '0.75rem', padding: '4px 10px' }}>Affectation Officielle</span>
+          <span className="badge badge-primary" style={{ fontSize: '0.75rem', padding: '4px 10px' }}>Affectation Optionnelle</span>
         </div>
       </div>
 
       {/* SELECTION CLASSE PAR CARTE / DROPDOWN */}
       <div>
-        <label className="form-label" style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1e293b', marginBottom: 8, display: 'block' }}>
-          Choisir la Classe d'Affectation (Optionnel)
-        </label>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <label className="form-label" style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>
+            Choisir la Classe d'Affectation (Optionnel)
+          </label>
+          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+            Vous pouvez passer cette étape et affecter l'élève plus tard
+          </span>
+        </div>
 
         {loadingClasses ? (
           <div className="p-4 text-center text-muted" style={{ fontSize: '0.875rem' }}>Chargement de la liste des classes...</div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+            {/* OPTION : SANS AFFECTATION IMMÉDIATE */}
+            <div
+              onClick={handleSelectUnassigned}
+              style={{
+                padding: '14px 16px',
+                borderRadius: 14,
+                border: isUnassigned ? '2px solid #6366f1' : '1px dashed #cbd5e1',
+                background: isUnassigned ? '#f5f3ff' : '#fafafa',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: isUnassigned ? '0 4px 14px rgba(99,102,241,0.15)' : 'none',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontWeight: 800, fontSize: '0.9375rem', color: isUnassigned ? '#4f46e5' : '#475569' }}>
+                  ⏳ Sans affectation
+                </span>
+                <span className="badge" style={{ background: isUnassigned ? '#ede9fe' : '#e2e8f0', color: isUnassigned ? '#6d28d9' : '#64748b', fontSize: '0.65rem' }}>
+                  Optionnel
+                </span>
+              </div>
+              <p style={{ margin: '6px 0 0', fontSize: '0.75rem', color: '#64748b', lineHeight: 1.4 }}>
+                Inscrire l'élève maintenant et lui attribuer une classe ultérieurement.
+              </p>
+            </div>
+
+            {/* CARTES DES CLASSES EXISTANTES */}
             {classrooms.map((cls) => {
               const count = classCounts[cls.name] || 0;
               const isSelected = cls.id === data.classId;
@@ -140,6 +191,18 @@ export const ClassAssignmentStep: React.FC<Props> = ({ data, onChange, errors })
         )}
         {errors.classId && <span style={{ fontSize: '0.75rem', color: '#ef4444', display: 'block', marginTop: 6 }}>{errors.classId}</span>}
       </div>
+
+      {/* INFORMATION SI SANS CLASSE */}
+      {isUnassigned && (
+        <div className="card p-3" style={{ borderRadius: 14, border: '1px solid #e0e7ff', background: '#eef2ff' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Sparkles size={20} color="#6366f1" />
+            <div style={{ fontSize: '0.8125rem', color: '#4338ca' }}>
+              <strong>Inscription sans classe immédiate :</strong> L'élève sera enregistré sous le statut <em>« Non affecté »</em>. Vous pourrez à tout moment lui affecter une classe depuis la fiche élève ou la gestion des classes.
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* APERÇU DE LA CAPACITE DE LA CLASSE SELECTIONNEE */}
       {selectedClassroom && (
