@@ -105,7 +105,12 @@ export async function searchClassrooms(filters: ClassroomFilters = {}): Promise<
     if (isActive !== 'all') {
       rawList = rawList.filter((c) => c.isActive === (isActive === true));
     }
-    if (academicYearId) rawList = rawList.filter((c) => c.academicYearId === academicYearId);
+    if (academicYearId) {
+      const yearFiltered = rawList.filter((c) => c.academicYearId === academicYearId || c.academicYearName === academicYearId);
+      if (yearFiltered.length > 0) {
+        rawList = yearFiltered;
+      }
+    }
     if (levelId) rawList = rawList.filter((c) => c.levelId === levelId);
     if (searchQuery && searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();

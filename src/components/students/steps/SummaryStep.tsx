@@ -112,8 +112,8 @@ export const SummaryStep: React.FC<Props> = ({
             <BookOpen size={16} color="#2563eb" /> Classe & Session
           </h5>
           <div style={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.6 }}>
-            <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#2563eb', marginBottom: 4 }}>
-              Classe : {assignment.className}
+            <div style={{ fontSize: '1.05rem', fontWeight: 900, color: assignment.className && assignment.className !== 'Non affecté' ? '#2563eb' : '#6366f1', marginBottom: 4 }}>
+              Classe : {assignment.className && assignment.className !== 'Non affecté' ? assignment.className : 'Non affecté (Affectation ultérieure)'}
             </div>
             <div><strong>Année Scolaire :</strong> {assignment.schoolYear}</div>
             <div><strong>Statut :</strong> <span className="badge badge-success">Inscription Officielle Active</span></div>
