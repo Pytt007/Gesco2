@@ -231,7 +231,7 @@ const TransportPaymentModal: React.FC<{
 
             <div>
               <label className="form-label fw-semibold text-sm">Montant payé (FCFA) *</label>
-              <input type="number" className="form-control form-control-lg" value={amount} onChange={(e) => setAmount(e.target.value)} min={1} max={enrollment.remainingBalance} step={1000} required style={{ fontWeight: 700, fontSize: '1.125rem', textAlign: 'right' }} />
+              <input type="number" className="form-control form-control-lg" value={amount} onChange={(e) => setAmount(e.target.value)} min={1} max={enrollment.remainingBalance} step="any" required style={{ fontWeight: 700, fontSize: '1.125rem', textAlign: 'right' }} />
             </div>
 
             {pendingPeriods.length > 0 && (

@@ -258,7 +258,7 @@ export const TuitionFeeModal: React.FC<TuitionFeeModalProps> = ({
               <input
                 type="number"
                 min="0"
-                step="500"
+                step="any"
                 className="form-input"
                 style={{ height: 44, borderRadius: 12, fontSize: '0.875rem', fontWeight: 600 }}
                 placeholder="0"
@@ -275,7 +275,7 @@ export const TuitionFeeModal: React.FC<TuitionFeeModalProps> = ({
               <input
                 type="number"
                 min="0"
-                step="1000"
+                step="any"
                 className="form-input"
                 style={{ height: 44, borderRadius: 12, fontSize: '0.875rem', fontWeight: 600 }}
                 placeholder="0"

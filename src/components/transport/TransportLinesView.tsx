@@ -206,7 +206,7 @@ const LineModal: React.FC<LineModalProps> = ({
                   }
                 }}
                 min={0}
-                step={1000}
+                step="any"
                 placeholder="Ex : 250000"
                 required
               />

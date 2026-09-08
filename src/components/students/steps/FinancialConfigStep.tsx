@@ -595,7 +595,7 @@ export const FinancialConfigStep: React.FC<Props> = ({
                       <input
                         type="number"
                         min="0"
-                        step="500"
+                        step="any"
                         className="form-control form-control-sm text-end"
                         placeholder="0"
                         value={inst.amountDue ? inst.amountDue : ''}

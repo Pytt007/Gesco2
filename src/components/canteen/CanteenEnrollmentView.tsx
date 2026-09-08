@@ -489,7 +489,7 @@ export const CanteenEnrollmentView: React.FC = () => {
                           onChange={(e) => setDiscountValue(e.target.value)}
                           min={0}
                           max={discountType === 'PERCENTAGE' ? 100 : undefined}
-                          step={discountType === 'PERCENTAGE' ? 1 : 1000}
+                          step="any"
                         />
                       </div>
                     )}

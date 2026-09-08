@@ -288,7 +288,7 @@ const CanteenPaymentModal: React.FC<CanteenPaymentModalProps> = ({ isOpen, enrol
                 onChange={(e) => setAmount(e.target.value)}
                 min={1}
                 max={enrollment.remainingBalance}
-                step={1000}
+                step="any"
                 required
                 style={{ fontWeight: 700, fontSize: '1.125rem', textAlign: 'right' }}
               />

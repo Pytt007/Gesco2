@@ -655,7 +655,7 @@ export default function ExpensesPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div>
                     <label className="form-label fw-semibold text-sm">Montant (FCFA) *</label>
-                    <input type="number" className="form-control" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} min={1} step={100} placeholder="Ex : 50000" required />
+                    <input type="number" className="form-control" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} min={1} step="any" placeholder="Ex : 50000" required />
                   </div>
                   <div>
                     <label className="form-label fw-semibold text-sm">Mode de paiement *</label>

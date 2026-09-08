@@ -153,7 +153,7 @@ const CanteenFeeModal: React.FC<CanteenFeeModalProps> = ({ isOpen, onClose, onSa
                     }
                   }}
                   min={0}
-                  step={1000}
+                  step="any"
                   placeholder="Ex : 150000"
                   required
                 />

@@ -353,7 +353,7 @@ export const CustomScheduleEditor: React.FC<CustomScheduleEditorProps> = ({
                     <input
                       type="number"
                       min="0"
-                      step="500"
+                      step="any"
                       className="form-control form-control-sm text-end"
                       placeholder="0"
                       value={item.amountDue ? item.amountDue : ''}
