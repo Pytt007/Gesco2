@@ -191,10 +191,9 @@ export const PaymentStep: React.FC<Props> = ({ data, onChange, levelCode = 'CP1'
               className="form-select" value={data.paymentMode}
               onChange={(e) => onChange({ paymentMode: e.target.value as PaymentMode })}
             >
-              <option value="CASH">Espèces</option>
+              <option value="CHECK">Chèque</option>
+              <option value="TRANSFER">Virement bancaire</option>
               <option value="WAVE">Wave</option>
-              <option value="ORANGE_MONEY">Orange Money</option>
-              <option value="MTN_MONEY">MTN Money</option>
             </select>
           </div>
         </div>
@@ -202,7 +201,13 @@ export const PaymentStep: React.FC<Props> = ({ data, onChange, levelCode = 'CP1'
         <div style={{ marginTop: 12 }}>
           <label className="form-label" style={{ fontSize: '0.78125rem', fontWeight: 600 }}>Référence Transaction (Optionnel)</label>
           <input
-            type="text" className="form-input" placeholder="Ex: TX-99882200 / Réf. Wave"
+            type="text" className="form-input" placeholder={
+              data.paymentMode === 'CHECK'
+                ? 'Ex: N° de chèque'
+                : data.paymentMode === 'TRANSFER'
+                ? 'Ex: Réf. Virement bancaire'
+                : 'Ex: TX-99882200 / Réf. Wave'
+            }
             value={data.paymentReference} onChange={(e) => onChange({ paymentReference: e.target.value })}
           />
         </div>

@@ -69,7 +69,7 @@ export const StudentRegistrationWizard: React.FC<Props> = ({ isOpen, onClose, on
     discountType: 'FIXED',
     discountValue: 0,
     paidAmount: 0,
-    paymentMode: 'CASH',
+    paymentMode: 'CHECK',
     paymentReference: '',
     remarks: '',
   });

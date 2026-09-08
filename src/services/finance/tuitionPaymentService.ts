@@ -86,7 +86,7 @@ export const PAYMENT_MODE_LABELS: Record<PaymentMode, string> = {
   ORANGE_MONEY: 'Orange Money',
   MTN_MONEY: 'MTN Money',
   WAVE: 'Wave',
-  TRANSFER: 'Virement',
+  TRANSFER: 'Virement bancaire',
   CHECK: 'Chèque',
 };
 

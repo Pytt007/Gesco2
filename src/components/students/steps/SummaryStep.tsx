@@ -128,7 +128,15 @@ export const SummaryStep: React.FC<Props> = ({
           <div style={{ fontSize: '0.8125rem', color: '#475569', lineHeight: 1.6 }}>
             <div><strong>Total Frais Net :</strong> {netTotal.toLocaleString('fr-FR')} FCFA</div>
             <div style={{ color: '#16a34a', fontWeight: 800, fontSize: '0.9375rem', marginTop: 2 }}>
-              Versement Effectué : {payment.paidAmount.toLocaleString('fr-FR')} FCFA ({payment.paymentMode})
+              Versement Effectué : {payment.paidAmount.toLocaleString('fr-FR')} FCFA ({
+                payment.paymentMode === 'CHECK'
+                  ? 'Chèque'
+                  : payment.paymentMode === 'TRANSFER'
+                  ? 'Virement bancaire'
+                  : payment.paymentMode === 'WAVE'
+                  ? 'Wave Money'
+                  : payment.paymentMode
+              })
             </div>
             <div style={{ color: remainingBalance === 0 ? '#16a34a' : '#dc2626', fontWeight: 700, marginTop: 2 }}>
               Solde Restant : {remainingBalance.toLocaleString('fr-FR')} FCFA

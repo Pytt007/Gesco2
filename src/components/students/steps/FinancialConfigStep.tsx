@@ -709,10 +709,9 @@ export const FinancialConfigStep: React.FC<Props> = ({
               onChange={(e) => onChange({ paymentMode: e.target.value as PaymentMode })}
               style={{ fontWeight: 700 }}
             >
-              <option value="CASH">Espèces (Guichet)</option>
+              <option value="CHECK">Chèque</option>
+              <option value="TRANSFER">Virement bancaire</option>
               <option value="WAVE">Wave Money</option>
-              <option value="ORANGE_MONEY">Orange Money</option>
-              <option value="MTN_MONEY">MTN Mobile Money</option>
             </select>
           </div>
 
@@ -723,7 +722,13 @@ export const FinancialConfigStep: React.FC<Props> = ({
             <input
               type="text"
               className="form-input"
-              placeholder="ex: WV-948201 / Réf. Transaction"
+              placeholder={
+                data.paymentMode === 'CHECK'
+                  ? 'ex: N° Chèque / Banque'
+                  : data.paymentMode === 'TRANSFER'
+                  ? 'ex: Réf. Virement bancaire / Avis de débit'
+                  : 'ex: WV-948201 / Réf. Wave'
+              }
               value={data.paymentReference}
               onChange={(e) => onChange({ paymentReference: e.target.value })}
             />
