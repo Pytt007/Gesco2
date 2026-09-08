@@ -11,6 +11,7 @@ import {
   DollarSign, Tag, RotateCcw, MapPin, X,
 } from 'lucide-react';
 import { listStudents } from '../../services/students/studentsService';
+import { CustomScheduleEditor, SchedulePeriodItem } from '../common/CustomScheduleEditor';
 
 export interface StudentSearchItem {
   id: string;
@@ -36,6 +37,7 @@ export const TransportEnrollmentView: React.FC = () => {
 
   const [discountType, setDiscountType] = useState<TransportDiscountType>('NONE');
   const [discountValue, setDiscountValue] = useState<string>('');
+  const [customPeriods, setCustomPeriods] = useState<SchedulePeriodItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<any>(null);
 
@@ -67,6 +69,7 @@ export const TransportEnrollmentView: React.FC = () => {
     setSelectedLineId('');
     setDiscountType('NONE');
     setDiscountValue('');
+    setCustomPeriods([]);
     setSuccess(null);
 
     const existing = await transportEnrollmentService.getEnrollmentByStudent(student.id, academicYearId);
@@ -84,7 +87,38 @@ export const TransportEnrollmentView: React.FC = () => {
   const discountAmount = discountType === 'FIXED' ? discountNum
     : discountType === 'PERCENTAGE' ? Math.round((annualFee * discountNum) / 100) : 0;
   const netAmount = Math.max(0, annualFee - discountAmount);
-  const perPeriod = selectedLine?.periodsCount ? Math.round(netAmount / selectedLine.periodsCount) : 0;
+
+  // Synchronisation des échéances de transport
+  React.useEffect(() => {
+    if (selectedLine) {
+      if (selectedLine.customPeriods && selectedLine.customPeriods.length > 0) {
+        const lineTotal = selectedLine.annualFee || 1;
+        const ratio = netAmount / lineTotal;
+        setCustomPeriods(
+          selectedLine.customPeriods.map((p, idx) => ({
+            number: p.number || idx + 1,
+            label: p.label || `Période ${idx + 1}`,
+            dueDate: p.dueDate || '',
+            amountDue: discountAmount > 0 ? Math.round(p.amountDue * ratio) : p.amountDue,
+          }))
+        );
+      } else {
+        const count = selectedLine.periodsCount || 3;
+        const base = Math.floor(netAmount / count);
+        const rem = netAmount - base * count;
+        setCustomPeriods(
+          Array.from({ length: count }, (_, i) => ({
+            number: i + 1,
+            label: count === 3 ? (i === 0 ? '1er Trimestre' : i === 1 ? '2ème Trimestre' : '3ème Trimestre') : `Période ${i + 1}`,
+            dueDate: '',
+            amountDue: i === 0 ? base + rem : base,
+          }))
+        );
+      }
+    } else {
+      setCustomPeriods([]);
+    }
+  }, [selectedLineId, discountType, discountValue]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,6 +137,7 @@ export const TransportEnrollmentView: React.FC = () => {
         academicYearId,
         discountType,
         discountValue: discountNum,
+        customPeriods: customPeriods.length > 0 ? customPeriods : undefined,
       };
       const result = await transportEnrollmentService.createEnrollment(input);
       if (result.success && result.data) {
@@ -124,6 +159,7 @@ export const TransportEnrollmentView: React.FC = () => {
     setSuccess(null);
     setDiscountType('NONE');
     setDiscountValue('');
+    setCustomPeriods([]);
   };
 
   return (
@@ -320,6 +356,22 @@ export const TransportEnrollmentView: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Échéancier personnalisable */}
+                  <div className="mb-4">
+                    <CustomScheduleEditor
+                      periods={customPeriods}
+                      onChange={setCustomPeriods}
+                      targetTotal={netAmount}
+                      title="Échéancier de transport de l'élève"
+                      subtitle="Personnalisez le nombre d'échéances et leurs montants pour cet élève."
+                      periodPrefix="Période"
+                      quickCounts={[1, 2, 3, 4, 6, 9, 10]}
+                      schoolYear={academicYearId}
+                      accentColor="#2563eb"
+                      compact
+                    />
+                  </div>
+
                   {/* Récapitulatif */}
                   <div className="card mb-4" style={{ borderRadius: 12, border: '2px solid #2563eb', background: '#eff6ff' }}>
                     <div className="card-body p-4">
@@ -336,10 +388,11 @@ export const TransportEnrollmentView: React.FC = () => {
                           </div>
                         )}
                         <div style={{ borderTop: '1px solid #bfdbfe', paddingTop: 8, display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: 700, color: '#1d4ed8' }}>
-                          <span>Montant à payer</span><span>{netAmount.toLocaleString('fr-FR')} FCFA</span>
+                          <span>Montant net à payer</span><span>{netAmount.toLocaleString('fr-FR')} FCFA</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: '#475569' }}>
-                          <span>Par période ({selectedLine.periodsCount})</span><span>≈ {perPeriod.toLocaleString('fr-FR')} FCFA</span>
+                          <span>Total échéances ({customPeriods.length})</span>
+                          <span>{customPeriods.reduce((acc, p) => acc + (Number(p.amountDue) || 0), 0).toLocaleString('fr-FR')} FCFA</span>
                         </div>
                       </div>
                     </div>

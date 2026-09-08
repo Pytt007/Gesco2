@@ -140,7 +140,7 @@ export const canteenFeesService = {
       return { success: false, error: `Un tarif cantine existe déjà pour le niveau ${input.levelCode} sur cette année scolaire.` };
     }
 
-    const periodsCount = input.periodsCount ?? 3;
+    const periodsCount = input.periodsCount ?? (input.customPeriods ? input.customPeriods.length : 3);
     const id = `canteen-${input.academicYearId}-${input.levelCode.toLowerCase()}-${Date.now()}`;
     const levelName = input.levelName || levelNamesMap[input.levelCode] || input.levelCode;
 
@@ -152,6 +152,7 @@ export const canteenFeesService = {
       annualRate: Number(input.annualRate),
       periodsCount,
       totalAmount: Number(input.annualRate),
+      customPeriods: input.customPeriods,
       status: 'ACTIVE',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -178,13 +179,14 @@ export const canteenFeesService = {
     }
 
     const annualRate = input.annualRate !== undefined ? Number(input.annualRate) : existing.annualRate;
-    const periodsCount = input.periodsCount !== undefined ? input.periodsCount : existing.periodsCount;
+    const periodsCount = input.periodsCount !== undefined ? input.periodsCount : (input.customPeriods ? input.customPeriods.length : existing.periodsCount);
 
     const updated: CanteenFeeSchedule = {
       ...existing,
       annualRate,
       periodsCount,
       totalAmount: annualRate,
+      customPeriods: input.customPeriods !== undefined ? input.customPeriods : existing.customPeriods,
       updatedAt: new Date().toISOString(),
     };
 

@@ -12,6 +12,7 @@ import {
   Bus, Plus, Edit2, Archive, RefreshCw, AlertCircle, CheckCircle2,
   Users, MapPin, Phone, Car, Shield, Calendar, TrendingUp, X, BarChart3,
 } from 'lucide-react';
+import { CustomScheduleEditor, SchedulePeriodItem } from '../common/CustomScheduleEditor';
 
 // ─── Statut Badge ─────────────────────────────────────────────────────────────
 
@@ -44,6 +45,7 @@ const LineModal: React.FC<LineModalProps> = ({
   const [driverId, setDriverId] = useState(initialData?.driverId || '');
   const [annualFee, setAnnualFee] = useState(initialData ? String(initialData.annualFee) : '');
   const [periodsCount, setPeriodsCount] = useState(initialData?.periodsCount ?? 3);
+  const [customPeriods, setCustomPeriods] = useState<SchedulePeriodItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,7 +56,34 @@ const LineModal: React.FC<LineModalProps> = ({
       setVehicleId(initialData?.vehicleId || (vehicles[0]?.id ?? ''));
       setDriverId(initialData?.driverId || (drivers[0]?.id ?? ''));
       setAnnualFee(initialData ? String(initialData.annualFee) : '');
-      setPeriodsCount(initialData?.periodsCount ?? 3);
+      const count = initialData?.periodsCount ?? 3;
+      setPeriodsCount(count);
+
+      const feeVal = initialData?.annualFee || 0;
+      if (initialData?.customPeriods && initialData.customPeriods.length > 0) {
+        setCustomPeriods(
+          initialData.customPeriods.map((p, idx) => ({
+            number: p.number || idx + 1,
+            label: p.label || `Période ${idx + 1}`,
+            dueDate: p.dueDate || '',
+            amountDue: p.amountDue,
+          }))
+        );
+      } else if (feeVal > 0) {
+        // Initialiser avec répartition équitable
+        const base = Math.floor(feeVal / count);
+        const rem = feeVal - base * count;
+        setCustomPeriods(
+          Array.from({ length: count }, (_, i) => ({
+            number: i + 1,
+            label: count === 3 ? (i === 0 ? '1er Trimestre' : i === 1 ? '2ème Trimestre' : '3ème Trimestre') : `Période ${i + 1}`,
+            dueDate: '',
+            amountDue: i === 0 ? base + rem : base,
+          }))
+        );
+      } else {
+        setCustomPeriods([]);
+      }
       setError(null);
     }
   }, [isOpen, initialData, vehicles, drivers]);
@@ -63,7 +92,6 @@ const LineModal: React.FC<LineModalProps> = ({
 
   const selectedVehicle = vehicles.find((v) => v.id === vehicleId);
   const fee = parseFloat(annualFee) || 0;
-  const perPeriod = periodsCount > 0 ? Math.round(fee / periodsCount) : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,14 +106,18 @@ const LineModal: React.FC<LineModalProps> = ({
       return;
     }
 
+    const periodsSum = customPeriods.reduce((acc, p) => acc + (Number(p.amountDue) || 0), 0);
+    const finalAnnualFee = periodsSum > 0 ? periodsSum : fee;
+
     setSaving(true);
     const result = await onSave({
       name: name.trim(),
       zone: zone.trim(),
       vehicleId,
       driverId,
-      annualFee: fee,
-      periodsCount,
+      annualFee: finalAnnualFee,
+      periodsCount: customPeriods.length > 0 ? customPeriods.length : periodsCount,
+      customPeriods: customPeriods.length > 0 ? customPeriods : undefined,
       academicYearId,
     });
     setSaving(false);
@@ -95,7 +127,7 @@ const LineModal: React.FC<LineModalProps> = ({
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15,23,42,0.6)', padding: 16 }}>
-      <div className="card shadow-lg" style={{ width: '100%', maxWidth: 580, borderRadius: 16, overflow: 'hidden', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div className="card shadow-lg" style={{ width: '100%', maxWidth: 720, borderRadius: 16, overflow: 'hidden', maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ padding: '20px 24px', background: 'linear-gradient(135deg,#1e3a5f,#2563eb)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Bus size={22} color="white" />
@@ -109,7 +141,7 @@ const LineModal: React.FC<LineModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div style={{ padding: '24px', display: 'grid', gap: 16 }}>
+          <div style={{ padding: '24px', display: 'grid', gap: 18 }}>
             {error && (
               <div className="alert alert-danger text-sm p-2" style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <AlertCircle size={16} /> {error}
@@ -157,35 +189,49 @@ const LineModal: React.FC<LineModalProps> = ({
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
-              <div>
-                <label className="form-label fw-semibold text-sm">Tarif annuel (FCFA) *</label>
-                <input type="number" className="form-control" value={annualFee} onChange={(e) => setAnnualFee(e.target.value)} min={0} step={1000} placeholder="Ex : 250000" required />
-              </div>
-              <div>
-                <label className="form-label fw-semibold text-sm">Nb. périodes</label>
-                <select className="form-select" value={periodsCount} onChange={(e) => setPeriodsCount(Number(e.target.value))}>
-                  {[1, 2, 3, 4, 6].map((n) => <option key={n} value={n}>{n} période{n > 1 ? 's' : ''}</option>)}
-                </select>
-              </div>
+            <div>
+              <label className="form-label fw-semibold text-sm">Tarif annuel global (FCFA) *</label>
+              <input
+                type="number"
+                className="form-control"
+                value={annualFee}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setAnnualFee(val);
+                  const num = parseFloat(val) || 0;
+                  if (customPeriods.length > 0 && num > 0) {
+                    const base = Math.floor(num / customPeriods.length);
+                    const rem = num - base * customPeriods.length;
+                    setCustomPeriods(customPeriods.map((p, i) => ({ ...p, amountDue: i === 0 ? base + rem : base })));
+                  }
+                }}
+                min={0}
+                step={1000}
+                placeholder="Ex : 250000"
+                required
+              />
             </div>
 
-            {fee > 0 && (
-              <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 10, padding: '12px 16px' }}>
-                <p className="text-xs fw-semibold text-primary mb-2 d-flex align-items-center gap-1"><BarChart3 size={14} /> Calcul automatique</p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
-                  <span>Tarif annuel :</span><strong>{fee.toLocaleString('fr-FR')} FCFA</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginTop: 4 }}>
-                  <span>Par période ({periodsCount}) :</span><strong style={{ color: '#0369a1' }}>≈ {perPeriod.toLocaleString('fr-FR')} FCFA</strong>
-                </div>
-                {selectedVehicle && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginTop: 4 }}>
-                    <span>Capacité véhicule :</span><strong>{selectedVehicle.capacity} places</strong>
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Échéancier personnalisable comme pour l'inscription d'un élève */}
+            <CustomScheduleEditor
+              periods={customPeriods}
+              onChange={(newPeriods) => {
+                setCustomPeriods(newPeriods);
+                setPeriodsCount(newPeriods.length);
+                const sum = newPeriods.reduce((acc, p) => acc + (Number(p.amountDue) || 0), 0);
+                if (sum > 0) {
+                  setAnnualFee(String(sum));
+                }
+              }}
+              targetTotal={fee}
+              onTotalChange={(newTotal) => setAnnualFee(String(newTotal))}
+              title="Échéancier de règlement de la ligne"
+              subtitle="Personnalisez le nombre de périodes, les dates d'exigibilité et le montant de chaque période."
+              periodPrefix="Période"
+              quickCounts={[1, 2, 3, 4, 6, 9, 10]}
+              schoolYear={academicYearId}
+              accentColor="#2563eb"
+            />
           </div>
 
           <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: 12, justifyContent: 'flex-end', background: '#f8fafc' }}>

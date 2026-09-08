@@ -31,6 +31,7 @@ export interface CanteenFeeSchedule {
   annualRate: number;         // Tarif annuel de base
   periodsCount: number;       // Nombre de périodes (défaut: 3)
   totalAmount: number;        // Calculé automatiquement = annualRate
+  customPeriods?: { number: number; label: string; dueDate?: string; amountDue: number }[];
   status: 'ACTIVE' | 'ARCHIVED';
   createdAt: string;
   updatedAt: string;
@@ -42,6 +43,7 @@ export interface CanteenFeeInput {
   levelName?: string;
   annualRate: number;
   periodsCount?: number;
+  customPeriods?: { number: number; label: string; dueDate?: string; amountDue: number }[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -86,6 +88,7 @@ export interface CanteenEnrollmentInput {
   academicYearId: string;
   discountType: CanteenDiscountType;
   discountValue: number;
+  customPeriods?: { number: number; label: string; dueDate?: string; amountDue: number }[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

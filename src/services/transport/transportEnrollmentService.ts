@@ -143,7 +143,30 @@ export const transportEnrollmentService = {
     }
 
     const netAmountDue = Math.max(0, line.annualFee - discountAmount);
-    const periods = generateTransportPeriods(netAmountDue, line.periodsCount);
+
+    let periods: TransportPeriod[];
+    if (input.customPeriods && input.customPeriods.length > 0) {
+      periods = input.customPeriods.map((p, idx) => ({
+        number: p.number || idx + 1,
+        label: p.label || `Période ${idx + 1}`,
+        amountDue: Number(p.amountDue) || 0,
+        amountPaid: 0,
+        status: 'PENDING' as const,
+        dueDate: p.dueDate,
+      }));
+    } else if (line.customPeriods && line.customPeriods.length > 0) {
+      // Hériter des périodes personnalisées de la ligne
+      periods = line.customPeriods.map((p, idx) => ({
+        number: p.number || idx + 1,
+        label: p.label || `Période ${idx + 1}`,
+        amountDue: Number(p.amountDue) || 0,
+        amountPaid: 0,
+        status: 'PENDING' as const,
+        dueDate: p.dueDate,
+      }));
+    } else {
+      periods = generateTransportPeriods(netAmountDue, line.periodsCount);
+    }
 
     const id = `te-${input.studentId}-${input.academicYearId}-${Date.now()}`;
 
@@ -162,7 +185,7 @@ export const transportEnrollmentService = {
       zone: line.zone,
       academicYearId: input.academicYearId,
       annualFee: line.annualFee,
-      periodsCount: line.periodsCount,
+      periodsCount: periods.length,
       discountType: input.discountType,
       discountValue: input.discountValue,
       discountAmount,

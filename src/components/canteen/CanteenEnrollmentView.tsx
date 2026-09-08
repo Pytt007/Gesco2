@@ -11,6 +11,7 @@ import {
   Phone, DollarSign, Tag, RotateCcw, X,
 } from 'lucide-react';
 import { listStudents } from '../../services/students/studentsService';
+import { CustomScheduleEditor, SchedulePeriodItem } from '../common/CustomScheduleEditor';
 
 const LEVEL_ORDER: CanteenLevelCode[] = ['PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
 
@@ -33,10 +34,11 @@ export const CanteenEnrollmentView: React.FC = () => {
   const [searchResults, setSearchResults] = useState<CanteenStudentSearchItem[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<CanteenStudentSearchItem | null>(null);
   const [existingEnrollment, setExistingEnrollment] = useState<CanteenEnrollment | null>(null);
-  const [schedule, setSchedule] = useState<{ annualRate: number; periodsCount: number } | null>(null);
+  const [schedule, setSchedule] = useState<{ annualRate: number; periodsCount: number; customPeriods?: SchedulePeriodItem[] } | null>(null);
 
   const [discountType, setDiscountType] = useState<CanteenDiscountType>('NONE');
   const [discountValue, setDiscountValue] = useState<string>('');
+  const [customPeriods, setCustomPeriods] = useState<SchedulePeriodItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<CanteenEnrollment | null>(null);
 
@@ -68,6 +70,7 @@ export const CanteenEnrollmentView: React.FC = () => {
     setSchedule(null);
     setDiscountType('NONE');
     setDiscountValue('');
+    setCustomPeriods([]);
     setSuccess(null);
 
     // Vérifier inscription existante
@@ -80,7 +83,29 @@ export const CanteenEnrollmentView: React.FC = () => {
     // Récupérer le tarif
     const sch = await canteenFeesService.getScheduleByLevel(academicYearId, student.levelCode);
     if (sch) {
-      setSchedule({ annualRate: sch.annualRate, periodsCount: sch.periodsCount });
+      setSchedule({ annualRate: sch.annualRate, periodsCount: sch.periodsCount, customPeriods: sch.customPeriods });
+      if (sch.customPeriods && sch.customPeriods.length > 0) {
+        setCustomPeriods(
+          sch.customPeriods.map((p, idx) => ({
+            number: p.number || idx + 1,
+            label: p.label || `Période ${idx + 1}`,
+            dueDate: p.dueDate || '',
+            amountDue: p.amountDue,
+          }))
+        );
+      } else {
+        const count = sch.periodsCount || 3;
+        const base = Math.floor(sch.annualRate / count);
+        const rem = sch.annualRate - base * count;
+        setCustomPeriods(
+          Array.from({ length: count }, (_, i) => ({
+            number: i + 1,
+            label: count === 3 ? (i === 0 ? '1er Trimestre' : i === 1 ? '2ème Trimestre' : '3ème Trimestre') : `Période ${i + 1}`,
+            dueDate: '',
+            amountDue: i === 0 ? base + rem : base,
+          }))
+        );
+      }
     }
   }, [academicYearId]);
 
@@ -89,7 +114,36 @@ export const CanteenEnrollmentView: React.FC = () => {
   const discountAmount = discountType === 'FIXED' ? discountNum
     : discountType === 'PERCENTAGE' ? Math.round((annualRate * discountNum) / 100) : 0;
   const netAmount = Math.max(0, annualRate - discountAmount);
-  const perPeriod = schedule?.periodsCount ? Math.round(netAmount / schedule.periodsCount) : 0;
+
+  // Synchronisation des échéances de cantine
+  React.useEffect(() => {
+    if (schedule) {
+      if (schedule.customPeriods && schedule.customPeriods.length > 0) {
+        const schedTotal = schedule.annualRate || 1;
+        const ratio = netAmount / schedTotal;
+        setCustomPeriods(
+          schedule.customPeriods.map((p, idx) => ({
+            number: p.number || idx + 1,
+            label: p.label || `Période ${idx + 1}`,
+            dueDate: p.dueDate || '',
+            amountDue: discountAmount > 0 ? Math.round(p.amountDue * ratio) : p.amountDue,
+          }))
+        );
+      } else {
+        const count = schedule.periodsCount || 3;
+        const base = Math.floor(netAmount / count);
+        const rem = netAmount - base * count;
+        setCustomPeriods(
+          Array.from({ length: count }, (_, i) => ({
+            number: i + 1,
+            label: count === 3 ? (i === 0 ? '1er Trimestre' : i === 1 ? '2ème Trimestre' : '3ème Trimestre') : `Période ${i + 1}`,
+            dueDate: '',
+            amountDue: i === 0 ? base + rem : base,
+          }))
+        );
+      }
+    }
+  }, [discountType, discountValue]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,6 +162,7 @@ export const CanteenEnrollmentView: React.FC = () => {
         academicYearId,
         discountType,
         discountValue: discountNum,
+        customPeriods: customPeriods.length > 0 ? customPeriods : undefined,
       };
       const result = await canteenEnrollmentService.createEnrollment(input);
       if (result.success && result.data) {
@@ -128,6 +183,7 @@ export const CanteenEnrollmentView: React.FC = () => {
     setSuccess(null);
     setDiscountType('NONE');
     setDiscountValue('');
+    setCustomPeriods([]);
   };
 
   return (
@@ -330,6 +386,24 @@ export const CanteenEnrollmentView: React.FC = () => {
                 </div>
               )}
 
+              {/* Échéancier personnalisable */}
+              {schedule && (
+                <div className="mb-4">
+                  <CustomScheduleEditor
+                    periods={customPeriods}
+                    onChange={setCustomPeriods}
+                    targetTotal={netAmount}
+                    title="Échéancier de cantine de l'élève"
+                    subtitle="Personnalisez le nombre d'échéances et leurs montants pour cet élève."
+                    periodPrefix="Période"
+                    quickCounts={[1, 2, 3, 4, 6, 9, 10]}
+                    schoolYear={academicYearId}
+                    accentColor="#0284c7"
+                    compact
+                  />
+                </div>
+              )}
+
               {/* Récapitulatif financier */}
               {schedule && (
                 <div className="card mb-4" style={{ borderRadius: 12, border: '2px solid #0ea5e9', background: '#f0f9ff' }}>
@@ -349,12 +423,12 @@ export const CanteenEnrollmentView: React.FC = () => {
                         </div>
                       )}
                       <div style={{ borderTop: '1px solid #bae6fd', paddingTop: 8, display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: 700, color: '#0369a1' }}>
-                        <span>Montant à payer</span>
+                        <span>Montant net à payer</span>
                         <span>{netAmount.toLocaleString('fr-FR')} FCFA</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: '#475569' }}>
-                        <span>Par période ({schedule.periodsCount})</span>
-                        <span>≈ {perPeriod.toLocaleString('fr-FR')} FCFA</span>
+                        <span>Total échéances ({customPeriods.length})</span>
+                        <span>{customPeriods.reduce((acc, p) => acc + (Number(p.amountDue) || 0), 0).toLocaleString('fr-FR')} FCFA</span>
                       </div>
                     </div>
                   </div>

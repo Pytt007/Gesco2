@@ -131,7 +131,29 @@ export const canteenEnrollmentService = {
     }
 
     const netAmountDue = Math.max(0, annualRate - discountAmount);
-    const periods = generateDefaultPeriods(netAmountDue, periodsCount);
+
+    let periods: CanteenPeriod[];
+    if (input.customPeriods && input.customPeriods.length > 0) {
+      periods = input.customPeriods.map((p, idx) => ({
+        number: p.number || idx + 1,
+        label: p.label || `Période ${idx + 1}`,
+        amountDue: Number(p.amountDue) || 0,
+        amountPaid: 0,
+        status: 'PENDING' as const,
+        dueDate: p.dueDate,
+      }));
+    } else if (schedule.customPeriods && schedule.customPeriods.length > 0) {
+      periods = schedule.customPeriods.map((p, idx) => ({
+        number: p.number || idx + 1,
+        label: p.label || `Période ${idx + 1}`,
+        amountDue: Number(p.amountDue) || 0,
+        amountPaid: 0,
+        status: 'PENDING' as const,
+        dueDate: p.dueDate,
+      }));
+    } else {
+      periods = generateDefaultPeriods(netAmountDue, periodsCount);
+    }
 
     const id = `ct-${input.studentId}-${input.academicYearId}-${Date.now()}`;
 
@@ -147,7 +169,7 @@ export const canteenEnrollmentService = {
       parentPhone: input.parentPhone,
       academicYearId: input.academicYearId,
       annualRate,
-      periodsCount,
+      periodsCount: periods.length,
       discountType: input.discountType,
       discountValue: input.discountValue,
       discountAmount,

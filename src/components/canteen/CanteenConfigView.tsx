@@ -4,6 +4,7 @@ import { useCanteenFees } from '../../hooks/canteen/useCanteenFees';
 import { CanteenFeeSchedule, CanteenLevelCode } from '../../services/canteen/types';
 import { Plus, Copy, Edit2, Archive, Calendar, AlertCircle, CheckCircle2, UtensilsCrossed, BarChart3 } from 'lucide-react';
 import { useAcademicYears } from '../../hooks/academic';
+import { CustomScheduleEditor, SchedulePeriodItem } from '../common/CustomScheduleEditor';
 
 const LEVEL_ORDER: CanteenLevelCode[] = ['GARDERIE', 'PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
 
@@ -16,44 +17,80 @@ const LEVEL_NAMES: Record<CanteenLevelCode, string> = {
 interface CanteenFeeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: { levelCode: CanteenLevelCode; annualRate: number; periodsCount: number }) => Promise<boolean>;
+  onSave: (data: { levelCode: CanteenLevelCode; annualRate: number; periodsCount: number; customPeriods?: SchedulePeriodItem[] }) => Promise<boolean>;
   initialData: CanteenFeeSchedule | null;
   existingLevels: CanteenLevelCode[];
+  schoolYear?: string;
 }
 
-const CanteenFeeModal: React.FC<CanteenFeeModalProps> = ({ isOpen, onClose, onSave, initialData, existingLevels }) => {
+const CanteenFeeModal: React.FC<CanteenFeeModalProps> = ({ isOpen, onClose, onSave, initialData, existingLevels, schoolYear }) => {
   const [levelCode, setLevelCode] = useState<CanteenLevelCode>(initialData?.levelCode || 'GARDERIE');
   const [annualRate, setAnnualRate] = useState<string>(initialData ? String(initialData.annualRate) : '');
   const [periodsCount, setPeriodsCount] = useState<number>(initialData?.periodsCount || 3);
+  const [customPeriods, setCustomPeriods] = useState<SchedulePeriodItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  React.useEffect(() => {
-    if (isOpen) {
-      const defaultLvl = initialData?.levelCode || availableLevels[0] || 'GARDERIE';
-      setLevelCode(defaultLvl);
-      setAnnualRate(initialData ? String(initialData.annualRate) : '');
-      setPeriodsCount(initialData?.periodsCount || 3);
-      setError(null);
-    }
-  }, [isOpen, initialData]);
 
   const availableLevels = LEVEL_ORDER.filter(
     (l) => !existingLevels.includes(l) || (initialData && l === initialData.levelCode)
   );
 
+  React.useEffect(() => {
+    if (isOpen) {
+      const defaultLvl = initialData?.levelCode || availableLevels[0] || 'GARDERIE';
+      setLevelCode(defaultLvl);
+      const rateStr = initialData ? String(initialData.annualRate) : '';
+      setAnnualRate(rateStr);
+      const count = initialData?.periodsCount || 3;
+      setPeriodsCount(count);
+
+      const feeVal = initialData?.annualRate || 0;
+      if (initialData?.customPeriods && initialData.customPeriods.length > 0) {
+        setCustomPeriods(
+          initialData.customPeriods.map((p, idx) => ({
+            number: p.number || idx + 1,
+            label: p.label || `Période ${idx + 1}`,
+            dueDate: p.dueDate || '',
+            amountDue: p.amountDue,
+          }))
+        );
+      } else if (feeVal > 0) {
+        const base = Math.floor(feeVal / count);
+        const rem = feeVal - base * count;
+        setCustomPeriods(
+          Array.from({ length: count }, (_, i) => ({
+            number: i + 1,
+            label: count === 3 ? (i === 0 ? '1er Trimestre' : i === 1 ? '2ème Trimestre' : '3ème Trimestre') : `Période ${i + 1}`,
+            dueDate: '',
+            amountDue: i === 0 ? base + rem : base,
+          }))
+        );
+      } else {
+        setCustomPeriods([]);
+      }
+      setError(null);
+    }
+  }, [isOpen, initialData]);
+
   const annualRateNum = parseFloat(annualRate) || 0;
-  const perPeriod = periodsCount > 0 ? Math.round(annualRateNum / periodsCount) : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!annualRate || annualRateNum <= 0) {
+    const periodsSum = customPeriods.reduce((acc, p) => acc + (Number(p.amountDue) || 0), 0);
+    const finalRate = periodsSum > 0 ? periodsSum : annualRateNum;
+
+    if (finalRate <= 0) {
       setError('Le tarif annuel doit être supérieur à 0.');
       return;
     }
     setSaving(true);
     setError(null);
-    const ok = await onSave({ levelCode, annualRate: annualRateNum, periodsCount });
+    const ok = await onSave({
+      levelCode,
+      annualRate: finalRate,
+      periodsCount: customPeriods.length > 0 ? customPeriods.length : periodsCount,
+      customPeriods: customPeriods.length > 0 ? customPeriods : undefined,
+    });
     setSaving(false);
     if (ok) onClose();
   };
@@ -61,90 +98,95 @@ const CanteenFeeModal: React.FC<CanteenFeeModalProps> = ({ isOpen, onClose, onSa
   if (!isOpen) return null;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15,23,42,0.6)' }}>
-      <div className="card shadow-lg" style={{ width: '100%', maxWidth: 480, borderRadius: 16, overflow: 'hidden' }}>
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15,23,42,0.6)', padding: 16 }}>
+      <div className="card shadow-lg" style={{ width: '100%', maxWidth: 720, borderRadius: 16, overflow: 'hidden', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(135deg, #064e3b 0%, #10b981 100%)', color: 'white' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <UtensilsCrossed size={20} color="#0ea5e9" />
-            <h5 style={{ margin: 0, fontWeight: 700, color: '#0f172a' }}>
+            <UtensilsCrossed size={22} color="white" />
+            <h5 style={{ margin: 0, fontWeight: 700, color: 'white' }}>
               {initialData ? 'Modifier le tarif cantine' : 'Nouveau tarif cantine'}
             </h5>
           </div>
-          <button className="btn btn-sm btn-outline-secondary" onClick={onClose} style={{ borderRadius: 8, padding: '4px 10px' }}>✕</button>
+          <button className="btn btn-sm btn-outline-light" onClick={onClose} style={{ borderRadius: 8, padding: '4px 10px' }}>✕</button>
         </div>
         <form onSubmit={handleSubmit}>
-          <div style={{ padding: '24px' }}>
+          <div style={{ padding: '24px', display: 'grid', gap: 16 }}>
             {error && (
-              <div className="alert alert-danger text-sm p-2 mb-3" style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div className="alert alert-danger text-sm p-2 mb-2" style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <AlertCircle size={16} /> {error}
               </div>
             )}
 
-            <div className="mb-3">
-              <label className="form-label fw-semibold text-sm">Niveau</label>
-              <select
-                className="form-select"
-                value={levelCode}
-                onChange={(e) => setLevelCode(e.target.value as CanteenLevelCode)}
-                disabled={!!initialData}
-                required
-              >
-                {availableLevels.map((l) => (
-                  <option key={l} value={l}>{LEVEL_NAMES[l]}</option>
-                ))}
-              </select>
-              {availableLevels.length === 0 && !initialData && (
-                <p className="text-muted text-xs mt-1">Tous les niveaux sont déjà configurés.</p>
-              )}
-            </div>
-
-            <div className="mb-3">
-              <label className="form-label fw-semibold text-sm">Tarif annuel (FCFA)</label>
-              <input
-                type="number"
-                className="form-control"
-                value={annualRate}
-                onChange={(e) => setAnnualRate(e.target.value)}
-                min={0}
-                step={1000}
-                placeholder="Ex : 130000"
-                required
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="form-label fw-semibold text-sm">Nombre de périodes de paiement</label>
-              <select
-                className="form-select"
-                value={periodsCount}
-                onChange={(e) => setPeriodsCount(Number(e.target.value))}
-              >
-                {[1, 2, 3, 4, 6].map((n) => (
-                  <option key={n} value={n}>{n} période{n > 1 ? 's' : ''}</option>
-                ))}
-              </select>
-            </div>
-
-            {annualRateNum > 0 && (
-              <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 10, padding: '14px 16px' }}>
-                <p className="text-xs fw-semibold text-success mb-2 d-flex align-items-center gap-1"><BarChart3 size={14} /> Calcul automatique</p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
-                  <span>Tarif annuel :</span>
-                  <strong>{annualRateNum.toLocaleString('fr-FR')} FCFA</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginTop: 4 }}>
-                  <span>Montant par période ({periodsCount}) :</span>
-                  <strong style={{ color: '#16a34a' }}>≈ {perPeriod.toLocaleString('fr-FR')} FCFA</strong>
-                </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div>
+                <label className="form-label fw-semibold text-sm">Niveau *</label>
+                <select
+                  className="form-select"
+                  value={levelCode}
+                  onChange={(e) => setLevelCode(e.target.value as CanteenLevelCode)}
+                  disabled={!!initialData}
+                  required
+                >
+                  {availableLevels.map((l) => (
+                    <option key={l} value={l}>{LEVEL_NAMES[l]}</option>
+                  ))}
+                </select>
+                {availableLevels.length === 0 && !initialData && (
+                  <p className="text-muted text-xs mt-1">Tous les niveaux sont déjà configurés.</p>
+                )}
               </div>
-            )}
+
+              <div>
+                <label className="form-label fw-semibold text-sm">Tarif annuel global (FCFA) *</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={annualRate}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setAnnualRate(val);
+                    const num = parseFloat(val) || 0;
+                    if (customPeriods.length > 0 && num > 0) {
+                      const base = Math.floor(num / customPeriods.length);
+                      const rem = num - base * customPeriods.length;
+                      setCustomPeriods(customPeriods.map((p, i) => ({ ...p, amountDue: i === 0 ? base + rem : base })));
+                    }
+                  }}
+                  min={0}
+                  step={1000}
+                  placeholder="Ex : 150000"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Échéancier personnalisable comme dans l'inscription d'un élève */}
+            <CustomScheduleEditor
+              periods={customPeriods}
+              onChange={(newPeriods) => {
+                setCustomPeriods(newPeriods);
+                setPeriodsCount(newPeriods.length);
+                const sum = newPeriods.reduce((acc, p) => acc + (Number(p.amountDue) || 0), 0);
+                if (sum > 0) {
+                  setAnnualRate(String(sum));
+                }
+              }}
+              targetTotal={annualRateNum}
+              onTotalChange={(newTotal) => setAnnualRate(String(newTotal))}
+              title="Échéancier de cantine du niveau"
+              subtitle="Définissez les tranches, dates limites et montants pour ce niveau."
+              periodPrefix="Période"
+              quickCounts={[1, 2, 3, 4, 6]}
+              schoolYear={schoolYear}
+              accentColor="#10b981"
+            />
           </div>
 
           <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: 12, justifyContent: 'flex-end', background: '#f8fafc' }}>
             <button type="button" className="btn btn-outline-secondary" onClick={onClose} disabled={saving}>
               Annuler
             </button>
-            <button type="submit" className="btn btn-primary fw-semibold" disabled={saving || availableLevels.length === 0}>
+            <button type="submit" className="btn btn-success fw-semibold" disabled={saving || availableLevels.length === 0}>
               {saving ? <><span className="spinner-border spinner-border-sm me-2" />Enregistrement...</> : 'Enregistrer'}
             </button>
           </div>
@@ -183,7 +225,7 @@ export const CanteenConfigView: React.FC = () => {
   const handleOpenCreate = () => { setEditingSchedule(null); setModalOpen(true); };
   const handleOpenEdit = (s: CanteenFeeSchedule) => { setEditingSchedule(s); setModalOpen(true); };
 
-  const handleSave = async (data: { levelCode: CanteenLevelCode; annualRate: number; periodsCount: number }) => {
+  const handleSave = async (data: { levelCode: CanteenLevelCode; annualRate: number; periodsCount: number; customPeriods?: SchedulePeriodItem[] }) => {
     let result;
     if (editingSchedule) {
       result = await updateSchedule(editingSchedule.id, data);
@@ -373,6 +415,7 @@ export const CanteenConfigView: React.FC = () => {
         onSave={handleSave}
         initialData={editingSchedule}
         existingLevels={existingLevels}
+        schoolYear={schoolYear}
       />
     </div>
   );

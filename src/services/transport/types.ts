@@ -105,6 +105,7 @@ export interface TransportLine {
   availableSeats: number;   // Places restantes (calculé)
   occupancyRate: number;    // Taux d'occupation en % (calculé)
   stops?: TransportStop[];  // Arrêts ordonnés desservis par la ligne
+  customPeriods?: { number: number; label: string; dueDate?: string; amountDue: number }[];
   academicYearId: string;
   status: TransportLineStatus;
   createdAt: string;
@@ -118,6 +119,7 @@ export interface TransportLineInput {
   driverId: string;
   annualFee: number;
   periodsCount?: number;
+  customPeriods?: { number: number; label: string; dueDate?: string; amountDue: number }[];
   stops?: TransportStopInput[];
   academicYearId: string;
 }
@@ -176,6 +178,7 @@ export interface TransportEnrollmentInput {
   academicYearId: string;
   discountType: TransportDiscountType;
   discountValue: number;
+  customPeriods?: { number: number; label: string; dueDate?: string; amountDue: number }[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
