@@ -21,6 +21,35 @@ const levelNamesMap: Record<CanteenLevelCode, string> = {
 
 const defaultLevelOrder: CanteenLevelCode[] = ['GARDERIE', 'PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
 
+export function normalizeCanteenLevelCode(code?: string): CanteenLevelCode {
+  if (!code) return 'CP1';
+  const clean = code.trim().toUpperCase()
+    .replace(/^LVL-/, '')
+    .replace(/^LEVEL-/, '')
+    .replace(/^CLASSE-/, '');
+
+  if (clean in levelNamesMap) {
+    return clean as CanteenLevelCode;
+  }
+
+  // Correspondances exactes ou avec section (ex: "CE1 A", "CP1-B", "Pte Section")
+  if (/^GARDERIE\b/i.test(clean) || clean.includes('GARDERIE')) return 'GARDERIE';
+  if (/^CP1\b/i.test(clean) || clean.includes('CP1') || clean.includes('CP 1')) return 'CP1';
+  if (/^CP2\b/i.test(clean) || clean.includes('CP2') || clean.includes('CP 2')) return 'CP2';
+  if (/^CE1\b/i.test(clean) || clean.includes('CE1') || clean.includes('CE 1')) return 'CE1';
+  if (/^CE2\b/i.test(clean) || clean.includes('CE2') || clean.includes('CE 2')) return 'CE2';
+  if (/^CM1\b/i.test(clean) || clean.includes('CM1') || clean.includes('CM 1')) return 'CM1';
+  if (/^CM2\b/i.test(clean) || clean.includes('CM2') || clean.includes('CM 2')) return 'CM2';
+  if (/^PS\b/i.test(clean) || clean.includes('PETITE') || clean.includes('PTE')) return 'PS';
+  if (/^MS\b/i.test(clean) || clean.includes('MOYENNE') || clean.includes('MOY')) return 'MS';
+  if (/^GS\b/i.test(clean) || clean.includes('GRANDE') || clean.includes('GDE')) return 'GS';
+
+  const found = defaultLevelOrder.find((l) => clean === l || clean.includes(l) || l.includes(clean));
+  return found || 'CP1';
+}
+
+export const defaultLevelNames = levelNamesMap;
+
 // Stockage local mémoire et synchro Supabase
 const localCanteenSchedulesStore: Map<string, CanteenFeeSchedule> = new Map();
 
@@ -68,22 +97,29 @@ export const canteenFeesService = {
   /**
    * Récupère tous les tarifs cantine pour une année scolaire
    */
-  async getSchedulesByYear(academicYearId: string): Promise<CanteenFeeSchedule[]> {
-    if (!academicYearId) return [];
-
+  async getSchedulesByYear(academicYearId?: string): Promise<CanteenFeeSchedule[]> {
     await syncSchedulesFromSupabase();
 
-    return Array.from(localCanteenSchedulesStore.values())
-      .filter((s) => s.academicYearId === academicYearId && s.status === 'ACTIVE')
+    const all = Array.from(localCanteenSchedulesStore.values())
+      .filter((s) => s.status === 'ACTIVE')
       .sort((a, b) => defaultLevelOrder.indexOf(a.levelCode) - defaultLevelOrder.indexOf(b.levelCode));
+
+    if (!academicYearId) return all;
+
+    const matched = all.filter((s) => s.academicYearId === academicYearId);
+    if (matched.length > 0) return matched;
+
+    // Fallback tolérant si l'année scolaire transmise (ex: "ay-2026") diffère du libellé stocké ("2026-2027")
+    return all;
   },
 
   /**
    * Récupère le tarif cantine d'un niveau pour une année scolaire
    */
-  async getScheduleByLevel(academicYearId: string, levelCode: CanteenLevelCode): Promise<CanteenFeeSchedule | null> {
+  async getScheduleByLevel(academicYearId: string, levelCode: string): Promise<CanteenFeeSchedule | null> {
+    const norm = normalizeCanteenLevelCode(levelCode);
     const list = await this.getSchedulesByYear(academicYearId);
-    return list.find((s) => s.levelCode === levelCode) || null;
+    return list.find((s) => s.levelCode === norm) || null;
   },
 
   /**

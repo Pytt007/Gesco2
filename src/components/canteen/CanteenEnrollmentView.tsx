@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { canteenEnrollmentService } from '../../services/canteen/canteenEnrollmentService';
-import { canteenFeesService } from '../../services/canteen/canteenFeesService';
+import { canteenFeesService, normalizeCanteenLevelCode } from '../../services/canteen/canteenFeesService';
 import {
   CanteenEnrollment, CanteenEnrollmentInput, CanteenDiscountType, CanteenLevelCode,
 } from '../../services/canteen/types';
@@ -27,7 +27,7 @@ export interface CanteenStudentSearchItem {
 export const CanteenEnrollmentView: React.FC = () => {
   const { schoolYear } = useSchoolYear();
   const { showToast } = useToast();
-  const academicYearId = schoolYear || 'ay-2026';
+  const academicYearId = schoolYear || '2026-2027';
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<CanteenStudentSearchItem[]>([]);
@@ -51,7 +51,7 @@ export const CanteenEnrollmentView: React.FC = () => {
         name: `${s.lastName} ${s.firstName}`,
         matricule: s.matricule || `MAT-${s.id.slice(0, 6)}`,
         className: s.className || s.grade || 'Classe',
-        levelCode: ((s as any).level || s.grade || 'CP1') as CanteenLevelCode,
+        levelCode: normalizeCanteenLevelCode((s as any).level || s.grade || 'CP1'),
         parentSponsor: s.parentName,
         parentPhone: s.parentPhone,
       })));

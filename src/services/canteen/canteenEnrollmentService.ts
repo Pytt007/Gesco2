@@ -6,7 +6,7 @@ import {
   CanteenDiscountType,
   CanteenSubscriptionStatus,
 } from './types';
-import { canteenFeesService } from './canteenFeesService';
+import { canteenFeesService, normalizeCanteenLevelCode } from './canteenFeesService';
 import { ServiceResponse } from '../academic/academicYearsService';
 import { supabase } from '../common/supabaseClient';
 
@@ -105,12 +105,13 @@ export const canteenEnrollmentService = {
       return { success: false, error: 'Cet élève est déjà inscrit à la cantine pour cette année scolaire.' };
     }
 
-    // Récupération automatique du tarif
-    const schedule = await canteenFeesService.getScheduleByLevel(input.academicYearId, input.levelCode);
+    // Normalisation et récupération automatique du tarif
+    const normLevel = normalizeCanteenLevelCode(input.levelCode);
+    const schedule = await canteenFeesService.getScheduleByLevel(input.academicYearId, normLevel);
     if (!schedule) {
       return {
         success: false,
-        error: `Aucun tarif cantine configuré pour le niveau ${input.levelCode}.`,
+        error: `Aucun tarif cantine configuré pour le niveau ${normLevel}.`,
       };
     }
 
@@ -141,7 +142,7 @@ export const canteenEnrollmentService = {
       matricule: input.matricule,
       photoUrl: input.photoUrl,
       className: input.className,
-      levelCode: input.levelCode,
+      levelCode: normLevel,
       parentSponsor: input.parentSponsor,
       parentPhone: input.parentPhone,
       academicYearId: input.academicYearId,
