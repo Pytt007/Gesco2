@@ -18,16 +18,16 @@ const levelNamesMap: Record<TuitionLevelCode, string> = {
 const defaultLevelOrder: TuitionLevelCode[] = ['PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
 
 export const defaultFeeTariffs: Record<TuitionLevelCode, { registrationFee: number; tuitionFee: number; levelName: string }> = {
-  GARDERIE: { registrationFee: 50000, tuitionFee: 200000, levelName: 'Garderie' },
-  PS:       { registrationFee: 50000, tuitionFee: 250000, levelName: 'Petite Section (PS)' },
-  MS:       { registrationFee: 50000, tuitionFee: 250000, levelName: 'Moyenne Section (MS)' },
-  GS:       { registrationFee: 50000, tuitionFee: 250000, levelName: 'Grande Section (GS)' },
-  CP1:      { registrationFee: 60000, tuitionFee: 300000, levelName: 'Cours Préparatoire 1 (CP1)' },
-  CP2:      { registrationFee: 60000, tuitionFee: 300000, levelName: 'Cours Préparatoire 2 (CP2)' },
-  CE1:      { registrationFee: 60000, tuitionFee: 320000, levelName: 'Cours Élémentaire 1 (CE1)' },
-  CE2:      { registrationFee: 60000, tuitionFee: 320000, levelName: 'Cours Élémentaire 2 (CE2)' },
-  CM1:      { registrationFee: 70000, tuitionFee: 350000, levelName: 'Cours Moyen 1 (CM1)' },
-  CM2:      { registrationFee: 70000, tuitionFee: 350000, levelName: 'Cours Moyen 2 (CM2)' },
+  GARDERIE: { registrationFee: 0, tuitionFee: 0, levelName: 'Garderie' },
+  PS:       { registrationFee: 0, tuitionFee: 0, levelName: 'Petite Section (PS)' },
+  MS:       { registrationFee: 0, tuitionFee: 0, levelName: 'Moyenne Section (MS)' },
+  GS:       { registrationFee: 0, tuitionFee: 0, levelName: 'Grande Section (GS)' },
+  CP1:      { registrationFee: 0, tuitionFee: 0, levelName: 'Cours Préparatoire 1 (CP1)' },
+  CP2:      { registrationFee: 0, tuitionFee: 0, levelName: 'Cours Préparatoire 2 (CP2)' },
+  CE1:      { registrationFee: 0, tuitionFee: 0, levelName: 'Cours Élémentaire 1 (CE1)' },
+  CE2:      { registrationFee: 0, tuitionFee: 0, levelName: 'Cours Élémentaire 2 (CE2)' },
+  CM1:      { registrationFee: 0, tuitionFee: 0, levelName: 'Cours Moyen 1 (CM1)' },
+  CM2:      { registrationFee: 0, tuitionFee: 0, levelName: 'Cours Moyen 2 (CM2)' },
 };
 
 export function normalizeLevelCode(code?: string): TuitionLevelCode {

@@ -530,7 +530,7 @@ export const TuitionFeesConfigView: React.FC = () => {
                               fontSize: '0.78125rem',
                             }}
                           >
-                            {sch.levelCode}
+                            {sch.levelCode === 'GARDERIE' ? 'G' : sch.levelCode}
                           </div>
                           <div>
                             <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#0f172a', display: 'block' }}>
@@ -545,17 +545,29 @@ export const TuitionFeesConfigView: React.FC = () => {
 
                       {/* Inscription */}
                       <td style={{ padding: '14px 18px', textAlign: 'right', fontSize: '0.875rem', fontWeight: 700, color: '#334155' }}>
-                        {sch.registrationFee.toLocaleString('fr-FR')} <span style={{ fontSize: '0.75rem', color: '#64748b' }}>FCFA</span>
+                        {sch.registrationFee > 0 ? (
+                          <>{sch.registrationFee.toLocaleString('fr-FR')} <span style={{ fontSize: '0.75rem', color: '#64748b' }}>FCFA</span></>
+                        ) : (
+                          <span style={{ color: '#94a3b8', fontWeight: 600 }}>—</span>
+                        )}
                       </td>
 
                       {/* Scolarité */}
                       <td style={{ padding: '14px 18px', textAlign: 'right', fontSize: '0.875rem', fontWeight: 700, color: '#334155' }}>
-                        {sch.tuitionFee.toLocaleString('fr-FR')} <span style={{ fontSize: '0.75rem', color: '#64748b' }}>FCFA</span>
+                        {sch.tuitionFee > 0 ? (
+                          <>{sch.tuitionFee.toLocaleString('fr-FR')} <span style={{ fontSize: '0.75rem', color: '#64748b' }}>FCFA</span></>
+                        ) : (
+                          <span style={{ color: '#94a3b8', fontWeight: 600 }}>—</span>
+                        )}
                       </td>
 
                       {/* Total Annuel */}
-                      <td style={{ padding: '14px 18px', textAlign: 'right', fontSize: '0.9375rem', fontWeight: 900, color: '#1d4ed8', backgroundColor: '#f0f9ff' }}>
-                        {sch.totalAnnualFee.toLocaleString('fr-FR')} <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>FCFA</span>
+                      <td style={{ padding: '14px 18px', textAlign: 'right', fontSize: '0.9375rem', fontWeight: 900, color: sch.totalAnnualFee > 0 ? '#1d4ed8' : '#94a3b8', backgroundColor: sch.totalAnnualFee > 0 ? '#f0f9ff' : 'transparent' }}>
+                        {sch.totalAnnualFee > 0 ? (
+                          <>{sch.totalAnnualFee.toLocaleString('fr-FR')} <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>FCFA</span></>
+                        ) : (
+                          <span style={{ color: '#94a3b8', fontWeight: 600 }}>—</span>
+                        )}
                       </td>
 
                       {/* Remises autorisées */}
@@ -666,13 +678,19 @@ export const TuitionFeesConfigView: React.FC = () => {
                       Total Cumulé ({filteredSchedules.length} Niveaux)
                     </td>
                     <td style={{ padding: '14px 18px', textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>
-                      {filteredSchedules.reduce((s, i) => s + i.registrationFee, 0).toLocaleString('fr-FR')} FCFA
+                      {filteredSchedules.reduce((s, i) => s + i.registrationFee, 0) > 0
+                        ? `${filteredSchedules.reduce((s, i) => s + i.registrationFee, 0).toLocaleString('fr-FR')} FCFA`
+                        : '—'}
                     </td>
                     <td style={{ padding: '14px 18px', textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>
-                      {filteredSchedules.reduce((s, i) => s + i.tuitionFee, 0).toLocaleString('fr-FR')} FCFA
+                      {filteredSchedules.reduce((s, i) => s + i.tuitionFee, 0) > 0
+                        ? `${filteredSchedules.reduce((s, i) => s + i.tuitionFee, 0).toLocaleString('fr-FR')} FCFA`
+                        : '—'}
                     </td>
                     <td style={{ padding: '14px 18px', textAlign: 'right', fontWeight: 900, color: '#1e40af', fontSize: '1rem', backgroundColor: '#dbeafe' }}>
-                      {filteredSchedules.reduce((s, i) => s + i.totalAnnualFee, 0).toLocaleString('fr-FR')} FCFA
+                      {filteredSchedules.reduce((s, i) => s + i.totalAnnualFee, 0) > 0
+                        ? `${filteredSchedules.reduce((s, i) => s + i.totalAnnualFee, 0).toLocaleString('fr-FR')} FCFA`
+                        : '—'}
                     </td>
                     <td colSpan={2} />
                   </tr>
@@ -718,7 +736,7 @@ export const TuitionFeesConfigView: React.FC = () => {
                         fontSize: '0.75rem',
                       }}
                     >
-                      {sch.levelCode}
+                      {sch.levelCode === 'GARDERIE' ? 'G' : sch.levelCode}
                     </span>
                     <span style={{ fontSize: '0.71875rem', color: '#64748b', fontWeight: 600 }}>
                       {isPre ? 'Maternelle' : 'Primaire'}
@@ -730,10 +748,14 @@ export const TuitionFeesConfigView: React.FC = () => {
                   </h4>
 
                   {/* Total Amount badge */}
-                  <div style={{ margin: '12px 0 8px', padding: '10px 12px', borderRadius: 10, background: '#f0f9ff', border: '1px solid #bfdbfe' }}>
-                    <span style={{ fontSize: '0.6875rem', color: '#0369a1', textTransform: 'uppercase', fontWeight: 700 }}>Total Annuel</span>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0284c7' }}>
-                      {sch.totalAnnualFee.toLocaleString('fr-FR')} <span style={{ fontSize: '0.75rem' }}>FCFA</span>
+                  <div style={{ margin: '12px 0 8px', padding: '10px 12px', borderRadius: 10, background: sch.totalAnnualFee > 0 ? '#f0f9ff' : '#f8fafc', border: sch.totalAnnualFee > 0 ? '1px solid #bfdbfe' : '1px solid #e2e8f0' }}>
+                    <span style={{ fontSize: '0.6875rem', color: sch.totalAnnualFee > 0 ? '#0369a1' : '#64748b', textTransform: 'uppercase', fontWeight: 700 }}>Total Annuel</span>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 900, color: sch.totalAnnualFee > 0 ? '#0284c7' : '#94a3b8' }}>
+                      {sch.totalAnnualFee > 0 ? (
+                        <>{sch.totalAnnualFee.toLocaleString('fr-FR')} <span style={{ fontSize: '0.75rem' }}>FCFA</span></>
+                      ) : (
+                        '—'
+                      )}
                     </div>
                   </div>
 
@@ -744,8 +766,8 @@ export const TuitionFeesConfigView: React.FC = () => {
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#475569', fontWeight: 600, marginBottom: 8 }}>
-                    <span>Inscription : <strong>{sch.registrationFee.toLocaleString('fr-FR')}</strong></span>
-                    <span>Scolarité : <strong>{sch.tuitionFee.toLocaleString('fr-FR')}</strong></span>
+                    <span>Inscription : <strong>{sch.registrationFee > 0 ? `${sch.registrationFee.toLocaleString('fr-FR')} FCFA` : '—'}</strong></span>
+                    <span>Scolarité : <strong>{sch.tuitionFee > 0 ? `${sch.tuitionFee.toLocaleString('fr-FR')} FCFA` : '—'}</strong></span>
                   </div>
 
                   {/* Discount Chips */}

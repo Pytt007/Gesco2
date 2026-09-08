@@ -261,7 +261,7 @@ export const TuitionFeeModal: React.FC<TuitionFeeModalProps> = ({
                 step="500"
                 className="form-input"
                 style={{ height: 44, borderRadius: 12, fontSize: '0.875rem', fontWeight: 600 }}
-                placeholder="Ex : 40 000"
+                placeholder="0"
                 value={registrationFee}
                 onChange={(e) => setRegistrationFee(e.target.value)}
                 required
@@ -278,7 +278,7 @@ export const TuitionFeeModal: React.FC<TuitionFeeModalProps> = ({
                 step="1000"
                 className="form-input"
                 style={{ height: 44, borderRadius: 12, fontSize: '0.875rem', fontWeight: 600 }}
-                placeholder="Ex : 200 000"
+                placeholder="0"
                 value={tuitionFee}
                 onChange={(e) => setTuitionFee(e.target.value)}
                 required

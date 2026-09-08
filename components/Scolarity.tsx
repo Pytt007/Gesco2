@@ -1309,9 +1309,8 @@ const Scolarity: React.FC<ScolarityProps> = ({ records, setRecords, students, se
                   <div>
                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">MOYEN INSCRIPTION</label>
                     <select className="w-full p-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/30 outline-none cursor-pointer text-xs" value={editingRecord.registrationMethod || 'Mobile Money'} onChange={(e) => setEditingRecord({ ...editingRecord, registrationMethod: e.target.value })}>
+                      <option value="Espèces">Espèces</option>
                       <option value="Mobile Money">Mobile Money</option>
-                      <option value="Virement">Virement</option>
-                      <option value="Chèque">Chèque</option>
                     </select>
                   </div>
                   <div><label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">REMISE (%)</label><input type="number" className="w-full p-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/30 outline-none" value={editingRecord.discount} onChange={(e) => setEditingRecord({ ...editingRecord, discount: parseFloat(e.target.value) || 0 })} /></div>
@@ -1359,9 +1358,8 @@ const Scolarity: React.FC<ScolarityProps> = ({ records, setRecords, students, se
                                 value={method || 'Mobile Money'} 
                                 onChange={(e) => updateInstallmentField(key, 'method', e.target.value)}
                               >
+                                <option value="Espèces">Espèces</option>
                                 <option value="Mobile Money">Mobile Money</option>
-                                <option value="Virement">Virement</option>
-                                <option value="Chèque">Chèque</option>
                               </select>
                               <CreditCard size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none" />
                               <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none" />
@@ -1445,9 +1443,8 @@ const Scolarity: React.FC<ScolarityProps> = ({ records, setRecords, students, se
                   <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Moyen Inscription</label>
                   <div className="relative">
                     <select className="w-full p-3 pr-10 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary/50 outline-none transition-all dark:text-white cursor-pointer appearance-none text-sm" value={newStudent.registrationMethod || 'Mobile Money'} onChange={e => setNewStudent({ ...newStudent, registrationMethod: e.target.value })}>
+                      <option value="Espèces">Espèces</option>
                       <option value="Mobile Money">Mobile Money</option>
-                      <option value="Virement">Virement</option>
-                      <option value="Chèque">Chèque</option>
                     </select>
                     <ChevronDown size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none" />
                   </div>

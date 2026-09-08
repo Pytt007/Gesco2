@@ -75,50 +75,54 @@ export function useStaff(options: UseStaffOptions = {}) {
   }, [fetchStaffList]);
 
   const create = useCallback(
-    async (staffData: Partial<StaffMember>): Promise<boolean> => {
+    async (staffData: Partial<StaffMember>): Promise<{ success: boolean; error?: string }> => {
       setSaving(true);
       setError(null);
       setSuccess(null);
       try {
         const res = await createStaff(staffData);
         if (!res.success) {
-          setError(res.error || 'Erreur lors de la création de la fiche employé.');
+          const msg = res.error || 'Erreur lors de la création de la fiche employé.';
+          setError(msg);
           setSaving(false);
-          return false;
+          return { success: false, error: msg };
         }
         setSuccess(res.message || 'Membre du personnel créé avec succès.');
         await fetchStaffList();
         setSaving(false);
-        return true;
+        return { success: true };
       } catch (err: any) {
-        setError(err.message || 'Erreur lors de la création.');
+        const msg = err.message || 'Erreur lors de la création.';
+        setError(msg);
         setSaving(false);
-        return false;
+        return { success: false, error: msg };
       }
     },
     [fetchStaffList]
   );
 
   const update = useCallback(
-    async (id: string, updates: Partial<StaffMember>): Promise<boolean> => {
+    async (id: string, updates: Partial<StaffMember>): Promise<{ success: boolean; error?: string }> => {
       setSaving(true);
       setError(null);
       setSuccess(null);
       try {
         const res = await updateStaff(id, updates);
         if (!res.success) {
-          setError(res.error || 'Erreur lors de la mise à jour.');
+          const msg = res.error || 'Erreur lors de la mise à jour.';
+          setError(msg);
           setSaving(false);
-          return false;
+          return { success: false, error: msg };
         }
         setSuccess(res.message || 'Fiche employé mise à jour.');
         await fetchStaffList();
         setSaving(false);
-        return true;
+        return { success: true };
       } catch (err: any) {
-        setError(err.message || 'Erreur lors de la mise à jour.');
+        const msg = err.message || 'Erreur lors de la mise à jour.';
+        setError(msg);
         setSaving(false);
-        return false;
+        return { success: false, error: msg };
       }
     },
     [fetchStaffList]

@@ -202,11 +202,13 @@ export const PaymentRecordingModal: React.FC<PaymentRecordingModalProps> = ({
                 value={paymentMode}
                 onChange={(e) => setPaymentMode(e.target.value as PaymentMode)}
               >
-                {(Object.keys(PAYMENT_MODE_LABELS) as PaymentMode[]).map((mode) => (
-                  <option key={mode} value={mode}>
-                    {PAYMENT_MODE_LABELS[mode]}
-                  </option>
-                ))}
+                {(Object.keys(PAYMENT_MODE_LABELS) as PaymentMode[])
+                  .filter((mode) => mode !== 'TRANSFER' && mode !== 'CHECK')
+                  .map((mode) => (
+                    <option key={mode} value={mode}>
+                      {PAYMENT_MODE_LABELS[mode]}
+                    </option>
+                  ))}
               </select>
             </div>
           </div>
@@ -217,7 +219,7 @@ export const PaymentRecordingModal: React.FC<PaymentRecordingModalProps> = ({
             <input
               type="text"
               className="form-input text-sm"
-              placeholder="Ex: TXN-998823 ou N° Chèque"
+              placeholder="Ex: TXN-998823 / Réf. Wave"
               value={referenceNumber}
               onChange={(e) => setReferenceNumber(e.target.value)}
             />

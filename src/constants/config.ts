@@ -13,4 +13,4 @@ export const EXPENSE_CATEGORIES = [
   'Salaires', 'Transport', 'Matériel', 'Entretien', 'Alimentation', 'Communication', 'Autres',
 ] as const;
 
-export const PAYMENT_METHODS = ['Espèces', 'Virement', 'Chèque', 'Mobile Money'] as const;
+export const PAYMENT_METHODS = ['Espèces', 'Mobile Money'] as const;

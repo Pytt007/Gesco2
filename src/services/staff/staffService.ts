@@ -211,17 +211,24 @@ async function persistStaffToSupabase(member: StaffMember, allMembers?: StaffMem
   }
 
   try {
+    const rawRole = String(member.role || '').toUpperCase();
+    const sqlRole =
+      rawRole.includes('TEACHER') || rawRole.includes('ENSEIGN') ? 'TEACHER' :
+      rawRole.includes('DIRECTOR') || rawRole.includes('DIRECT') ? 'DIRECTOR' :
+      rawRole.includes('DRIVER') || rawRole.includes('CHAUFF') ? 'DRIVER' :
+      rawRole.includes('COOK') || rawRole.includes('CUISIN') ? 'COOK' : 'STAFF';
+
     await supabase.from('staff_members').upsert({
       id: member.id,
       first_name: member.firstName,
       last_name: member.lastName,
       email: member.email || null,
-      phone: member.phonePrimary || null,
-      role: member.role === 'Enseignant' ? 'TEACHER' : member.role === 'Directeur' ? 'DIRECTOR' : 'STAFF',
+      phone: member.phonePrimary || member.phone || null,
+      role: sqlRole,
       specialty: member.jobTitle || member.positionTitle || null,
       hire_date: member.hireDate || new Date().toISOString().split('T')[0],
       base_salary: member.baseSalary ?? 0,
-      status: member.status === 'Actif' ? 'ACTIVE' : 'INACTIVE',
+      status: member.status === 'Actif' || member.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
       updated_at: new Date().toISOString(),
     }, { onConflict: 'id' });
   } catch (e) {
@@ -237,54 +244,64 @@ async function persistStaffToSupabase(member: StaffMember, allMembers?: StaffMem
  */
 export async function createStaff(staffData: Partial<StaffMember>): Promise<ServiceResponse<StaffMember>> {
   try {
-    if (!staffData.firstName?.trim() || !staffData.lastName?.trim()) {
-      return createError(null, 'Le prénom et le nom sont obligatoires.');
-    }
-    if (!staffData.phonePrimary?.trim()) {
-      return createError(null, 'Le téléphone principal est obligatoire.');
+    if (!staffData.firstName?.trim() && !staffData.lastName?.trim()) {
+      return createError(null, 'Veuillez renseigner au moins le prénom ou le nom.');
     }
 
     // Synchroniser d'abord pour avoir la liste à jour
     await syncStaffFromSupabase();
 
-    const phone = staffData.phonePrimary.trim();
+    const phone = (staffData.phonePrimary || staffData.phone || '').trim();
     const email = staffData.email?.trim().toLowerCase();
 
-    // Contrôle d'unicité du Téléphone et de l'Email
-    for (const member of localStaffCache.values()) {
-      if (member.phonePrimary === phone) {
-        return createError(null, `Un membre du personnel possède déjà le numéro de téléphone ${phone} (${member.lastName} ${member.firstName}).`);
+    // Contrôle d'unicité du Téléphone et de l'Email UNIQUEMENT s'ils sont renseignés
+    if (phone && phone !== '—' && phone !== '-') {
+      for (const member of localStaffCache.values()) {
+        const existingPhone = (member.phonePrimary || member.phone || '').trim();
+        if (existingPhone && existingPhone === phone) {
+          return createError(null, `Un membre du personnel possède déjà le numéro de téléphone ${phone} (${member.lastName} ${member.firstName}).`);
+        }
       }
-      if (email && member.email?.toLowerCase() === email) {
-        return createError(null, `L'adresse email ${email} est déjà utilisée par un autre membre du personnel.`);
+    }
+    if (email) {
+      for (const member of localStaffCache.values()) {
+        if (member.email?.toLowerCase() === email) {
+          return createError(null, `L'adresse email ${email} est déjà utilisée par un autre membre du personnel.`);
+        }
       }
     }
 
     // Validation Salaire
-    if (staffData.baseSalary !== undefined && staffData.baseSalary < 0) {
+    if (staffData.baseSalary !== undefined && Number(staffData.baseSalary) < 0) {
       return createError(null, 'Le salaire de base ne peut pas être négatif.');
     }
 
     const newId = staffData.id || crypto.randomUUID();
+    const cleanFirstName = (staffData.firstName?.trim() || staffData.lastName?.trim() || 'Employé');
+    const cleanLastName = (staffData.lastName?.trim() || '');
+    const cleanTitle = (staffData.jobTitle || staffData.positionTitle || '').trim();
+
     const created: StaffMember = {
       id: newId,
       employeeNumber: staffData.employeeNumber || `EMP-${new Date().getFullYear()}-${String(localStaffCache.size + 1).padStart(3, '0')}`,
-      firstName: staffData.firstName.trim(),
-      lastName: staffData.lastName.trim(),
+      firstName: cleanFirstName,
+      lastName: cleanLastName,
       middleName: staffData.middleName?.trim() || '',
       gender: staffData.gender || 'Masculin',
       role: staffData.role || 'Enseignant',
       departmentId: staffData.departmentId || '',
       departmentName: staffData.departmentName || '',
       positionId: staffData.positionId || '',
-      positionTitle: staffData.positionTitle || '',
+      positionTitle: cleanTitle,
+      jobTitle: cleanTitle,
       phonePrimary: phone,
+      phone: phone,
       phoneSecondary: staffData.phoneSecondary?.trim() || '',
       email: email || '',
       address: staffData.address?.trim() || '',
       cityDistrict: staffData.cityDistrict?.trim() || 'Abidjan',
-      avatarUrl: staffData.avatarUrl?.trim() || `https://api.dicebear.com/7.x/avataaars/svg?seed=${phone}`,
-      baseSalary: staffData.baseSalary ?? 200000,
+      avatarUrl: staffData.avatarUrl?.trim() || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(newId)}`,
+      baseSalary: staffData.baseSalary !== undefined ? Number(staffData.baseSalary) : 200000,
       hireDate: staffData.hireDate || new Date().toISOString().split('T')[0],
       status: staffData.status || 'Actif',
       contractType: staffData.contractType || 'CDI',

@@ -31,8 +31,13 @@ export const PaymentStep: React.FC<Props> = ({ data, onChange, levelCode = 'CP1'
     tuitionFeesService.getScheduleByLevel(levelCode, schoolYear).then((match) => {
       if (match) {
         onChange({
-          registrationFee: match.registrationFee,
-          tuitionFee: match.tuitionFee,
+          registrationFee: match.registrationFee || 0,
+          tuitionFee: match.tuitionFee || 0,
+        });
+      } else {
+        onChange({
+          registrationFee: 0,
+          tuitionFee: 0,
         });
       }
     });
@@ -56,7 +61,7 @@ export const PaymentStep: React.FC<Props> = ({ data, onChange, levelCode = 'CP1'
           <div>
             <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>Total Annuel Frais</span>
             <h3 style={{ margin: '4px 0 0', fontSize: '1.375rem', fontWeight: 900, color: '#ffffff' }}>
-              {netTotal.toLocaleString('fr-FR')} FCFA
+              {netTotal > 0 ? `${netTotal.toLocaleString('fr-FR')} FCFA` : '—'}
             </h3>
             {discountAmount > 0 && (
               <span style={{ fontSize: '0.75rem', color: '#4ade80', fontWeight: 600 }}>Remise déduite: -{discountAmount.toLocaleString('fr-FR')} FCFA</span>
@@ -66,18 +71,18 @@ export const PaymentStep: React.FC<Props> = ({ data, onChange, levelCode = 'CP1'
           <div>
             <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>Montant Versé (Ce jour)</span>
             <h3 style={{ margin: '4px 0 0', fontSize: '1.375rem', fontWeight: 900, color: '#38bdf8' }}>
-              {data.paidAmount.toLocaleString('fr-FR')} FCFA
+              {data.paidAmount > 0 ? `${data.paidAmount.toLocaleString('fr-FR')} FCFA` : '0 FCFA'}
             </h3>
             <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Règlement immédiat</span>
           </div>
 
           <div>
             <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>Reste à Payer</span>
-            <h3 style={{ margin: '4px 0 0', fontSize: '1.375rem', fontWeight: 900, color: remainingBalance === 0 ? '#4ade80' : '#f87171' }}>
-              {remainingBalance.toLocaleString('fr-FR')} FCFA
+            <h3 style={{ margin: '4px 0 0', fontSize: '1.375rem', fontWeight: 900, color: grossTotal === 0 ? '#94a3b8' : (remainingBalance === 0 ? '#4ade80' : '#f87171') }}>
+              {grossTotal > 0 ? `${remainingBalance.toLocaleString('fr-FR')} FCFA` : '—'}
             </h3>
-            <span style={{ fontSize: '0.75rem', color: remainingBalance === 0 ? '#4ade80' : '#fca5a5' }}>
-              {remainingBalance === 0 ? '✓ Intégralement réglé' : 'Échéances à venir'}
+            <span style={{ fontSize: '0.75rem', color: grossTotal === 0 ? '#94a3b8' : (remainingBalance === 0 ? '#4ade80' : '#fca5a5') }}>
+              {grossTotal === 0 ? 'En attente de tarif' : (remainingBalance === 0 ? '✓ Intégralement réglé' : 'Échéances à venir')}
             </span>
           </div>
         </div>
@@ -187,19 +192,17 @@ export const PaymentStep: React.FC<Props> = ({ data, onChange, levelCode = 'CP1'
               onChange={(e) => onChange({ paymentMode: e.target.value as PaymentMode })}
             >
               <option value="CASH">Espèces</option>
+              <option value="WAVE">Wave</option>
               <option value="ORANGE_MONEY">Orange Money</option>
               <option value="MTN_MONEY">MTN Money</option>
-              <option value="WAVE">Wave</option>
-              <option value="TRANSFER">Virement Bancaire</option>
-              <option value="CHECK">Chèque</option>
             </select>
           </div>
         </div>
 
         <div style={{ marginTop: 12 }}>
-          <label className="form-label" style={{ fontSize: '0.78125rem', fontWeight: 600 }}>Référence Transaction / N° Chèque (Optionnel)</label>
+          <label className="form-label" style={{ fontSize: '0.78125rem', fontWeight: 600 }}>Référence Transaction (Optionnel)</label>
           <input
-            type="text" className="form-input" placeholder="Ex: TX-99882200 ou Chèque N° 004928"
+            type="text" className="form-input" placeholder="Ex: TX-99882200 / Réf. Wave"
             value={data.paymentReference} onChange={(e) => onChange({ paymentReference: e.target.value })}
           />
         </div>

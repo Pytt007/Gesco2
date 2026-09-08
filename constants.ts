@@ -53,16 +53,16 @@ export const MOCK_HISTORY: ActivityLog[] = [];
 export const MOCK_FEE_RECORDS: SchoolFeeRecord[] = [];
 
 export const MOCK_FEE_CONFIGS: FeeConfiguration[] = [
-  { id: 'CF01', grade: 'Garderie', tuitionAmount: 200000, registrationAmount: 0, installmentCount: 8 },
-  { id: 'CF02', grade: 'Ptesection', tuitionAmount: 190000, registrationAmount: 0, installmentCount: 8 },
-  { id: 'CF03', grade: 'Moysection', tuitionAmount: 190000, registrationAmount: 0, installmentCount: 8 },
-  { id: 'CF04', grade: 'Grdsection', tuitionAmount: 190000, registrationAmount: 0, installmentCount: 8 },
-  { id: 'CF05', grade: 'CP1', tuitionAmount: 200000, registrationAmount: 0, installmentCount: 8 },
-  { id: 'CF06', grade: 'CP2', tuitionAmount: 200000, registrationAmount: 0, installmentCount: 8 },
-  { id: 'CF07', grade: 'CE1', tuitionAmount: 220000, registrationAmount: 0, installmentCount: 8 },
-  { id: 'CF08', grade: 'CE2', tuitionAmount: 220000, registrationAmount: 0, installmentCount: 8 },
-  { id: 'CF09', grade: 'CM1', tuitionAmount: 250000, registrationAmount: 0, installmentCount: 8 },
-  { id: 'CF10', grade: 'CM2', tuitionAmount: 250000, registrationAmount: 0, installmentCount: 8 },
+  { id: 'CF01', grade: 'Garderie', tuitionAmount: 0, registrationAmount: 0, installmentCount: 8 },
+  { id: 'CF02', grade: 'Ptesection', tuitionAmount: 0, registrationAmount: 0, installmentCount: 8 },
+  { id: 'CF03', grade: 'Moysection', tuitionAmount: 0, registrationAmount: 0, installmentCount: 8 },
+  { id: 'CF04', grade: 'Grdsection', tuitionAmount: 0, registrationAmount: 0, installmentCount: 8 },
+  { id: 'CF05', grade: 'CP1', tuitionAmount: 0, registrationAmount: 0, installmentCount: 8 },
+  { id: 'CF06', grade: 'CP2', tuitionAmount: 0, registrationAmount: 0, installmentCount: 8 },
+  { id: 'CF07', grade: 'CE1', tuitionAmount: 0, registrationAmount: 0, installmentCount: 8 },
+  { id: 'CF08', grade: 'CE2', tuitionAmount: 0, registrationAmount: 0, installmentCount: 8 },
+  { id: 'CF09', grade: 'CM1', tuitionAmount: 0, registrationAmount: 0, installmentCount: 8 },
+  { id: 'CF10', grade: 'CM2', tuitionAmount: 0, registrationAmount: 0, installmentCount: 8 },
 ];
 
 // ─────────────────────────────────────────────────────────────

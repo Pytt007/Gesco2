@@ -100,27 +100,42 @@ export default function StaffPage() {
   const handleSaveStaff = async () => {
     if (!form.firstName?.trim() && !form.lastName?.trim()) {
       addNotification('error', 'Veuillez renseigner au moins le nom ou le prénom.');
+      setWizardStep(1);
       return;
     }
 
-    const payload = {
+    const cleanLastName = (form.lastName || '').trim();
+    const cleanFirstName = (form.firstName || cleanLastName || 'Employé').trim();
+    const phoneVal = (form.phone || form.phonePrimary || '').trim();
+    const cleanTitle = (form.jobTitle || form.positionTitle || '').trim();
+
+    const payload: Partial<StaffMember> = {
       ...form,
-      firstName: form.firstName?.trim() || form.lastName?.trim() || 'Employé',
-      lastName: form.lastName?.trim() || '',
-      phone: form.phone?.trim() || '—',
+      firstName: cleanFirstName,
+      lastName: cleanLastName,
+      phone: phoneVal,
+      phonePrimary: phoneVal,
+      jobTitle: cleanTitle,
+      positionTitle: cleanTitle,
+      baseSalary: form.baseSalary !== undefined ? Number(form.baseSalary) : 250000,
+      role: form.role || 'TEACHER',
     };
 
     if (editingStaff) {
-      const ok = await update(editingStaff.id, payload);
-      if (ok) {
+      const res = await update(editingStaff.id, payload);
+      if (res.success) {
         addNotification('success', 'Fiche employé mise à jour avec succès.');
         setShowAddModal(false);
+      } else {
+        addNotification('error', res.error || 'Erreur lors de la mise à jour.');
       }
     } else {
-      const created = await create(payload);
-      if (created) {
+      const res = await create(payload);
+      if (res.success) {
         addNotification('success', 'Nouveau membre du personnel créé avec succès.');
         setWizardStep(4);
+      } else {
+        addNotification('error', res.error || 'Erreur lors de la création.');
       }
     }
   };
@@ -464,8 +479,11 @@ export default function StaffPage() {
 
               {wizardStep === 4 && (
                 <div style={{ textAlign: 'center', padding: '24px 0' }}>
-                  <CheckCircle2 size={48} color="#10b981" style={{ margin: '0 auto 12px' }} />
-                  <h4 style={{ margin: 0, fontWeight: 800, color: '#0f172a' }}>Employé Enregistré !</h4>
+                  <CheckCircle2 size={52} color="#10b981" style={{ margin: '0 auto 14px' }} />
+                  <h4 style={{ margin: 0, fontWeight: 800, color: '#0f172a', fontSize: '1.2rem' }}>Membre du Personnel Enregistré !</h4>
+                  <p style={{ margin: '8px 0 0', fontSize: '0.875rem', color: '#64748b' }}>
+                    Le dossier de {form.lastName} {form.firstName} est validé et actif dans l'établissement.
+                  </p>
                 </div>
               )}
             </div>
@@ -482,7 +500,17 @@ export default function StaffPage() {
                   {saving ? 'Enregistrement...' : 'Valider & Enregistrer'}
                 </button>
               ) : (
-                <button className="btn btn-primary" onClick={() => setShowAddModal(false)}>Fermer</button>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setEditingStaff(null);
+                    setForm({ role: 'TEACHER', baseSalary: 250000 });
+                    setWizardStep(1);
+                  }}
+                >
+                  Terminer & Fermer
+                </button>
               )}
             </div>
 

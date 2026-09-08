@@ -302,6 +302,21 @@ html.dark .search-bar-input,
   color: #f8fafc !important;
 }
 
+html.dark ::placeholder,
+[data-theme="dark"] ::placeholder,
+html.dark input::placeholder,
+[data-theme="dark"] input::placeholder,
+html.dark textarea::placeholder,
+[data-theme="dark"] textarea::placeholder,
+html.dark input::-webkit-input-placeholder,
+[data-theme="dark"] input::-webkit-input-placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  -webkit-text-fill-color: #64748b !important;
+}
+
 html.dark select option,
 [data-theme="dark"] select option {
   background-color: #141d2e !important;
@@ -1264,7 +1279,66 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   color: #2563eb;
 }
 
-.form-input::placeholder { color: var(--text-muted); font-weight: 400; }
+/* ─── Placeholders Universels : Gris Clair Doux (#94a3b8) Distinct du Texte Saisi ─── */
+::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  -webkit-text-fill-color: #94a3b8 !important;
+}
+
+input::placeholder,
+textarea::placeholder,
+.form-input::placeholder,
+.form-control::placeholder,
+.search-bar-input::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  -webkit-text-fill-color: #94a3b8 !important;
+}
+
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder,
+.form-input::-webkit-input-placeholder,
+.form-control::-webkit-input-placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  -webkit-text-fill-color: #94a3b8 !important;
+}
+
+input::-moz-placeholder,
+textarea::-moz-placeholder,
+.form-input::-moz-placeholder,
+.form-control::-moz-placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+}
+
+input:-ms-input-placeholder,
+textarea:-ms-input-placeholder,
+.form-input:-ms-input-placeholder,
+.form-control:-ms-input-placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+}
+
+/* Texte réellement saisi par l'utilisateur : net, très contrasté et sombre */
+input,
+textarea,
+.form-input,
+.form-control {
+  color: var(--text-primary, #0f172a);
+}
+
 .form-select { cursor: pointer; appearance: none; }
 
 /* ─── Style de Liste Épurée avec Puce Unique Fine ──────────────────────────── */
