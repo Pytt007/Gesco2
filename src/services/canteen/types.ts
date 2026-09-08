@@ -6,7 +6,7 @@ export type CanteenLevelCode = 'GARDERIE' | 'PS' | 'MS' | 'GS' | 'CP1' | 'CP2' |
 
 export type CanteenDiscountType = 'NONE' | 'FIXED' | 'PERCENTAGE';
 
-export type CanteenSubscriptionStatus = 'ACTIVE' | 'SUSPENDED' | 'NOT_ENROLLED' | 'ARCHIVED';
+export type CanteenSubscriptionStatus = 'ACTIVE' | 'SUSPENDED' | 'NOT_ENROLLED' | 'ARCHIVED' | 'CANCELLED';
 
 export type CanteenPaymentStatus = 'PAID' | 'PARTIAL' | 'UNPAID';
 

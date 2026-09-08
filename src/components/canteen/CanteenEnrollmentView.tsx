@@ -8,10 +8,13 @@ import { useToast } from '../../context/ToastContext';
 import { useSchoolYear } from '../../context/SchoolYearContext';
 import {
   Search, User, UtensilsCrossed, CheckCircle2, AlertCircle,
-  Phone, DollarSign, Tag, RotateCcw, X,
+  Phone, DollarSign, Tag, RotateCcw, X, Eye, Edit2, Trash2,
 } from 'lucide-react';
 import { listStudents } from '../../services/students/studentsService';
 import { CustomScheduleEditor, SchedulePeriodItem } from '../common/CustomScheduleEditor';
+import { CanteenEnrollmentDetailModal } from './CanteenEnrollmentDetailModal';
+import { CanteenEnrollmentEditModal } from './CanteenEnrollmentEditModal';
+import { ConfirmDeleteEnrollmentModal } from '../common/ConfirmDeleteEnrollmentModal';
 
 const LEVEL_ORDER: CanteenLevelCode[] = ['PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
 
@@ -41,6 +44,11 @@ export const CanteenEnrollmentView: React.FC = () => {
   const [customPeriods, setCustomPeriods] = useState<SchedulePeriodItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<CanteenEnrollment | null>(null);
+
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const handleSearch = useCallback(async (query: string) => {
     setSearchQuery(query);
@@ -186,6 +194,30 @@ export const CanteenEnrollmentView: React.FC = () => {
     setCustomPeriods([]);
   };
 
+  const reloadEnrollment = async () => {
+    if (selectedStudent) {
+      const updated = await canteenEnrollmentService.getEnrollmentByStudent(selectedStudent.id, academicYearId);
+      setExistingEnrollment(updated);
+    }
+  };
+
+  const handleDeleteEnrollment = async () => {
+    if (!existingEnrollment) return;
+    setDeleting(true);
+    try {
+      const res = await canteenEnrollmentService.deleteEnrollment(existingEnrollment.id);
+      if (res.success) {
+        showToast('Inscription cantine supprimée avec succès.', 'success');
+        setShowDeleteModal(false);
+        setExistingEnrollment(null);
+      } else {
+        showToast(res.error || 'Erreur lors de la suppression.', 'error');
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div style={{ padding: '8px 0' }}>
       <div style={{ marginBottom: 24 }}>
@@ -282,22 +314,101 @@ export const CanteenEnrollmentView: React.FC = () => {
         <div>
           {/* Déjà inscrit */}
           {existingEnrollment && (
-            <div style={{ background: '#fef9c3', border: '1px solid #fde047', borderRadius: 12, padding: 20 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                <AlertCircle size={20} color="#a16207" />
-                <strong style={{ color: '#a16207' }}>Déjà inscrit à la cantine</strong>
+            <div className="card shadow-sm mb-4" style={{ borderRadius: 14, border: '1px solid #a7f3d0', background: '#f8fafc', overflow: 'hidden' }}>
+              <div style={{ background: '#ecfdf5', padding: '16px 20px', borderBottom: '1px solid #d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: '#10b981', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <UtensilsCrossed size={18} />
+                  </div>
+                  <div>
+                    <h6 style={{ margin: 0, fontWeight: 800, color: '#064e3b', fontSize: '0.9375rem' }}>
+                      Élève déjà inscrit à la cantine
+                    </h6>
+                    <div style={{ fontSize: '0.8125rem', color: '#059669' }}>
+                      Niveau : <strong>{existingEnrollment.levelCode}</strong> ({existingEnrollment.className})
+                    </div>
+                  </div>
+                </div>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '4px 12px',
+                    borderRadius: 20,
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    background: existingEnrollment.remainingBalance === 0 ? '#dcfce7' : existingEnrollment.totalPaid > 0 ? '#fef3c7' : '#fee2e2',
+                    color: existingEnrollment.remainingBalance === 0 ? '#166534' : existingEnrollment.totalPaid > 0 ? '#92400e' : '#991b1b',
+                    border: `1px solid ${existingEnrollment.remainingBalance === 0 ? '#86efac' : existingEnrollment.totalPaid > 0 ? '#fde68a' : '#fca5a5'}`,
+                  }}
+                >
+                  {existingEnrollment.remainingBalance === 0 ? '🟢 À jour' : existingEnrollment.totalPaid > 0 ? '🟡 Partiel' : '🔴 Impayé'}
+                </span>
               </div>
-              <p style={{ fontSize: '0.875rem', color: '#713f12', margin: '0 0 12px' }}>
-                Cet élève est déjà inscrit à la cantine pour cette année scolaire.
-              </p>
-              <div style={{ fontSize: '0.875rem', display: 'grid', gap: 6 }}>
-                <div><strong>Tarif net :</strong> {existingEnrollment.netAmountDue.toLocaleString('fr-FR')} FCFA</div>
-                <div><strong>Payé :</strong> {existingEnrollment.totalPaid.toLocaleString('fr-FR')} FCFA</div>
-                <div><strong>Restant :</strong> {existingEnrollment.remainingBalance.toLocaleString('fr-FR')} FCFA</div>
+
+              <div style={{ padding: '20px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: 16 }}>
+                  <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 12px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Tarif annuel</div>
+                    <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#0f172a' }}>{existingEnrollment.annualRate?.toLocaleString('fr-FR')} F</div>
+                  </div>
+                  {existingEnrollment.discountAmount > 0 && (
+                    <div style={{ background: '#fef2f2', border: '1px solid #fecdd3', borderRadius: 8, padding: '10px 12px' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#dc2626' }}>Remise</div>
+                      <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#b91c1c' }}>– {existingEnrollment.discountAmount?.toLocaleString('fr-FR')} F</div>
+                    </div>
+                  )}
+                  <div style={{ background: '#ffffff', border: '1px solid #a7f3d0', borderRadius: 8, padding: '10px 12px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#047857' }}>Net à payer</div>
+                    <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#064e3b' }}>{existingEnrollment.netAmountDue?.toLocaleString('fr-FR')} F</div>
+                  </div>
+                  <div style={{ background: '#ffffff', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px 12px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#16a34a' }}>Déjà réglé</div>
+                    <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#15803d' }}>{existingEnrollment.totalPaid?.toLocaleString('fr-FR')} F</div>
+                  </div>
+                  <div style={{ background: '#ffffff', border: '1px solid #fed7aa', borderRadius: 8, padding: '10px 12px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#ea580c' }}>Reste dû</div>
+                    <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#c2410c' }}>{existingEnrollment.remainingBalance?.toLocaleString('fr-FR')} F</div>
+                  </div>
+                </div>
+
+                {/* Barre d'action avec Voir, Modifier, Supprimer */}
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary btn-sm fw-semibold"
+                    style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6 }}
+                    onClick={() => setShowDetailModal(true)}
+                  >
+                    <Eye size={15} /> Voir les détails
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-success btn-sm fw-semibold"
+                    style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6 }}
+                    onClick={() => setShowEditModal(true)}
+                  >
+                    <Edit2 size={15} /> Modifier l'inscription
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline-danger btn-sm fw-semibold"
+                    style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6 }}
+                    onClick={() => setShowDeleteModal(true)}
+                  >
+                    <Trash2 size={15} /> Supprimer l'inscription
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary btn-sm ms-auto"
+                    style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6 }}
+                    onClick={handleReset}
+                  >
+                    <RotateCcw size={13} /> Nouvel élève
+                  </button>
+                </div>
               </div>
-              <button className="btn btn-sm btn-outline-secondary mt-3" onClick={handleReset}>
-                <RotateCcw size={13} className="me-1" /> Nouveau élève
-              </button>
             </div>
           )}
 
@@ -460,6 +571,29 @@ export const CanteenEnrollmentView: React.FC = () => {
           )}
         </div>
       </div>
+      <CanteenEnrollmentDetailModal
+        isOpen={showDetailModal}
+        enrollment={existingEnrollment}
+        onClose={() => setShowDetailModal(false)}
+        onEdit={() => { setShowDetailModal(false); setShowEditModal(true); }}
+        onDelete={() => { setShowDetailModal(false); setShowDeleteModal(true); }}
+      />
+      <CanteenEnrollmentEditModal
+        isOpen={showEditModal}
+        enrollment={existingEnrollment}
+        onClose={() => setShowEditModal(false)}
+        onSaved={reloadEnrollment}
+      />
+      <ConfirmDeleteEnrollmentModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteEnrollment}
+        studentName={existingEnrollment?.studentName || ''}
+        matricule={existingEnrollment?.matricule}
+        serviceType="cantine"
+        totalPaid={existingEnrollment?.totalPaid || 0}
+        loading={deleting}
+      />
     </div>
   );
 };

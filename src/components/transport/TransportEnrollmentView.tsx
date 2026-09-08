@@ -8,10 +8,13 @@ import { useToast } from '../../context/ToastContext';
 import { useSchoolYear } from '../../context/SchoolYearContext';
 import {
   Search, User, Bus, CheckCircle2, AlertCircle, Phone,
-  DollarSign, Tag, RotateCcw, MapPin, X,
+  DollarSign, Tag, RotateCcw, MapPin, X, Eye, Edit2, Trash2,
 } from 'lucide-react';
 import { listStudents } from '../../services/students/studentsService';
 import { CustomScheduleEditor, SchedulePeriodItem } from '../common/CustomScheduleEditor';
+import { TransportEnrollmentDetailModal } from './TransportEnrollmentDetailModal';
+import { TransportEnrollmentEditModal } from './TransportEnrollmentEditModal';
+import { ConfirmDeleteEnrollmentModal } from '../common/ConfirmDeleteEnrollmentModal';
 
 export interface StudentSearchItem {
   id: string;
@@ -40,6 +43,11 @@ export const TransportEnrollmentView: React.FC = () => {
   const [customPeriods, setCustomPeriods] = useState<SchedulePeriodItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<any>(null);
+
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const handleSearch = useCallback(async (query: string) => {
     setSearchQuery(query);
@@ -162,6 +170,35 @@ export const TransportEnrollmentView: React.FC = () => {
     setCustomPeriods([]);
   };
 
+  const reloadEnrollment = async () => {
+    if (selectedStudent) {
+      const updated = await transportEnrollmentService.getEnrollmentByStudent(selectedStudent.id, academicYearId);
+      setExistingEnrollment(updated);
+    }
+  };
+
+  const handleDeleteEnrollment = async () => {
+    if (!existingEnrollment) return;
+    setDeleting(true);
+    try {
+      const res = await transportEnrollmentService.deleteEnrollment(existingEnrollment.id);
+      if (res.success) {
+        showToast('Inscription transport supprimée avec succès. La place a été libérée.', 'success');
+        setShowDeleteModal(false);
+        setExistingEnrollment(null);
+        // recharger les lignes actives
+        const allLines = await transportLineService.getLinesByYear(academicYearId);
+        const active = allLines.filter((l) => l.status === 'ACTIVE' && l.availableSeats > 0);
+        setLines(active);
+        if (active.length > 0) setSelectedLineId(active[0].id);
+      } else {
+        showToast(res.error || 'Erreur lors de la suppression.', 'error');
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div style={{ padding: '8px 0' }}>
       <div style={{ marginBottom: 24 }}>
@@ -247,19 +284,101 @@ export const TransportEnrollmentView: React.FC = () => {
         {/* Droite : Formulaire */}
         <div>
           {existingEnrollment && (
-            <div style={{ background: '#fef9c3', border: '1px solid #fde047', borderRadius: 12, padding: 20 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                <AlertCircle size={20} color="#a16207" />
-                <strong style={{ color: '#a16207' }}>Déjà inscrit au transport</strong>
+            <div className="card shadow-sm mb-4" style={{ borderRadius: 14, border: '1px solid #bfdbfe', background: '#f8fafc', overflow: 'hidden' }}>
+              <div style={{ background: '#eff6ff', padding: '16px 20px', borderBottom: '1px solid #dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: '#2563eb', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Bus size={18} />
+                  </div>
+                  <div>
+                    <h6 style={{ margin: 0, fontWeight: 800, color: '#1e3a8a', fontSize: '0.9375rem' }}>
+                      Élève déjà inscrit au transport
+                    </h6>
+                    <div style={{ fontSize: '0.8125rem', color: '#3b82f6' }}>
+                      Ligne : <strong>{existingEnrollment.lineName}</strong> ({existingEnrollment.zone})
+                    </div>
+                  </div>
+                </div>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '4px 12px',
+                    borderRadius: 20,
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    background: existingEnrollment.remainingBalance === 0 ? '#dcfce7' : existingEnrollment.totalPaid > 0 ? '#fef3c7' : '#fee2e2',
+                    color: existingEnrollment.remainingBalance === 0 ? '#166534' : existingEnrollment.totalPaid > 0 ? '#92400e' : '#991b1b',
+                    border: `1px solid ${existingEnrollment.remainingBalance === 0 ? '#86efac' : existingEnrollment.totalPaid > 0 ? '#fde68a' : '#fca5a5'}`,
+                  }}
+                >
+                  {existingEnrollment.remainingBalance === 0 ? '🟢 Soldé' : existingEnrollment.totalPaid > 0 ? '🟡 Partiel' : '🔴 Impayé'}
+                </span>
               </div>
-              <p style={{ fontSize: '0.875rem', color: '#713f12', margin: '0 0 8px' }}>
-                Cet élève est déjà inscrit sur la <strong>{existingEnrollment.lineName}</strong> pour cette année scolaire.
-              </p>
-              <div style={{ fontSize: '0.875rem', display: 'grid', gap: 4 }}>
-                <div><strong>Net :</strong> {existingEnrollment.netAmountDue.toLocaleString('fr-FR')} FCFA</div>
-                <div><strong>Payé :</strong> {existingEnrollment.totalPaid.toLocaleString('fr-FR')} FCFA</div>
+
+              <div style={{ padding: '20px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: 16 }}>
+                  <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 12px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Tarif brut</div>
+                    <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#0f172a' }}>{existingEnrollment.annualFee?.toLocaleString('fr-FR')} F</div>
+                  </div>
+                  {existingEnrollment.discountAmount > 0 && (
+                    <div style={{ background: '#fef2f2', border: '1px solid #fecdd3', borderRadius: 8, padding: '10px 12px' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#dc2626' }}>Remise</div>
+                      <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#b91c1c' }}>– {existingEnrollment.discountAmount?.toLocaleString('fr-FR')} F</div>
+                    </div>
+                  )}
+                  <div style={{ background: '#ffffff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '10px 12px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#2563eb' }}>Net à payer</div>
+                    <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#1d4ed8' }}>{existingEnrollment.netAmountDue?.toLocaleString('fr-FR')} F</div>
+                  </div>
+                  <div style={{ background: '#ffffff', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px 12px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#16a34a' }}>Déjà réglé</div>
+                    <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#15803d' }}>{existingEnrollment.totalPaid?.toLocaleString('fr-FR')} F</div>
+                  </div>
+                  <div style={{ background: '#ffffff', border: '1px solid #fed7aa', borderRadius: 8, padding: '10px 12px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#ea580c' }}>Reste à payer</div>
+                    <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#c2410c' }}>{existingEnrollment.remainingBalance?.toLocaleString('fr-FR')} F</div>
+                  </div>
+                </div>
+
+                {/* Barre d'action avec Voir, Modifier, Supprimer */}
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary btn-sm fw-semibold"
+                    style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6 }}
+                    onClick={() => setShowDetailModal(true)}
+                  >
+                    <Eye size={15} /> Voir les détails
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm fw-semibold"
+                    style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6 }}
+                    onClick={() => setShowEditModal(true)}
+                  >
+                    <Edit2 size={15} /> Modifier l'inscription
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline-danger btn-sm fw-semibold"
+                    style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6 }}
+                    onClick={() => setShowDeleteModal(true)}
+                  >
+                    <Trash2 size={15} /> Supprimer l'inscription
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary btn-sm ms-auto"
+                    style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6 }}
+                    onClick={handleReset}
+                  >
+                    <RotateCcw size={13} /> Nouvel élève
+                  </button>
+                </div>
               </div>
-              <button className="btn btn-sm btn-outline-secondary mt-3" onClick={handleReset}><RotateCcw size={13} className="me-1" /> Nouvel élève</button>
             </div>
           )}
 
@@ -417,6 +536,29 @@ export const TransportEnrollmentView: React.FC = () => {
           )}
         </div>
       </div>
+      <TransportEnrollmentDetailModal
+        isOpen={showDetailModal}
+        enrollment={existingEnrollment}
+        onClose={() => setShowDetailModal(false)}
+        onEdit={() => { setShowDetailModal(false); setShowEditModal(true); }}
+        onDelete={() => { setShowDetailModal(false); setShowDeleteModal(true); }}
+      />
+      <TransportEnrollmentEditModal
+        isOpen={showEditModal}
+        enrollment={existingEnrollment}
+        onClose={() => setShowEditModal(false)}
+        onSaved={reloadEnrollment}
+      />
+      <ConfirmDeleteEnrollmentModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteEnrollment}
+        studentName={existingEnrollment?.studentName || ''}
+        matricule={existingEnrollment?.matricule}
+        serviceType="transport"
+        totalPaid={existingEnrollment?.totalPaid || 0}
+        loading={deleting}
+      />
     </div>
   );
 };

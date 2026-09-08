@@ -254,4 +254,109 @@ export const transportEnrollmentService = {
 
     return { success: true, data: enrollment, message: 'Inscription transport annulée et place libérée.' };
   },
+
+  /**
+   * Met à jour une inscription existante (changement de ligne, remise, échéancier personnalisé, contacts)
+   */
+  async updateEnrollment(
+    enrollmentId: string,
+    updates: {
+      lineId?: string;
+      discountType?: TransportDiscountType;
+      discountValue?: number;
+      customPeriods?: { number: number; label: string; dueDate?: string; amountDue: number }[];
+      parentSponsor?: string;
+      parentPhone?: string;
+    }
+  ): Promise<ServiceResponse<TransportEnrollment>> {
+    await syncEnrollmentsFromSupabase();
+    const enrollment = enrollmentStore.get(enrollmentId);
+    if (!enrollment) return { success: false, error: 'Inscription transport introuvable.' };
+
+    let newLine = updates.lineId && updates.lineId !== enrollment.lineId
+      ? transportLineService.getById(updates.lineId)
+      : null;
+
+    if (updates.lineId && updates.lineId !== enrollment.lineId) {
+      if (!newLine) return { success: false, error: 'Nouvelle ligne de transport introuvable.' };
+      if (newLine.status !== 'ACTIVE') return { success: false, error: `La ligne "${newLine.name}" n'est pas active.` };
+      if (newLine.availableSeats <= 0) return { success: false, error: `La ligne "${newLine.name}" n'a plus de place disponible.` };
+
+      // Libérer la place sur l'ancienne ligne
+      updateLineEnrollmentCount(enrollment.lineId, -1);
+      // Réserver la place sur la nouvelle ligne
+      updateLineEnrollmentCount(newLine.id, +1);
+
+      enrollment.lineId = newLine.id;
+      enrollment.lineName = newLine.name;
+      enrollment.zone = newLine.zone;
+      enrollment.annualFee = newLine.annualFee;
+    }
+
+    const currentAnnualFee = newLine ? newLine.annualFee : enrollment.annualFee;
+    const discountType = updates.discountType ?? enrollment.discountType;
+    const discountValue = updates.discountValue !== undefined ? updates.discountValue : enrollment.discountValue;
+
+    let discountAmount = 0;
+    if (discountType === 'FIXED') {
+      discountAmount = discountValue;
+    } else if (discountType === 'PERCENTAGE') {
+      discountAmount = Math.round((currentAnnualFee * discountValue) / 100);
+    }
+    const netAmountDue = Math.max(0, currentAnnualFee - discountAmount);
+
+    enrollment.discountType = discountType;
+    enrollment.discountValue = discountValue;
+    enrollment.discountAmount = discountAmount;
+    enrollment.netAmountDue = netAmountDue;
+
+    if (updates.parentSponsor !== undefined) enrollment.parentSponsor = updates.parentSponsor;
+    if (updates.parentPhone !== undefined) enrollment.parentPhone = updates.parentPhone;
+
+    // Gestion des périodes / échéances
+    if (updates.customPeriods && updates.customPeriods.length > 0) {
+      let paidPool = enrollment.totalPaid;
+      enrollment.periods = updates.customPeriods.map((p, idx) => {
+        const amtDue = Number(p.amountDue) || 0;
+        const amtPaid = Math.min(amtDue, Math.max(0, paidPool));
+        paidPool = Math.max(0, paidPool - amtPaid);
+        const status: TransportPeriod['status'] = amtPaid >= amtDue && amtDue > 0 ? 'PAID' : amtPaid > 0 ? 'PARTIAL' : 'PENDING';
+        return {
+          number: p.number || idx + 1,
+          label: p.label || `Période ${idx + 1}`,
+          amountDue: amtDue,
+          amountPaid: amtPaid,
+          status,
+          dueDate: p.dueDate,
+        };
+      });
+      enrollment.periodsCount = enrollment.periods.length;
+    }
+
+    enrollment.remainingBalance = Math.max(0, netAmountDue - enrollment.totalPaid);
+    enrollment.updatedAt = new Date().toISOString();
+
+    enrollmentStore.set(enrollmentId, enrollment);
+    await persistEnrollmentsToSupabase();
+
+    return { success: true, data: enrollment, message: 'Inscription transport mise à jour avec succès.' };
+  },
+
+  /**
+   * Supprime définitivement une inscription et libère la place
+   */
+  async deleteEnrollment(enrollmentId: string): Promise<ServiceResponse<boolean>> {
+    await syncEnrollmentsFromSupabase();
+    const enrollment = enrollmentStore.get(enrollmentId);
+    if (!enrollment) return { success: false, error: 'Inscription transport introuvable.' };
+
+    if (enrollment.status !== 'CANCELLED') {
+      updateLineEnrollmentCount(enrollment.lineId, -1);
+    }
+
+    enrollmentStore.delete(enrollmentId);
+    await persistEnrollmentsToSupabase();
+
+    return { success: true, data: true, message: 'Inscription transport supprimée avec succès.' };
+  },
 };

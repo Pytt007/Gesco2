@@ -5,8 +5,12 @@ import { TransportEnrollment, TransportLine, TransportKPIs } from '../../service
 import { useSchoolYear } from '../../context/SchoolYearContext';
 import {
   Users, CheckCircle2, AlertCircle, XCircle, DollarSign,
-  TrendingUp, Search, Filter, Bus,
+  TrendingUp, Search, Filter, Bus, Eye, Edit2, Trash2,
 } from 'lucide-react';
+import { useToast } from '../../context/ToastContext';
+import { TransportEnrollmentDetailModal } from './TransportEnrollmentDetailModal';
+import { TransportEnrollmentEditModal } from './TransportEnrollmentEditModal';
+import { ConfirmDeleteEnrollmentModal } from '../common/ConfirmDeleteEnrollmentModal';
 
 function computeKPIs(lines: TransportLine[], enrollments: TransportEnrollment[]): TransportKPIs {
   const totalCapacity = lines.reduce((s, l) => s + l.vehicleCapacity, 0);
@@ -31,6 +35,7 @@ function computeKPIs(lines: TransportLine[], enrollments: TransportEnrollment[])
 
 export const TransportTrackingView: React.FC = () => {
   const { schoolYear } = useSchoolYear();
+  const { showToast } = useToast();
   const academicYearId = schoolYear || 'ay-2026';
 
   const [enrollments, setEnrollments] = useState<TransportEnrollment[]>([]);
@@ -40,19 +45,42 @@ export const TransportTrackingView: React.FC = () => {
   const [filterLineId, setFilterLineId] = useState<string>('ALL');
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'PAID' | 'PARTIAL' | 'UNPAID'>('ALL');
 
+  const [selectedDetail, setSelectedDetail] = useState<TransportEnrollment | null>(null);
+  const [selectedEdit, setSelectedEdit] = useState<TransportEnrollment | null>(null);
+  const [selectedDelete, setSelectedDelete] = useState<TransportEnrollment | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const loadData = async () => {
+    setLoading(true);
+    const [e, l] = await Promise.all([
+      transportEnrollmentService.getEnrollmentsByYear(academicYearId),
+      transportLineService.getLinesByYear(academicYearId),
+    ]);
+    setEnrollments(e);
+    setLines(l);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      const [e, l] = await Promise.all([
-        transportEnrollmentService.getEnrollmentsByYear(academicYearId),
-        transportLineService.getLinesByYear(academicYearId),
-      ]);
-      setEnrollments(e);
-      setLines(l);
-      setLoading(false);
-    };
-    load();
+    loadData();
   }, [academicYearId]);
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedDelete) return;
+    setDeleting(true);
+    try {
+      const res = await transportEnrollmentService.deleteEnrollment(selectedDelete.id);
+      if (res.success) {
+        showToast('Inscription transport supprimée avec succès. La place a été libérée.', 'success');
+        setSelectedDelete(null);
+        await loadData();
+      } else {
+        showToast(res.error || 'Erreur lors de la suppression.', 'error');
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const kpis = useMemo(() => computeKPIs(lines, enrollments), [lines, enrollments]);
 
@@ -157,17 +185,17 @@ export const TransportTrackingView: React.FC = () => {
           <table className="table table-hover align-middle mb-0">
             <thead style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
               <tr>
-                {['Photo', 'Matricule', 'Nom', 'Classe', 'Ligne', 'Responsable', 'Total', 'Payé', 'Reste', 'Progression', 'Statut'].map((h, i) => (
-                  <th key={h} style={{ padding: '12px 12px', fontSize: '0.8125rem', fontWeight: 600, color: '#475569', textAlign: [6, 7, 8].includes(i) ? 'right' : 'left' }}>{h}</th>
+                {['Photo', 'Matricule', 'Nom', 'Classe', 'Ligne', 'Responsable', 'Total', 'Payé', 'Reste', 'Progression', 'Statut', 'Actions'].map((h, i) => (
+                  <th key={h} style={{ padding: '12px 12px', fontSize: '0.8125rem', fontWeight: 600, color: '#475569', textAlign: [6, 7, 8].includes(i) ? 'right' : i === 11 ? 'center' : 'left' }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={11} className="text-center py-5 text-muted">Chargement...</td></tr>
+                <tr><td colSpan={12} className="text-center py-5 text-muted">Chargement...</td></tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="text-center py-5">
+                  <td colSpan={12} className="text-center py-5">
                     <Bus size={36} style={{ opacity: 0.3, marginBottom: 8 }} />
                     <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.875rem' }}>Aucun élève inscrit au transport.</p>
                   </td>
@@ -211,6 +239,37 @@ export const TransportTrackingView: React.FC = () => {
                           {statusLabel}
                         </span>
                       </td>
+                      <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                        <div style={{ display: 'inline-flex', gap: 6 }}>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-primary p-1"
+                            title="Voir les détails"
+                            style={{ borderRadius: 6, width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                            onClick={() => setSelectedDetail(e)}
+                          >
+                            <Eye size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary p-1"
+                            title="Modifier l'inscription"
+                            style={{ borderRadius: 6, width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                            onClick={() => setSelectedEdit(e)}
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-danger p-1"
+                            title="Supprimer l'inscription"
+                            style={{ borderRadius: 6, width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                            onClick={() => setSelectedDelete(e)}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })
@@ -225,6 +284,31 @@ export const TransportTrackingView: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Modales Voir, Modifier, Supprimer */}
+      <TransportEnrollmentDetailModal
+        isOpen={!!selectedDetail}
+        enrollment={selectedDetail}
+        onClose={() => setSelectedDetail(null)}
+        onEdit={(enr) => { setSelectedDetail(null); setSelectedEdit(enr); }}
+        onDelete={(enr) => { setSelectedDetail(null); setSelectedDelete(enr); }}
+      />
+      <TransportEnrollmentEditModal
+        isOpen={!!selectedEdit}
+        enrollment={selectedEdit}
+        onClose={() => setSelectedEdit(null)}
+        onSaved={loadData}
+      />
+      <ConfirmDeleteEnrollmentModal
+        isOpen={!!selectedDelete}
+        onClose={() => setSelectedDelete(null)}
+        onConfirm={handleDeleteConfirm}
+        studentName={selectedDelete?.studentName || ''}
+        matricule={selectedDelete?.matricule}
+        serviceType="transport"
+        totalPaid={selectedDelete?.totalPaid || 0}
+        loading={deleting}
+      />
     </div>
   );
 };

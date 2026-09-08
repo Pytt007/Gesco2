@@ -160,7 +160,7 @@ export interface TransportEnrollment {
   totalPaid: number;
   remainingBalance: number;
   periods: TransportPeriod[];
-  status: 'ACTIVE' | 'ARCHIVED';
+  status: 'ACTIVE' | 'ARCHIVED' | 'CANCELLED';
   createdAt: string;
   updatedAt: string;
 }

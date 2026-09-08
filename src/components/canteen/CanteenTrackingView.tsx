@@ -4,8 +4,12 @@ import { CanteenEnrollment, CanteenLevelCode, CanteenKPIs } from '../../services
 import { useSchoolYear } from '../../context/SchoolYearContext';
 import {
   Users, CheckCircle2, AlertCircle, XCircle, DollarSign,
-  TrendingUp, Search, Filter, UtensilsCrossed,
+  TrendingUp, Search, Filter, UtensilsCrossed, Eye, Edit2, Trash2,
 } from 'lucide-react';
+import { useToast } from '../../context/ToastContext';
+import { CanteenEnrollmentDetailModal } from './CanteenEnrollmentDetailModal';
+import { CanteenEnrollmentEditModal } from './CanteenEnrollmentEditModal';
+import { ConfirmDeleteEnrollmentModal } from '../common/ConfirmDeleteEnrollmentModal';
 
 const LEVEL_ORDER: CanteenLevelCode[] = ['PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
 
@@ -25,6 +29,7 @@ function computeKPIs(enrollments: CanteenEnrollment[]): CanteenKPIs {
 
 export const CanteenTrackingView: React.FC = () => {
   const { schoolYear } = useSchoolYear();
+  const { showToast } = useToast();
   const academicYearId = schoolYear || 'ay-2026';
 
   const [enrollments, setEnrollments] = useState<CanteenEnrollment[]>([]);
@@ -33,15 +38,38 @@ export const CanteenTrackingView: React.FC = () => {
   const [filterLevel, setFilterLevel] = useState<CanteenLevelCode | 'ALL'>('ALL');
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'PAID' | 'PARTIAL' | 'UNPAID'>('ALL');
 
+  const [selectedDetail, setSelectedDetail] = useState<CanteenEnrollment | null>(null);
+  const [selectedEdit, setSelectedEdit] = useState<CanteenEnrollment | null>(null);
+  const [selectedDelete, setSelectedDelete] = useState<CanteenEnrollment | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const loadData = async () => {
+    setLoading(true);
+    const data = await canteenEnrollmentService.getEnrollmentsByYear(academicYearId);
+    setEnrollments(data);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      const data = await canteenEnrollmentService.getEnrollmentsByYear(academicYearId);
-      setEnrollments(data);
-      setLoading(false);
-    };
-    load();
+    loadData();
   }, [academicYearId]);
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedDelete) return;
+    setDeleting(true);
+    try {
+      const res = await canteenEnrollmentService.deleteEnrollment(selectedDelete.id);
+      if (res.success) {
+        showToast('Inscription cantine supprimée avec succès.', 'success');
+        setSelectedDelete(null);
+        await loadData();
+      } else {
+        showToast(res.error || 'Erreur lors de la suppression.', 'error');
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const kpis = useMemo(() => computeKPIs(enrollments), [enrollments]);
 
@@ -155,8 +183,8 @@ export const CanteenTrackingView: React.FC = () => {
           <table className="table table-hover align-middle mb-0">
             <thead style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
               <tr>
-                {['Photo', 'Matricule', 'Nom', 'Classe', 'Responsable', 'Total annuel', 'Payé', 'Reste', 'Progression', 'Statut'].map((h, i) => (
-                  <th key={h} style={{ padding: '12px 14px', fontSize: '0.8125rem', fontWeight: 600, color: '#475569', textAlign: i >= 5 && i <= 7 ? 'right' : 'left' }}>
+                {['Photo', 'Matricule', 'Nom', 'Classe', 'Responsable', 'Total annuel', 'Payé', 'Reste', 'Progression', 'Statut', 'Actions'].map((h, i) => (
+                  <th key={h} style={{ padding: '12px 14px', fontSize: '0.8125rem', fontWeight: 600, color: '#475569', textAlign: i >= 5 && i <= 7 ? 'right' : i === 10 ? 'center' : 'left' }}>
                     {h}
                   </th>
                 ))}
@@ -164,10 +192,10 @@ export const CanteenTrackingView: React.FC = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={10} className="text-center py-5 text-muted">Chargement...</td></tr>
+                <tr><td colSpan={11} className="text-center py-5 text-muted">Chargement...</td></tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="text-center py-5">
+                  <td colSpan={11} className="text-center py-5">
                     <UtensilsCrossed size={36} style={{ opacity: 0.3, marginBottom: 8 }} />
                     <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.875rem' }}>Aucun élève inscrit à la cantine.</p>
                   </td>
@@ -217,6 +245,37 @@ export const CanteenTrackingView: React.FC = () => {
                           {statusLabel}
                         </span>
                       </td>
+                      <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                        <div style={{ display: 'inline-flex', gap: 6 }}>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-primary p-1"
+                            title="Voir les détails"
+                            style={{ borderRadius: 6, width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                            onClick={() => setSelectedDetail(e)}
+                          >
+                            <Eye size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-success p-1"
+                            title="Modifier l'inscription"
+                            style={{ borderRadius: 6, width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                            onClick={() => setSelectedEdit(e)}
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-danger p-1"
+                            title="Supprimer l'inscription"
+                            style={{ borderRadius: 6, width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                            onClick={() => setSelectedDelete(e)}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })
@@ -231,6 +290,31 @@ export const CanteenTrackingView: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Modales Voir, Modifier, Supprimer */}
+      <CanteenEnrollmentDetailModal
+        isOpen={!!selectedDetail}
+        enrollment={selectedDetail}
+        onClose={() => setSelectedDetail(null)}
+        onEdit={(enr) => { setSelectedDetail(null); setSelectedEdit(enr); }}
+        onDelete={(enr) => { setSelectedDetail(null); setSelectedDelete(enr); }}
+      />
+      <CanteenEnrollmentEditModal
+        isOpen={!!selectedEdit}
+        enrollment={selectedEdit}
+        onClose={() => setSelectedEdit(null)}
+        onSaved={loadData}
+      />
+      <ConfirmDeleteEnrollmentModal
+        isOpen={!!selectedDelete}
+        onClose={() => setSelectedDelete(null)}
+        onConfirm={handleDeleteConfirm}
+        studentName={selectedDelete?.studentName || ''}
+        matricule={selectedDelete?.matricule}
+        serviceType="cantine"
+        totalPaid={selectedDelete?.totalPaid || 0}
+        loading={deleting}
+      />
     </div>
   );
 };

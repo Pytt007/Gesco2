@@ -243,4 +243,99 @@ export const canteenEnrollmentService = {
         (e.parentSponsor || '').toLowerCase().includes(q)
     );
   },
+
+  /**
+   * Met à jour une inscription cantine (remise, échéances personnalisées, contacts)
+   */
+  async updateEnrollment(
+    enrollmentId: string,
+    updates: {
+      discountType?: CanteenDiscountType;
+      discountValue?: number;
+      customPeriods?: { number: number; label: string; dueDate?: string; amountDue: number }[];
+      parentSponsor?: string;
+      parentPhone?: string;
+    }
+  ): Promise<ServiceResponse<CanteenEnrollment>> {
+    await syncEnrollmentsFromSupabase();
+    const enrollment = localCanteenEnrollmentsStore.get(enrollmentId);
+    if (!enrollment) return { success: false, error: 'Inscription cantine introuvable.' };
+
+    const discountType = updates.discountType ?? enrollment.discountType;
+    const discountValue = updates.discountValue !== undefined ? updates.discountValue : enrollment.discountValue;
+
+    let discountAmount = 0;
+    if (discountType === 'FIXED') {
+      discountAmount = discountValue;
+    } else if (discountType === 'PERCENTAGE') {
+      discountAmount = Math.round((enrollment.annualRate * discountValue) / 100);
+    }
+    const netAmountDue = Math.max(0, enrollment.annualRate - discountAmount);
+
+    enrollment.discountType = discountType;
+    enrollment.discountValue = discountValue;
+    enrollment.discountAmount = discountAmount;
+    enrollment.netAmountDue = netAmountDue;
+
+    if (updates.parentSponsor !== undefined) enrollment.parentSponsor = updates.parentSponsor;
+    if (updates.parentPhone !== undefined) enrollment.parentPhone = updates.parentPhone;
+
+    if (updates.customPeriods && updates.customPeriods.length > 0) {
+      let paidPool = enrollment.totalPaid;
+      enrollment.periods = updates.customPeriods.map((p, idx) => {
+        const amtDue = Number(p.amountDue) || 0;
+        const amtPaid = Math.min(amtDue, Math.max(0, paidPool));
+        paidPool = Math.max(0, paidPool - amtPaid);
+        const status: 'PAID' | 'PARTIAL' | 'PENDING' = amtPaid >= amtDue && amtDue > 0 ? 'PAID' : amtPaid > 0 ? 'PARTIAL' : 'PENDING';
+        return {
+          number: p.number || idx + 1,
+          label: p.label || `Période ${idx + 1}`,
+          amountDue: amtDue,
+          amountPaid: amtPaid,
+          status,
+          dueDate: p.dueDate,
+        };
+      });
+      enrollment.periodsCount = enrollment.periods.length;
+    }
+
+    enrollment.remainingBalance = Math.max(0, netAmountDue - enrollment.totalPaid);
+    enrollment.updatedAt = new Date().toISOString();
+
+    localCanteenEnrollmentsStore.set(enrollmentId, enrollment);
+    await persistEnrollmentsToSupabase();
+
+    return { success: true, data: enrollment, message: 'Inscription cantine mise à jour avec succès.' };
+  },
+
+  /**
+   * Supprime définitivement une inscription cantine
+   */
+  async deleteEnrollment(enrollmentId: string): Promise<ServiceResponse<boolean>> {
+    await syncEnrollmentsFromSupabase();
+    const enrollment = localCanteenEnrollmentsStore.get(enrollmentId);
+    if (!enrollment) return { success: false, error: 'Inscription cantine introuvable.' };
+
+    localCanteenEnrollmentsStore.delete(enrollmentId);
+    await persistEnrollmentsToSupabase();
+
+    return { success: true, data: true, message: 'Inscription cantine supprimée avec succès.' };
+  },
+
+  /**
+   * Annule une inscription cantine
+   */
+  async cancelEnrollment(enrollmentId: string): Promise<ServiceResponse<CanteenEnrollment>> {
+    await syncEnrollmentsFromSupabase();
+    const enrollment = localCanteenEnrollmentsStore.get(enrollmentId);
+    if (!enrollment) return { success: false, error: 'Inscription cantine introuvable.' };
+
+    enrollment.subscriptionStatus = 'CANCELLED';
+    enrollment.updatedAt = new Date().toISOString();
+
+    localCanteenEnrollmentsStore.set(enrollmentId, enrollment);
+    await persistEnrollmentsToSupabase();
+
+    return { success: true, data: enrollment, message: 'Inscription cantine annulée avec succès.' };
+  },
 };
