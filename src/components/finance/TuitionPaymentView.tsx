@@ -299,45 +299,52 @@ export const TuitionPaymentView: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {selectedEnrollment.installments.map((inst) => {
-                    const dueLeft = Math.max(0, inst.amountDue - inst.amountPaid);
-                    return (
-                      <tr key={inst.number} style={{ cursor: 'pointer' }} onClick={() => handleSelectInstallment(inst)}>
-                        <td style={{ padding: '10px 14px', fontWeight: 700 }}>N° {inst.number}</td>
-                        <td style={{ padding: '10px 14px', fontWeight: 600 }}>{inst.label}</td>
-                        <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>
-                          {inst.amountDue.toLocaleString('fr-FR')} FCFA
-                        </td>
-                        <td style={{ padding: '10px 14px', textAlign: 'right', color: '#16a34a', fontWeight: 600 }}>
-                          {inst.amountPaid.toLocaleString('fr-FR')} FCFA
-                        </td>
-                        <td style={{ padding: '10px 14px', textAlign: 'right', color: dueLeft > 0 ? '#dc2626' : '#64748b', fontWeight: 600 }}>
-                          {dueLeft.toLocaleString('fr-FR')} FCFA
-                        </td>
-                        <td style={{ padding: '10px 14px', color: '#64748b' }}>{inst.dueDate || 'Selon calendrier'}</td>
-                        <td style={{ padding: '10px 14px', textAlign: 'center' }}>
-                          {inst.status === 'PAID' ? (
-                            <span className="badge bg-success-subtle text-success text-xs">🟢 Payé</span>
-                          ) : inst.status === 'PARTIAL' ? (
-                            <span className="badge bg-warning-subtle text-warning text-xs">🟡 Partiel</span>
-                          ) : (
-                            <span className="badge bg-danger-subtle text-danger text-xs">🔴 En attente</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '10px 14px', textAlign: 'center' }}>
-                          <button
-                            className="btn btn-sm btn-outline-success text-xs fw-bold"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSelectInstallment(inst);
-                            }}
-                          >
-                            Régler
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {(selectedEnrollment.installments || [])
+                    .filter((inst, _, arr) => arr.length <= 1 || inst.amountDue > 0 || inst.amountPaid > 0)
+                    .map((inst, index) => {
+                      const dueLeft = Math.max(0, inst.amountDue - inst.amountPaid);
+                      const isPaid = inst.status === 'PAID' || dueLeft === 0;
+                      return (
+                        <tr key={inst.id || inst.number || index} style={{ cursor: dueLeft > 0 ? 'pointer' : 'default' }} onClick={() => dueLeft > 0 && handleSelectInstallment(inst)}>
+                          <td style={{ padding: '10px 14px', fontWeight: 700 }}>N° {index + 1}</td>
+                          <td style={{ padding: '10px 14px', fontWeight: 600 }}>{inst.label}</td>
+                          <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>
+                            {inst.amountDue.toLocaleString('fr-FR')} FCFA
+                          </td>
+                          <td style={{ padding: '10px 14px', textAlign: 'right', color: '#16a34a', fontWeight: 600 }}>
+                            {inst.amountPaid.toLocaleString('fr-FR')} FCFA
+                          </td>
+                          <td style={{ padding: '10px 14px', textAlign: 'right', color: dueLeft > 0 ? '#dc2626' : '#64748b', fontWeight: 600 }}>
+                            {dueLeft.toLocaleString('fr-FR')} FCFA
+                          </td>
+                          <td style={{ padding: '10px 14px', color: '#64748b' }}>{inst.dueDate || 'Selon calendrier'}</td>
+                          <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                            {isPaid ? (
+                              <span className="badge bg-success-subtle text-success text-xs">🟢 Payé</span>
+                            ) : inst.status === 'PARTIAL' ? (
+                              <span className="badge bg-warning-subtle text-warning text-xs">🟡 Partiel</span>
+                            ) : (
+                              <span className="badge bg-danger-subtle text-danger text-xs">🔴 En attente</span>
+                            )}
+                          </td>
+                          <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                            {dueLeft > 0 ? (
+                              <button
+                                className="btn btn-sm btn-outline-success text-xs fw-bold"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSelectInstallment(inst);
+                                }}
+                              >
+                                Régler
+                              </button>
+                            ) : (
+                              <span className="badge bg-light text-muted text-xs">Soldé</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
             </div>

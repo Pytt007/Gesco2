@@ -11,15 +11,54 @@ import { getStudentById } from '../students/studentsService';
 import { getClassroom } from '../academic/classroomsService';
 import { supabase } from '../common/supabaseClient';
 
-const localFinancialEnrollmentsStore: Map<string, StudentFinancialEnrollment> = new Map();
+const STORAGE_KEY_FINANCIAL_ENROLLMENTS = 'gesco_financial_enrollments_store';
+
+function loadPersistedFinancialEnrollments(): Map<string, StudentFinancialEnrollment> {
+  const store = new Map<string, StudentFinancialEnrollment>();
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem(STORAGE_KEY_FINANCIAL_ENROLLMENTS);
+      if (raw) {
+        const parsed: StudentFinancialEnrollment[] = JSON.parse(raw);
+        parsed.forEach((e) => {
+          if (Array.isArray(e.installments)) {
+            const nonZero = e.installments.filter((i) => i.amountDue > 0 || i.amountPaid > 0);
+            if (nonZero.length > 0 && nonZero.length < e.installments.length) {
+              e.installments = nonZero;
+              e.installments.forEach((i, idx) => { i.number = idx + 1; });
+              e.installmentsCount = nonZero.length;
+            }
+          }
+          store.set(e.id, e);
+        });
+      }
+    }
+  } catch {}
+  return store;
+}
+
+function persistFinancialEnrollments(store: Map<string, StudentFinancialEnrollment>) {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const list = Array.from(store.values());
+      localStorage.setItem(STORAGE_KEY_FINANCIAL_ENROLLMENTS, JSON.stringify(list));
+    }
+  } catch {}
+}
+
+const localFinancialEnrollmentsStore: Map<string, StudentFinancialEnrollment> = loadPersistedFinancialEnrollments();
 
 export function clearFinancialEnrollmentsStore() {
   localFinancialEnrollmentsStore.clear();
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEY_FINANCIAL_ENROLLMENTS);
+    }
+  } catch {}
 }
 
-
 /**
- * Génère automatiquement les 8 échéances réparties pour un solde donné
+ * Génère automatiquement les échéances réparties pour un solde donné
  */
 export function generateDefaultInstallments(
   netTotalDue: number,
@@ -27,22 +66,6 @@ export function generateDefaultInstallments(
   customs?: { number: number; amountDue: number; label?: string; dueDate?: string }[],
   academicYear?: string
 ): EnrollmentInstallmentItem[] {
-  if (customs && customs.length > 0) {
-    return customs.map((c) => ({
-      number: c.number,
-      label: c.label || `Échéance ${c.number}`,
-      dueDate: c.dueDate,
-      amountDue: c.amountDue,
-      amountPaid: 0,
-      status: 'PENDING' as const,
-    }));
-  }
-
-  const count = 8;
-  const netTuition = Math.max(0, netTotalDue - registrationFee);
-  const basePerInstallment = Math.floor(netTuition / count);
-  const remainder = netTuition - basePerInstallment * count;
-
   let startYear = new Date().getFullYear();
   if (academicYear) {
     const parts = academicYear.split(/[-/]/);
@@ -52,6 +75,41 @@ export function generateDefaultInstallments(
     }
   }
 
+  // 1. Si des échéances personnalisées ont été configurées (ex: 1 seule échéance comptant)
+  if (customs && customs.length > 0) {
+    const nonZeroCustoms = customs.filter((c, idx) => c.amountDue > 0 || (customs.length === 1 && idx === 0));
+    const finalCustoms = nonZeroCustoms.length > 0 ? nonZeroCustoms : [customs[0]];
+
+    return finalCustoms.map((c, idx) => ({
+      number: idx + 1,
+      label: c.label || (finalCustoms.length === 1 ? 'Paiement Unique (Comptant)' : `Échéance ${idx + 1}`),
+      dueDate: c.dueDate || `${startYear}-${String(10 + (idx % 12)).padStart(2, '0')}-05`,
+      amountDue: c.amountDue,
+      amountPaid: 0,
+      status: 'PENDING' as const,
+    }));
+  }
+
+  // 2. Si pas d'échéances personnalisées
+  const netTuition = Math.max(0, netTotalDue - registrationFee);
+
+  // Si la scolarité restante est de 0 (ex: seulement inscription ou déjà soldé)
+  if (netTuition <= 0) {
+    return [
+      {
+        number: 1,
+        label: registrationFee > 0 ? 'Frais d’inscription' : 'Paiement Unique (Comptant)',
+        dueDate: `${startYear}-10-05`,
+        amountDue: netTotalDue > 0 ? netTotalDue : registrationFee,
+        amountPaid: 0,
+        status: 'PENDING' as const,
+      },
+    ];
+  }
+
+  const count = 8;
+  const basePerInstallment = Math.floor(netTuition / count);
+  const remainder = netTuition - basePerInstallment * count;
   const months = ['10', '11', '12', '01', '02', '03', '04', '05'];
   const items: EnrollmentInstallmentItem[] = [];
 
@@ -61,12 +119,14 @@ export function generateDefaultInstallments(
       ? registrationFee + basePerInstallment + remainder
       : basePerInstallment;
 
+    if (dueAmount <= 0 && i > 1) continue; // Ne pas créer d'échéances fantômes à 0 FCFA
+
     const monthIndex = i - 1;
     const yearForMonth = monthIndex >= 3 ? startYear + 1 : startYear;
 
     items.push({
-      number: i,
-      label: `Échéance ${i}`,
+      number: items.length + 1,
+      label: `Échéance ${items.length + 1}`,
       dueDate: `${yearForMonth}-${months[monthIndex]}-05`,
       amountDue: dueAmount,
       amountPaid: 0,
@@ -131,12 +191,21 @@ export const studentFinancialEnrollmentService = {
       // Fallback
     }
 
-    return Array.from(localFinancialEnrollmentsStore.values()).filter(
+    const inMemoryList = Array.from(localFinancialEnrollmentsStore.values()).filter(
       (e) => (e.academicYearId === academicYearId || !academicYearId) && e.status === 'ACTIVE'
     );
+    inMemoryList.forEach((e) => {
+      if (Array.isArray(e.installments) && e.installments.length > 1) {
+        const nonZero = e.installments.filter((i) => i.amountDue > 0 || i.amountPaid > 0);
+        if (nonZero.length > 0 && nonZero.length < e.installments.length) {
+          e.installments = nonZero;
+          e.installments.forEach((i, idx) => { i.number = idx + 1; });
+          e.installmentsCount = nonZero.length;
+        }
+      }
+    });
+    return inMemoryList;
   },
-
-
 
   /**
    * Obtient le dossier financier d'un élève pour une année scolaire
@@ -178,25 +247,15 @@ export const studentFinancialEnrollmentService = {
       }
     } catch { /* Fallback */ }
 
-    // 4. Récupération automatique des tarifs selon l'année scolaire et le niveau
-    const feeSchedule = await tuitionFeesService.getScheduleByLevel(levelCode, input.academicYearId);
+    // 4. Récupération des tarifs officiels configurés
+    const schedules = await tuitionFeesService.getSchedulesByYear(input.academicYearId);
+    const schedule = schedules.find((s) => s.levelCode === levelCode);
 
-    if (!feeSchedule) {
-      return {
-        success: false,
-        error: `Aucun tarif configuré pour le niveau ${levelCode} sur l'année scolaire sélectionnée.`,
-      };
-    }
+    const registrationFee = schedule ? schedule.registrationFee : 50000;
+    const tuitionFee = schedule ? schedule.tuitionFee : 120000;
+    const totalAnnualFee = registrationFee + tuitionFee;
 
-    const registrationFee = feeSchedule.registrationFee;
-    const tuitionFee = feeSchedule.tuitionFee;
-    const totalAnnualFee = feeSchedule.totalAnnualFee;
-
-    // 5. Validation des valeurs de remise
-    if (input.discountValue < 0) {
-      return { success: false, error: 'La remise ne peut pas être négative.' };
-    }
-
+    // 5. Calcul de la remise éventuelle
     let discountAmount = 0;
     if (input.discountType === 'FIXED') {
       discountAmount = input.discountValue;
@@ -210,7 +269,7 @@ export const studentFinancialEnrollmentService = {
 
     const netTotalDue = Math.max(0, totalAnnualFee - discountAmount);
 
-    // 6. Génération automatique des 8 échéances
+    // 6. Génération des échéances réparties
     const installments = generateDefaultInstallments(
       netTotalDue,
       registrationFee,
@@ -258,12 +317,21 @@ export const studentFinancialEnrollmentService = {
     };
 
     localFinancialEnrollmentsStore.set(id, record);
+    persistFinancialEnrollments(localFinancialEnrollmentsStore);
 
     return {
       success: true,
       data: record,
-      message: 'Dossier financier créé et 8 échéances générées avec succès.',
+      message: `Dossier financier créé et ${installments.length} échéance(s) configurée(s) avec succès.`,
     };
+  },
+
+  /**
+   * Sauvegarde directe d'un dossier financier (synchronisation mémoire + localStorage)
+   */
+  saveEnrollment(enrollment: StudentFinancialEnrollment) {
+    localFinancialEnrollmentsStore.set(enrollment.id, enrollment);
+    persistFinancialEnrollments(localFinancialEnrollmentsStore);
   },
 
   /**
@@ -318,6 +386,7 @@ export const studentFinancialEnrollmentService = {
     };
 
     localFinancialEnrollmentsStore.set(id, updated);
+    persistFinancialEnrollments(localFinancialEnrollmentsStore);
     return { success: true, data: updated, message: 'Dossier financier mis à jour.' };
   },
 
@@ -333,6 +402,7 @@ export const studentFinancialEnrollmentService = {
     existing.status = 'ARCHIVED';
     existing.updatedAt = new Date().toISOString();
     localFinancialEnrollmentsStore.set(id, existing);
+    persistFinancialEnrollments(localFinancialEnrollmentsStore);
 
     return { success: true, data: true, message: 'Dossier financier archivé.' };
   },

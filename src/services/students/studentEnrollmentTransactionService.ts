@@ -48,6 +48,7 @@ export interface CompleteStudentRegistrationInput {
     paymentMode: 'CASH' | 'ORANGE_MONEY' | 'MTN_MONEY' | 'WAVE' | 'TRANSFER' | 'CHECK';
     paymentReference?: string;
     remarks?: string;
+    customInstallments?: { number: number; amountDue: number; label?: string; dueDate?: string }[];
   };
   assignment: {
     schoolYear: string;
@@ -232,6 +233,7 @@ export async function executeStudentRegistrationTransaction(
       levelCode,
       discountType: input.payment.discountType || 'FIXED',
       discountValue: input.payment.discountValue || input.payment.discountAmount,
+      customInstallments: input.payment.customInstallments,
     });
 
     if (!enrollmentRes.success || !enrollmentRes.data) {

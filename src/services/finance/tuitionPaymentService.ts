@@ -349,11 +349,12 @@ export const tuitionPaymentService = {
     const newTotalPaid = enrollment.totalPaid + input.amount;
     const newRemainingBalance = Math.max(0, enrollment.netTotalDue - newTotalPaid);
 
-    // Mise à jour du dossier financier en mémoire
+    // Mise à jour du dossier financier en mémoire et persistance
     enrollment.totalPaid = newTotalPaid;
     enrollment.remainingBalance = newRemainingBalance;
     enrollment.installments = updatedInstallments;
     enrollment.updatedAt = new Date().toISOString();
+    studentFinancialEnrollmentService.saveEnrollment(enrollment);
 
     // 6. Génération du reçu officiel avec QR Code
     const receipt = await this.generateReceiptData(paymentRecord, enrollment);
