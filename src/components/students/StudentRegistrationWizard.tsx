@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, CheckCircle2, User, Users, CreditCard, BookOpen, FileText, AlertCircle, Printer } from 'lucide-react';
 import { StudentInfoStep, StudentInfoData, AVATAR_BOY, AVATAR_GIRL } from './steps/StudentInfoStep';
 import { ParentsInfoStep, ParentsStepData } from './steps/ParentsInfoStep';
@@ -15,6 +15,7 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  schoolYear?: string;
 }
 
 const STEPS = [
@@ -25,8 +26,9 @@ const STEPS = [
   { id: 5, label: 'Résumé', icon: CheckCircle2 },
 ];
 
-export const StudentRegistrationWizard: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
-  const { schoolYear } = useSchoolYear();
+export const StudentRegistrationWizard: React.FC<Props> = ({ isOpen, onClose, onSuccess, schoolYear: schoolYearProp }) => {
+  const { schoolYear: contextSchoolYear } = useSchoolYear();
+  const schoolYear = schoolYearProp || contextSchoolYear;
   const { addNotification } = useToast();
 
   const [activeStep, setActiveStep] = useState<number>(1);
@@ -74,12 +76,18 @@ export const StudentRegistrationWizard: React.FC<Props> = ({ isOpen, onClose, on
 
   // État Step 4: Affectation
   const [assignmentData, setAssignmentData] = useState<ClassAssignmentStepData>({
-    schoolYear: schoolYear || '2024-2025',
+    schoolYear: schoolYear || '2025-2026',
     levelId: 'lvl-cp1',
     classId: '',
     className: '',
     allowCapacityOverflow: false,
   });
+
+  useEffect(() => {
+    if (schoolYear) {
+      setAssignmentData((prev) => ({ ...prev, schoolYear }));
+    }
+  }, [schoolYear]);
 
   const isDirty = Boolean(studentData.firstName || studentData.lastName || parentsData.father?.firstName);
   const { clearDraft } = useDraftAutosave('student_registration', {
@@ -143,8 +151,13 @@ export const StudentRegistrationWizard: React.FC<Props> = ({ isOpen, onClose, on
         errs.discountValue = 'Le pourcentage de remise doit être compris entre 0 et 100%.';
       }
     } else if (step === 4) {
-      if (!assignmentData.classId && !assignmentData.className) {
-        errs.classId = 'Veuillez sélectionner une classe pour affecter l\'élève.';
+      // Le choix de la classe est optionnel lors de l'inscription initiale.
+      // Si aucune classe n'est choisie, l'élève sera enregistré avec le statut "Non affecté".
+      if (!assignmentData.className && !assignmentData.classId) {
+        setAssignmentData((prev) => ({
+          ...prev,
+          className: 'Non affecté',
+        }));
       }
     }
 

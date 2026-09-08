@@ -75,6 +75,11 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, string[]> = {
   ],
 };
 
+// 🛡️ Support et rétrocompatibilité des alias de rôles
+(DEFAULT_PERMISSIONS as any).ADMIN = DEFAULT_PERMISSIONS.ADMIN_GENERALE;
+(DEFAULT_PERMISSIONS as any).ADMIN_GENERAL = DEFAULT_PERMISSIONS.ADMIN_GENERALE;
+(DEFAULT_PERMISSIONS as any).COMPTABLE = DEFAULT_PERMISSIONS.FINANCE;
+
 export const ROLE_LABELS: Record<string, string> = {
   ADMIN_GENERALE:      'Admin Général',
   DIRECTEUR:           'Directeur (Propriétaire)',

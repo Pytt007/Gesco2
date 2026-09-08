@@ -84,8 +84,9 @@ async function syncStudentsFromSupabase(): Promise<Student[]> {
       .maybeSingle();
 
     if (settingsRow && Array.isArray(settingsRow.data)) {
-      localStudentsStore = settingsRow.data;
-      return settingsRow.data;
+      const sanitized = settingsRow.data.filter((s: any) => s && typeof s === 'object');
+      localStudentsStore = sanitized;
+      return sanitized;
     }
 
     // Chargement paginé sans limite arbitraire (toutes les pages de 500 lignes)
@@ -379,6 +380,7 @@ export async function listStudents(filters: StudentFilters = {}): Promise<Servic
     }
 
     // Tri (Nom, Matricule)
+    rawList = rawList.filter((s): s is Student => Boolean(s && typeof s === 'object'));
     rawList.sort((a, b) => {
       let valA = '';
       let valB = '';
@@ -386,8 +388,8 @@ export async function listStudents(filters: StudentFilters = {}): Promise<Servic
         valA = a.matricule || '';
         valB = b.matricule || '';
       } else {
-        valA = `${a.lastName} ${a.firstName}`;
-        valB = `${b.lastName} ${b.firstName}`;
+        valA = `${a.lastName || ''} ${a.firstName || ''}`.trim();
+        valB = `${b.lastName || ''} ${b.firstName || ''}`.trim();
       }
       const comp = valA.localeCompare(valB, 'fr', { sensitivity: 'base' });
       return sortOrder === 'asc' ? comp : -comp;

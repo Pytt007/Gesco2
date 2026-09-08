@@ -117,21 +117,33 @@ export default function StudentsPage() {
   useEffect(() => {
     if (detailStudent) {
       studentFinancialEnrollmentService.getEnrollmentsByYear(schoolYear || '').then((list) => {
-        const found = list.find((e) => e.studentId === detailStudent.id || e.studentName.toLowerCase().includes(detailStudent.lastName.toLowerCase()));
-        setStudentScolarData(found || null);
-      });
+        if (Array.isArray(list)) {
+          const found = list.find((e) => e && (e.studentId === detailStudent.id || (e.studentName && detailStudent.lastName && e.studentName.toLowerCase().includes(detailStudent.lastName.toLowerCase()))));
+          setStudentScolarData(found || null);
+        } else {
+          setStudentScolarData(null);
+        }
+      }).catch(() => setStudentScolarData(null));
 
       canteenEnrollmentService.getEnrollmentsByYear(schoolYear || '').then((list) => {
-        const found = list.find((e) => e.studentId === detailStudent.id);
-        setStudentCanteenData(found || null);
-      });
+        if (Array.isArray(list)) {
+          const found = list.find((e) => e && e.studentId === detailStudent.id);
+          setStudentCanteenData(found || null);
+        } else {
+          setStudentCanteenData(null);
+        }
+      }).catch(() => setStudentCanteenData(null));
 
       transportEnrollmentService.getEnrollmentsByYear(schoolYear || '').then((list) => {
-        const found = list.find((e) => e.studentId === detailStudent.id);
-        setStudentTransportData(found || null);
-      });
+        if (Array.isArray(list)) {
+          const found = list.find((e) => e && e.studentId === detailStudent.id);
+          setStudentTransportData(found || null);
+        } else {
+          setStudentTransportData(null);
+        }
+      }).catch(() => setStudentTransportData(null));
     }
-  }, [detailStudent]);
+  }, [detailStudent, schoolYear]);
 
   const handleParentSearch = async (val: string) => {
     setParentQuery(val);
@@ -143,9 +155,11 @@ export default function StudentsPage() {
     setIsSearchingParent(true);
     try {
       const res = await listParents({ searchQuery: val, pageSize: 5 });
-      if (res.data?.parents) {
+      if (res.data?.parents && Array.isArray(res.data.parents)) {
         setParentSuggestions(res.data.parents);
       }
+    } catch {
+      setParentSuggestions([]);
     } finally {
       setIsSearchingParent(false);
     }
@@ -163,11 +177,11 @@ export default function StudentsPage() {
   };
 
   const filteredStudents = useMemo(() => {
-    let res = students;
+    const list = Array.isArray(students) ? students.filter(Boolean) : [];
     if (gradeFilter !== 'all') {
-      res = res.filter((s) => s.grade === gradeFilter);
+      return list.filter((s) => s && s.grade === gradeFilter);
     }
-    return res;
+    return list;
   }, [students, gradeFilter]);
 
   const handleOpenAdd = () => {
@@ -282,7 +296,9 @@ export default function StudentsPage() {
               </div>
             </div>
             <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>Élèves Actifs</span>
-            <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{filteredStudents.filter((s) => s.status === 'Actif').length}</div>
+            <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>
+              {(filteredStudents || []).filter((s) => s?.status === 'Actif').length}
+            </div>
           </div>
 
           {/* Scolarité à jour - Cyan */}
@@ -294,7 +310,9 @@ export default function StudentsPage() {
               </div>
             </div>
             <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>Scolarité à Jour</span>
-            <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{filteredStudents.filter((s) => s.feesStatus === 'Payé').length}</div>
+            <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>
+              {(filteredStudents || []).filter((s) => s?.feesStatus === 'Payé').length}
+            </div>
           </div>
 
           {/* En Retard - Rouge */}
@@ -306,7 +324,9 @@ export default function StudentsPage() {
               </div>
             </div>
             <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>En Retard</span>
-            <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{filteredStudents.filter((s) => s.feesStatus === 'En retard').length}</div>
+            <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>
+              {(filteredStudents || []).filter((s) => s?.feesStatus === 'En retard').length}
+            </div>
           </div>
         </div>
       </div>
@@ -393,70 +413,76 @@ export default function StudentsPage() {
                   </td>
                 </tr>
               ) : (
-                filteredStudents.map((st) => (
-                  <tr key={st.id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.15s ease' }} className="table-row-hover">
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <img
-                          src={st.photo || (st.gender === 'Féminin' ? OFFICIAL_GIRL_AVATAR : OFFICIAL_BOY_AVATAR)}
-                          alt={st.lastName}
-                          style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', background: '#ffffff', border: '1px solid #e2e8f0' }}
-                        />
-                        <div>
-                          <div style={{ fontWeight: 700, color: '#0f172a' }}>{st.lastName} {st.firstName}</div>
-                          <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Matricule : {st.matricule || st.id.slice(0, 8)}</div>
+                filteredStudents.map((st) => {
+                  if (!st) return null;
+                  const matriculeDisplay = st.matricule || (typeof st.id === 'string' ? st.id.slice(0, 8) : '—');
+                  const feesStatusStr = typeof st.feesStatus === 'string' ? st.feesStatus : 'En attente';
+                  const statusStr = typeof st.status === 'string' ? st.status : 'Actif';
+                  return (
+                    <tr key={st.id || Math.random()} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.15s ease' }} className="table-row-hover">
+                      <td style={{ padding: '12px 16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <img
+                            src={st.photo || (st.gender === 'Féminin' ? OFFICIAL_GIRL_AVATAR : OFFICIAL_BOY_AVATAR)}
+                            alt={st.lastName || 'Élève'}
+                            style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', background: '#ffffff', border: '1px solid #e2e8f0' }}
+                          />
+                          <div>
+                            <div style={{ fontWeight: 700, color: '#0f172a' }}>{st.lastName || ''} {st.firstName || ''}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Matricule : {matriculeDisplay}</div>
+                          </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td style={{ padding: '12px 16px' }}>
-                      <span className="badge badge-neutral" style={{ fontWeight: 700 }}>{st.grade}</span>
-                    </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span className="badge badge-neutral" style={{ fontWeight: 700 }}>{st.grade || '—'}</span>
+                      </td>
 
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ fontWeight: 600, color: '#334155' }}>{st.parentName || 'Non renseigné'}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{st.parentPhone || '—'}</div>
-                    </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <div style={{ fontWeight: 600, color: '#334155' }}>{st.parentName || 'Non renseigné'}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{st.parentPhone || '—'}</div>
+                      </td>
 
-                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                      {FEES_BADGE[st.feesStatus] || <span className="badge badge-neutral">{st.feesStatus}</span>}
-                    </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                        {FEES_BADGE[feesStatusStr] || <span className="badge badge-neutral">{feesStatusStr}</span>}
+                      </td>
 
-                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                      {STATUS_BADGE[st.status] || <span className="badge badge-neutral">{st.status}</span>}
-                    </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                        {STATUS_BADGE[statusStr] || <span className="badge badge-neutral">{statusStr}</span>}
+                      </td>
 
-                    <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                        <button className="btn btn-ghost btn-sm" title="Voir Dossier" onClick={() => setDetailStudent(st)}>
-                          <Eye size={15} color="#4f46e5" />
-                        </button>
-                        <button className="btn btn-ghost btn-sm" title="Modifier" onClick={() => handleOpenEdit(st)}>
-                          <Edit2 size={15} color="#0ea5e9" />
-                        </button>
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          title="Supprimer"
-                          onClick={async () => {
-                            const isConfirmed = await confirm({
-                              title: "Supprimer l'élève",
-                              message: `Voulez-vous vraiment supprimer définitivement l'élève ${st.lastName} ${st.firstName} ? Cette action est irréversible.`,
-                              confirmText: 'Oui, supprimer',
-                              cancelText: 'Annuler',
-                              variant: 'danger',
-                            });
-                            if (isConfirmed) {
-                              const ok = await remove(st.id);
-                              if (ok) addNotification('success', `L'élève ${st.lastName} ${st.firstName} a été supprimé avec succès.`);
-                            }
-                          }}
-                        >
-                          <Trash2 size={15} color="#ef4444" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                          <button className="btn btn-ghost btn-sm" title="Voir Dossier" onClick={() => setDetailStudent(st)}>
+                            <Eye size={15} color="#4f46e5" />
+                          </button>
+                          <button className="btn btn-ghost btn-sm" title="Modifier" onClick={() => handleOpenEdit(st)}>
+                            <Edit2 size={15} color="#0ea5e9" />
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            title="Supprimer"
+                            onClick={async () => {
+                              const isConfirmed = await confirm({
+                                title: "Supprimer l'élève",
+                                message: `Voulez-vous vraiment supprimer définitivement l'élève ${st.lastName || ''} ${st.firstName || ''} ? Cette action est irréversible.`,
+                                confirmText: 'Oui, supprimer',
+                                cancelText: 'Annuler',
+                                variant: 'danger',
+                              });
+                              if (isConfirmed) {
+                                const ok = await remove(st.id);
+                                if (ok) addNotification('success', `L'élève ${st.lastName || ''} ${st.firstName || ''} a été supprimé avec succès.`);
+                              }
+                            }}
+                          >
+                            <Trash2 size={15} color="#ef4444" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -486,8 +512,8 @@ export default function StudentsPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <img src={detailStudent.photo || (detailStudent.gender === 'Féminin' ? OFFICIAL_GIRL_AVATAR : OFFICIAL_BOY_AVATAR)} alt="" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: '2px solid #e2e8f0', background: '#ffffff' }} />
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800, color: '#0f172a' }}>{detailStudent.lastName} {detailStudent.firstName}</h3>
-                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Classe : {detailStudent.grade}</span>
+                  <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800, color: '#0f172a' }}>{detailStudent.lastName || ''} {detailStudent.firstName || ''}</h3>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Classe : {detailStudent.grade || 'Non assigné'}</span>
                 </div>
               </div>
               <button className="btn btn-ghost btn-sm" onClick={() => setDetailStudent(null)}><X size={18} /></button>
@@ -541,9 +567,9 @@ export default function StudentsPage() {
                   {studentScolarData ? (
                     <div style={{ padding: 16, background: '#f0fdf4', borderRadius: 12, border: '1px solid #bbf7d0' }}>
                       <div style={{ fontWeight: 700, color: '#166534' }}>Dossier Scolarité</div>
-                      <div style={{ fontSize: '0.875rem', marginTop: 6 }}>Netteté dûe : {studentScolarData.netAmountDue?.toLocaleString()} FCFA</div>
-                      <div style={{ fontSize: '0.875rem' }}>Montant Encaissé : {studentScolarData.totalPaid?.toLocaleString()} FCFA</div>
-                      <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#dc2626', marginTop: 4 }}>Reste à payer : {studentScolarData.remainingBalance?.toLocaleString()} FCFA</div>
+                      <div style={{ fontSize: '0.875rem', marginTop: 6 }}>Netteté dûe : {Number(studentScolarData.netAmountDue || 0).toLocaleString()} FCFA</div>
+                      <div style={{ fontSize: '0.875rem' }}>Montant Encaissé : {Number(studentScolarData.totalPaid || 0).toLocaleString()} FCFA</div>
+                      <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#dc2626', marginTop: 4 }}>Reste à payer : {Number(studentScolarData.remainingBalance || 0).toLocaleString()} FCFA</div>
                     </div>
                   ) : <p style={{ color: '#94a3b8' }}>Aucune inscription financière trouvée pour cette année.</p>}
                 </div>
@@ -585,6 +611,7 @@ export default function StudentsPage() {
           onSuccess={() => {
             refresh();
           }}
+          schoolYear={schoolYear}
         />
       )}
 

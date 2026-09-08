@@ -126,6 +126,7 @@ export default function ScolarityPage({ defaultTab }: { defaultTab?: ScolarityTa
           isOpen={showRegistrationWizard}
           onClose={() => setShowRegistrationWizard(false)}
           onSuccess={() => setShowRegistrationWizard(false)}
+          schoolYear={schoolYear}
         />
       )}
 

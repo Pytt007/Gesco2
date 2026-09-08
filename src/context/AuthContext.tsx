@@ -147,7 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const permissions = currentUser
-    ? (DEFAULT_PERMISSIONS[currentUser.role] || [])
+    ? (DEFAULT_PERMISSIONS[currentUser.role] || (currentUser.username === 'admin' || currentUser.isOwner ? DEFAULT_PERMISSIONS.ADMIN_GENERALE : []))
     : [];
   const canAccess = useCallback((viewId: string) => permissions.includes(viewId), [permissions]);
 

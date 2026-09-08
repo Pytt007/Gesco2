@@ -35,11 +35,47 @@ export const DEMO_ADMIN_USER: GescoUser = _ADMIN_USER;
 
 
 
+export function normalizeUserRole(rawRole: any): UserRole {
+  if (!rawRole) return 'ADMIN_GENERALE';
+  const str = String(rawRole).toUpperCase().trim();
+  if (str === 'ADMIN' || str === 'ADMINISTRATEUR' || str === 'ADMIN_GENERAL' || str === 'ADMIN_GENERALE') {
+    return 'ADMIN_GENERALE';
+  }
+  if (str === 'DIRECTEUR' || str === 'DIRECTRICE' || str === 'OWNER') {
+    return 'DIRECTEUR';
+  }
+  if (str === 'FINANCE' || str === 'COMPTABLE' || str === 'COMPTABILITE') {
+    return 'FINANCE';
+  }
+  if (str === 'CAISSIER' || str === 'CAISSIERE') {
+    return 'CAISSIER';
+  }
+  if (str === 'SECRETAIRE') {
+    return 'SECRETAIRE';
+  }
+  if (str === 'ENSEIGNANT' || str === 'PROFESSEUR' || str === 'MAITRE') {
+    return 'ENSEIGNANT';
+  }
+  if (str === 'SCOLAIRE_ENSEIGNANT') {
+    return 'SCOLAIRE_ENSEIGNANT';
+  }
+  if (str === 'CANTINE_TRANSPORT') {
+    return 'CANTINE_TRANSPORT';
+  }
+  if (str === 'RESP_CANTINE') {
+    return 'RESP_CANTINE';
+  }
+  if (str === 'RESP_TRANSPORT') {
+    return 'RESP_TRANSPORT';
+  }
+  return 'ADMIN_GENERALE';
+}
+
 export async function resolveUserFromSupabase(user: any): Promise<GescoUser> {
   const meta = user.user_metadata || {};
   const username = meta.username || (user.email ? emailToUsername(user.email) : '') || 'inconnu';
 
-  let role: UserRole = (meta.role as UserRole) || 'ADMIN_GENERALE';
+  let rawRole = meta.role || (username === 'admin' ? 'ADMIN_GENERALE' : 'ADMIN_GENERALE');
   let fullName: string = meta.full_name || username;
 
   try {
@@ -49,11 +85,13 @@ export async function resolveUserFromSupabase(user: any): Promise<GescoUser> {
       .eq('id', user.id)
       .single();
 
-    if (profile?.role) role = profile.role as UserRole;
+    if (profile?.role) rawRole = profile.role;
     if (profile?.full_name) fullName = profile.full_name;
   } catch {
     // Fallback aux métadonnées si la récupération du profil échoue
   }
+
+  const role: UserRole = normalizeUserRole(rawRole);
 
   return {
     id: user.id,
@@ -432,9 +470,9 @@ export async function updateAccountRole(userId: string, role: UserRole): Promise
   return {};
 }
 
-export async function updateAccountStatus(
+export async function setUserAccountStatus(
   userId: string,
-  status: 'ACTIF' | 'INACTIF' | 'ARCHIVE'
+  status: any
 ): Promise<{ error?: string }> {
   if (status !== 'ACTIF' && (await isLastActiveAdmin(userId))) {
     return { error: 'Impossible de désactiver ou archiver le dernier administrateur actif du système.' };
@@ -459,3 +497,5 @@ export async function updateAccountStatus(
 
   return {};
 }
+
+export const updateAccountStatus = setUserAccountStatus;

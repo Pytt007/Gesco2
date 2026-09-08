@@ -57,9 +57,9 @@ export function useStudents(options: UseStudentsOptions = {}) {
       if (!res.success || !res.data) {
         setError(res.error || 'Erreur lors de la récupération des élèves.');
       } else {
-        setStudents(res.data.students);
-        setTotalCount(res.data.totalCount);
-        setTotalPages(res.data.totalPages);
+        setStudents(Array.isArray(res.data.students) ? res.data.students.filter(Boolean) : []);
+        setTotalCount(res.data.totalCount || 0);
+        setTotalPages(res.data.totalPages || 1);
       }
     } catch (err: any) {
       setError(err.message || 'Erreur lors du chargement des élèves.');
