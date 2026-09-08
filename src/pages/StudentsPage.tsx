@@ -17,6 +17,7 @@ import { StudentRegistrationWizard } from '../components/students/StudentRegistr
 import { OFFICIAL_BOY_AVATAR, OFFICIAL_GIRL_AVATAR } from '../services/students/studentsService';
 import { Student } from '../types';
 import { exportStudentsToExcel, downloadExcel } from '../utils/exportUtils';
+import { getClassrooms } from '../services/academic/classroomsService';
 import {
   Plus, Search, Download, Upload, X, Save, Eye, FileText, HeartPulse,
   History, ArrowUpDown, ChevronLeft, ChevronRight, RefreshCw, CheckCircle2,
@@ -76,6 +77,8 @@ export default function StudentsPage() {
 
   const [gradeFilter, setGradeFilter] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [availableClasses, setAvailableClasses] = useState<string[]>(GRADES);
   const [showImportModal, setShowImportModal] = useState(false);
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
 
@@ -113,6 +116,16 @@ export default function StudentsPage() {
   });
 
   const [form, setForm] = useState<Partial<Student>>(emptyForm());
+
+  // Charger les classes réelles pour le filtre et l'édition
+  useEffect(() => {
+    getClassrooms().then((res) => {
+      if (res.success && res.data && res.data.length > 0) {
+        const names = Array.from(new Set(res.data.map((c) => c.name)));
+        setAvailableClasses(names);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (detailStudent) {
@@ -185,46 +198,58 @@ export default function StudentsPage() {
   }, [students, gradeFilter]);
 
   const handleOpenAdd = () => {
-    setEditingStudent(null);
-    setForm(emptyForm());
-    setParentQuery('');
-    setWizardStep(1);
     setShowAddModal(true);
   };
 
   const handleOpenEdit = (student: Student) => {
     setEditingStudent(student);
-    setForm(student);
-    setParentQuery(student.parentName || '');
-    setWizardStep(1);
-    setShowAddModal(true);
+    setForm({
+      ...student,
+      firstName: student.firstName || '',
+      lastName: student.lastName || '',
+      grade: student.grade || availableClasses[0] || 'CP1',
+      gender: student.gender || 'Masculin',
+      parentName: student.parentName || '',
+      parentPhone: student.parentPhone || '',
+      address: student.address || '',
+      status: student.status || 'Actif',
+      feesStatus: student.feesStatus || 'En attente',
+    });
+    setShowEditModal(true);
   };
 
-  const handleSave = async () => {
+  const handleSaveEdit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!editingStudent) return;
     if (!form.firstName?.trim() && !form.lastName?.trim()) {
       addNotification('error', 'Veuillez renseigner au moins le nom ou le prénom.');
       return;
     }
 
-    const payload = {
+    const cleanLastName = (form.lastName || '').trim();
+    const cleanFirstName = (form.firstName || cleanLastName || 'Élève').trim();
+
+    const payload: Partial<Student> = {
       ...form,
-      grade: form.grade || 'Non assigné',
-      firstName: form.firstName?.trim() || form.lastName?.trim() || 'Élève',
-      lastName: form.lastName?.trim() || '',
+      firstName: cleanFirstName,
+      lastName: cleanLastName,
+      grade: form.grade || editingStudent.grade || 'Non assigné',
+      parentName: form.parentName?.trim() || '',
+      parentPhone: form.parentPhone?.trim() || '',
+      address: form.address?.trim() || '',
+      gender: form.gender || 'Masculin',
+      status: form.status || 'Actif',
+      feesStatus: form.feesStatus || 'En attente',
     };
 
-    if (editingStudent) {
-      const ok = await update(editingStudent.id, payload);
-      if (ok) {
-        addNotification('success', 'Élève mis à jour avec succès.');
-        setShowAddModal(false);
-      }
+    const ok = await update(editingStudent.id, payload);
+    if (ok) {
+      addNotification('success', `Fiche de ${cleanLastName} ${cleanFirstName} mise à jour avec succès.`);
+      setShowEditModal(false);
+      setEditingStudent(null);
+      refresh();
     } else {
-      const created = await create(payload);
-      if (created) {
-        addNotification('success', 'Élève inscrit avec succès.');
-        setWizardStep(4);
-      }
+      addNotification('error', error || 'Erreur lors de la mise à jour.');
     }
   };
 
@@ -360,7 +385,7 @@ export default function StudentsPage() {
               onChange={(e) => setGradeFilter(e.target.value)}
             >
               <option value="all">Toutes classes</option>
-              {GRADES.map((g) => (
+              {availableClasses.map((g) => (
                 <option key={g} value={g}>{g}</option>
               ))}
             </select>
@@ -599,6 +624,175 @@ export default function StudentsPage() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODALE MODIFICATION FICHE ÉLÈVE DÉDIÉE ────────────────────────────── */}
+      {showEditModal && editingStudent && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(15,23,42,0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ width: '100%', maxWidth: '620px', background: '#ffffff', borderRadius: '16px', boxShadow: '0 20px 50px rgba(0,0,0,0.25)', overflow: 'hidden', animation: 'slideUp 0.2s ease-out' }}>
+            
+            {/* Header Modale */}
+            <div style={{ padding: '16px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Edit2 size={18} color="#2563eb" />
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800, color: '#0f172a' }}>
+                    Modifier la Fiche Élève
+                  </h3>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                    Matricule : {editingStudent.matricule || editingStudent.id}
+                  </span>
+                </div>
+              </div>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => { setShowEditModal(false); setEditingStudent(null); }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Formulaire de modification */}
+            <form onSubmit={handleSaveEdit}>
+              <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '70vh', overflowY: 'auto' }}>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <div>
+                    <label className="form-label">Nom de famille</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={form.lastName || ''}
+                      onChange={(e) => setForm({ ...form, lastName: e.target.value.toUpperCase() })}
+                      placeholder="Ex: KOUASSI"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Prénom(s)</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={form.firstName || ''}
+                      onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                      placeholder="Ex: Jean-Philippe"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+                  <div>
+                    <label className="form-label">Classe d'Affectation</label>
+                    <select
+                      className="form-select"
+                      value={form.grade || ''}
+                      onChange={(e) => setForm({ ...form, grade: e.target.value })}
+                    >
+                      {availableClasses.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="form-label">Genre</label>
+                    <select
+                      className="form-select"
+                      value={form.gender || 'Masculin'}
+                      onChange={(e) => setForm({ ...form, gender: e.target.value as any })}
+                    >
+                      <option value="Masculin">Garçon</option>
+                      <option value="Féminin">Fille</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="form-label">Statut</label>
+                    <select
+                      className="form-select"
+                      value={form.status || 'Actif'}
+                      onChange={(e) => setForm({ ...form, status: e.target.value as any })}
+                    >
+                      <option value="Actif">Actif</option>
+                      <option value="Inactif">Inactif</option>
+                      <option value="Archivé">Archivé</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <div>
+                    <label className="form-label">Nom du Responsable / Parent</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={form.parentName || ''}
+                      onChange={(e) => setForm({ ...form, parentName: e.target.value })}
+                      placeholder="Ex: KOUASSI Marc"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="form-label">Téléphone du Responsable</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={form.parentPhone || ''}
+                      onChange={(e) => setForm({ ...form, parentPhone: e.target.value })}
+                      placeholder="+225 07..."
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="form-label">Adresse de Résidence</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={form.address || ''}
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                    placeholder="Ex: Cocody Angré 8ème Tranche"
+                  />
+                </div>
+
+                <div>
+                  <label className="form-label">Statut des Frais de Scolarité</label>
+                  <select
+                    className="form-select"
+                    value={form.feesStatus || 'En attente'}
+                    onChange={(e) => setForm({ ...form, feesStatus: e.target.value as any })}
+                  >
+                    <option value="Payé">Payé (Scolarité soldée)</option>
+                    <option value="Partiel">Partiel (En cours de règlement)</option>
+                    <option value="En attente">En attente</option>
+                    <option value="En retard">En retard (Impayé)</option>
+                  </select>
+                </div>
+
+              </div>
+
+              {/* Footer actions */}
+              <div style={{ padding: '14px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => { setShowEditModal(false); setEditingStudent(null); }}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={saving}
+                >
+                  {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
+                </button>
+              </div>
+            </form>
+
           </div>
         </div>
       )}

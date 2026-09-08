@@ -114,25 +114,33 @@ export default function ParentsPage({ onNavigate }: ParentsPageProps) {
       return;
     }
 
-    const payload = {
+    const cleanLastName = (form.lastName || '').trim();
+    const cleanFirstName = (form.firstName || cleanLastName || 'Parent').trim();
+    const phoneVal = (form.phonePrimary || '').trim();
+
+    const payload: Partial<Parent> = {
       ...form,
-      firstName: form.firstName?.trim() || form.lastName?.trim() || 'Parent',
-      lastName: form.lastName?.trim() || '',
-      phonePrimary: form.phonePrimary?.trim() || '—',
+      firstName: cleanFirstName,
+      lastName: cleanLastName,
+      phonePrimary: phoneVal,
     };
 
     if (editingParent) {
-      const ok = await update(editingParent.id, payload);
-      if (ok) {
+      const res = await update(editingParent.id, payload);
+      if (res.success) {
         addNotification('success', 'Fiche responsable mise à jour avec succès.');
         setShowAddModal(false);
         setEditingParent(null);
+      } else {
+        addNotification('error', res.error || 'Erreur lors de la mise à jour.');
       }
     } else {
-      const created = await create(payload);
-      if (created) {
+      const res = await create(payload);
+      if (res.success) {
         addNotification('success', 'Nouveau responsable légal créé avec succès.');
         setWizardStep(4);
+      } else {
+        addNotification('error', res.error || 'Erreur lors de la création du responsable.');
       }
     }
   };

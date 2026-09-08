@@ -73,50 +73,54 @@ export function useParents(options: UseParentsOptions = {}) {
   }, [fetchParentsList]);
 
   const create = useCallback(
-    async (parentData: Partial<Parent>): Promise<boolean> => {
+    async (parentData: Partial<Parent>): Promise<{ success: boolean; error?: string }> => {
       setSaving(true);
       setError(null);
       setSuccess(null);
       try {
         const res = await createParent(parentData);
         if (!res.success) {
-          setError(res.error || 'Erreur lors de la création du responsable.');
+          const msg = res.error || 'Erreur lors de la création du responsable.';
+          setError(msg);
           setSaving(false);
-          return false;
+          return { success: false, error: msg };
         }
         setSuccess(res.message || 'Responsable légal créé avec succès.');
         await fetchParentsList();
         setSaving(false);
-        return true;
+        return { success: true };
       } catch (err: any) {
-        setError(err.message || 'Erreur lors de la création.');
+        const msg = err.message || 'Erreur lors de la création.';
+        setError(msg);
         setSaving(false);
-        return false;
+        return { success: false, error: msg };
       }
     },
     [fetchParentsList]
   );
 
   const update = useCallback(
-    async (id: string, updates: Partial<Parent>): Promise<boolean> => {
+    async (id: string, updates: Partial<Parent>): Promise<{ success: boolean; error?: string }> => {
       setSaving(true);
       setError(null);
       setSuccess(null);
       try {
         const res = await updateParent(id, updates);
         if (!res.success) {
-          setError(res.error || 'Erreur lors de la mise à jour.');
+          const msg = res.error || 'Erreur lors de la mise à jour.';
+          setError(msg);
           setSaving(false);
-          return false;
+          return { success: false, error: msg };
         }
         setSuccess(res.message || 'Fiche responsable mise à jour.');
         await fetchParentsList();
         setSaving(false);
-        return true;
+        return { success: true };
       } catch (err: any) {
-        setError(err.message || 'Erreur lors de la mise à jour.');
+        const msg = err.message || 'Erreur lors de la mise à jour.';
+        setError(msg);
         setSaving(false);
-        return false;
+        return { success: false, error: msg };
       }
     },
     [fetchParentsList]
