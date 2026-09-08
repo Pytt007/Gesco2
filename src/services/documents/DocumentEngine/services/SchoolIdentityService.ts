@@ -25,22 +25,22 @@ export interface SchoolIdentityData {
 }
 
 const DEFAULT_IDENTITY: SchoolIdentityData = {
-  name: 'Mon Établissement Scolaire',
+  name: 'Groupe Scolaire Les SCHTROUMPFS',
   logoUrl: undefined,
-  address: '',
-  phone: '',
+  address: 'BP',
+  phone: '0709570047',
   email: '',
-  city: '',
-  country: '',
+  city: 'Bassam',
+  country: "Côte d'Ivoire",
   website: '',
-  motto: '',
+  motto: 'Excellence & Réussite',
   currency: 'FCFA',
   themePrimaryColor: '#132644',
   themeAccentColor: '#2563eb',
   principalName: '',
   stampUrl: undefined,
   signatureUrl: undefined,
-  currentSchoolYear: '',
+  currentSchoolYear: '2026-2027',
 };
 
 class SchoolIdentityService {

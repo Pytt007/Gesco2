@@ -213,7 +213,17 @@ export const templateEngine = {
     customSections?: TemplateSection[]
   ): CompiledDocument {
     const documentId = `doc-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-    const schoolName = options.schoolName || options.data.schoolName || 'ÉTABLISSEMENT EXEMPLE GESCO';
+    let cachedSchoolName = 'Groupe Scolaire Les SCHTROUMPFS';
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const cached = localStorage.getItem('gesco_school_info');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed?.name) cachedSchoolName = parsed.name;
+        }
+      }
+    } catch {}
+    const schoolName = options.schoolName || options.data?.schoolName || cachedSchoolName;
 
     const defaultTmpl = this.getDefaultTemplates().find((t) => t.category === this.mapDocTypeToCategory(options.documentType)) || this.getDefaultTemplates()[0];
     const template = customTemplate || defaultTmpl;
@@ -427,10 +437,10 @@ export const templateEngine = {
       case 'HEADER':
         return `<div class="header-banner">
           <div style="display: flex; align-items: center; gap: 14px;">
-            <div class="brand-logo">G</div>
+            ${data.logoUrl ? `<img src="${data.logoUrl}" style="height: 48px; max-width: 90px; object-fit: contain;" alt="Logo" />` : '<div class="brand-logo">G</div>'}
             <div>
-              <div class="school-name">${data.schoolName || 'ÉTABLISSEMENT EXCELLENCE GESCO'}</div>
-              <div class="school-sub">Système d'Information & Management Éducatif</div>
+              <div class="school-name">${data.schoolName || 'Groupe Scolaire Les SCHTROUMPFS'}</div>
+              <div class="school-sub">${data.schoolAddress || 'Bassam, Côte d’Ivoire'} · Tél : ${data.phone || '0709570047'}</div>
             </div>
           </div>
           <div>
@@ -440,16 +450,16 @@ export const templateEngine = {
           </div>
         </div>
         <div class="accent-strip">
-          <span>📍 DOCUMENT OFFICIEL GESCO SÉCURISÉ PAR QR CODE</span>
+          <span>📍 DOCUMENT OFFICIEL SÉCURISÉ PAR QR CODE</span>
           <span>SYSTÈME CERTIFIÉ v1.0</span>
         </div>
         <div class="content-body">`;
 
       case 'SCHOOL_INFO':
         return `<div class="info-grid">
-          <div class="info-item"><span class="info-label">Établissement :</span><span class="info-value">${data.schoolName || 'GESCO School'}</span></div>
-          <div class="info-item"><span class="info-label">Ville / Pays :</span><span class="info-value">${data.city || 'Abidjan, Côte d’Ivoire'}</span></div>
-          <div class="info-item"><span class="info-label">Téléphone :</span><span class="info-value">${data.phone || '+225 07 00 00 00 00'}</span></div>
+          <div class="info-item"><span class="info-label">Établissement :</span><span class="info-value">${data.schoolName || 'Groupe Scolaire Les SCHTROUMPFS'}</span></div>
+          <div class="info-item"><span class="info-label">Ville / Pays :</span><span class="info-value">${data.city || data.schoolAddress || 'Bassam, Côte d’Ivoire'}</span></div>
+          <div class="info-item"><span class="info-label">Téléphone :</span><span class="info-value">${data.phone || '0709570047'}</span></div>
           <div class="info-item"><span class="info-label">Code Établissement :</span><span class="info-value">${data.schoolCode || 'CI-ABJ-001'}</span></div>
         </div>`;
 

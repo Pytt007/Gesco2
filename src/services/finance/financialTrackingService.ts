@@ -190,12 +190,29 @@ export const financialTrackingService = {
     const progress = Math.min(100, Math.round((enrollment.totalPaid / (enrollment.netTotalDue || 1)) * 100));
     const statusLabel = enrollment.remainingBalance <= 0 ? 'SOLDÉ' : enrollment.totalPaid > 0 ? 'PARTIEL' : 'IMPAYÉ';
 
+    let schoolName = 'Groupe Scolaire Les SCHTROUMPFS';
+    let schoolAddress = 'BP - Bassam, Côte d\'Ivoire';
+    let schoolPhone = '0709570047';
+    let schoolLogo = '';
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const cached = localStorage.getItem('gesco_school_info');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed.name) schoolName = parsed.name;
+          if (parsed.address || parsed.city) schoolAddress = [parsed.address, parsed.city, parsed.country].filter(Boolean).join(' - ');
+          if (parsed.phone) schoolPhone = parsed.phone;
+          if (parsed.logoUrl) schoolLogo = parsed.logoUrl;
+        }
+      }
+    } catch {}
+
     const checksum = qrCodeService.generateChecksum(`STATEMENT|${enrollment.matricule}|${enrollment.remainingBalance}`);
     const qrCodeUrl = qrCodeService.generateQRCodeDataUrl({
       documentId: enrollment.matricule,
       checksum,
       date: new Date().toISOString().split('T')[0],
-      schoolName: 'Établissement GESCO',
+      schoolName,
       documentType: 'REPORT',
       verified: true,
     });
@@ -235,9 +252,15 @@ export const financialTrackingService = {
       </head>
       <body>
         <div class="header">
-          <h2 style="margin:0;">ÉTABLISSEMENT GESCO</h2>
-          <div class="title">RELEVÉ HISTORIQUE DES RÈGLEMENTS DE SCOLARITÉ</div>
-          <span style="font-size:0.875rem; color:#64748b;">Année Scolaire ${enrollment.academicYearId || ''}</span>
+          <div style="display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 8px;">
+            ${schoolLogo ? `<img src="${schoolLogo}" style="height: 48px; max-width: 90px; object-fit: contain;" alt="Logo" />` : ''}
+            <div>
+              <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #1e293b;">${schoolName}</h2>
+              <p style="margin: 2px 0 0 0; font-size: 11px; color: #64748b;">${schoolAddress} · Tél : ${schoolPhone}</p>
+            </div>
+          </div>
+          <div class="title" style="font-size: 1.1rem; color: #2563eb; margin-top: 6px;">RELEVÉ HISTORIQUE DES RÈGLEMENTS DE SCOLARITÉ</div>
+          <span style="font-size:0.875rem; color:#64748b;">Année Scolaire ${enrollment.academicYearId || '2026-2027'}</span>
         </div>
 
         <div style="margin-bottom:16px;">

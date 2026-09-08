@@ -8,6 +8,7 @@ import { tuitionPaymentService, PAYMENT_MODE_LABELS } from './tuitionPaymentServ
 import { studentFinancialEnrollmentService } from './studentFinancialEnrollmentService';
 import { qrCodeService } from '../documents/qrCodeService';
 import { ServiceResponse } from '../academic/academicYearsService';
+import { fetchSchoolInfo } from '../settings/settingsService';
 
 const localReceiptsCache: Map<string, ReceiptData> = new Map();
 
@@ -27,6 +28,20 @@ export const paymentReceiptService = {
     if (existing) {
       return existing;
     }
+
+    let schoolInfo: any = {};
+    try {
+      schoolInfo = await fetchSchoolInfo();
+    } catch {
+      schoolInfo = {};
+    }
+
+    const schoolName = schoolInfo.name || 'Groupe Scolaire Les SCHTROUMPFS';
+    const schoolAddress = [schoolInfo.address, schoolInfo.city, schoolInfo.country].filter(Boolean).join(' - ') || 'BP - Bassam, Côte d\'Ivoire';
+    const schoolPhone = schoolInfo.phone || '0709570047';
+    const schoolEmail = schoolInfo.email || '';
+    const schoolLogo = schoolInfo.logoUrl || '';
+    const academicYear = enrollment.academicYearId || payment.academicYearId || '2026-2027';
 
     const modeLabel = PAYMENT_MODE_LABELS[payment.paymentMode] || payment.paymentMode;
     const totalPaidBefore = Math.max(0, enrollment.totalPaid - payment.amount);
@@ -50,7 +65,7 @@ export const paymentReceiptService = {
         <meta charset="utf-8" />
         <title>Reçu Officiel de Paiement ${payment.receiptNumber}</title>
         <style>
-          body { font-family: 'Inter', sans-serif; padding: 24px; color: #0f172a; line-height: 1.4; font-size: 13px; }
+          body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; color: #0f172a; line-height: 1.4; font-size: 13px; }
           .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #2563eb; padding-bottom: 12px; margin-bottom: 16px; }
           .school-name { font-size: 18px; font-weight: 800; color: #1e293b; margin: 0; }
           .receipt-title { background: #2563eb; color: #ffffff; padding: 6px 12px; font-weight: 800; border-radius: 6px; font-size: 14px; display: inline-block; margin-top: 6px; }
@@ -60,15 +75,18 @@ export const paymentReceiptService = {
           .info-table td { padding: 4px 6px; }
           .amount-banner { background: #f0fdf4; border: 2px solid #22c55e; border-radius: 8px; padding: 12px; text-align: center; margin: 16px 0; }
           .footer-signatures { display: flex; justify-content: space-between; margin-top: 24px; text-align: center; font-size: 11px; }
-          .stamp-box { border: 2px dashed #94a3b8; border-radius: 50%; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; margin: 0 auto; color: #2563eb; font-weight: bold; font-size: 10px; text-transform: uppercase; }
+          .stamp-box { border: 2px dashed #94a3b8; border-radius: 50%; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; margin: 0 auto; color: #2563eb; font-weight: bold; font-size: 9px; text-transform: uppercase; }
         </style>
       </head>
       <body>
         <div class="header">
-          <div>
-            <div class="school-name">ÉTABLISSEMENT GESCO</div>
-            <div style="color: #64748b; font-size: 11px;">Excellence & Discipline | Abidjan, Côte d'Ivoire</div>
-            <div style="color: #64748b; font-size: 11px;">Tél: +225 07 00 00 00 00 | Année Scolaire ${enrollment.academicYearId || ''}</div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            ${schoolLogo ? `<img src="${schoolLogo}" style="height: 48px; max-width: 90px; object-fit: contain;" alt="Logo" />` : ''}
+            <div>
+              <div class="school-name">${schoolName}</div>
+              <div style="color: #64748b; font-size: 11px;">${schoolAddress}</div>
+              <div style="color: #64748b; font-size: 11px;">Tél: ${schoolPhone}${schoolEmail ? ` | Email: ${schoolEmail}` : ''} | Année Scolaire ${academicYear}</div>
+            </div>
           </div>
           <div style="text-align: right;">
             <div class="receipt-title">REÇU DE PAIEMENT</div>
@@ -111,14 +129,14 @@ export const paymentReceiptService = {
         </div>
 
         <div class="section-box">
-          <div class="section-title">3. SITUATION FINANCIÈRE DE L'ÉLÈVE APPRÈS VERSEMENT</div>
+          <div class="section-title">3. SITUATION FINANCIÈRE DE L'ÉLÈVE APRÈS VERSEMENT</div>
           <table class="info-table">
             <tr>
               <td><strong>Montant Total Net :</strong> ${enrollment.netTotalDue.toLocaleString('fr-FR')} FCFA</td>
               <td><strong>Total Déjà Payé :</strong> ${enrollment.totalPaid.toLocaleString('fr-FR')} FCFA</td>
             </tr>
             <tr>
-              <td><strong>Reste à Payer :</strong> <span style="color:#dc2626; font-weight:bold;">${enrollment.remainingBalance.toLocaleString('fr-FR')} FCFA</span></td>
+              <td><strong>Reste à Payer :</strong> <span style="color:${enrollment.remainingBalance <= 0 ? '#16a34a' : '#dc2626'}; font-weight:bold;">${enrollment.remainingBalance.toLocaleString('fr-FR')} FCFA</span></td>
               <td><strong>Statut Global :</strong> <span style="color:#16a34a; font-weight:bold;">${statusLabel}</span></td>
             </tr>
           </table>
@@ -126,22 +144,22 @@ export const paymentReceiptService = {
 
         <div class="footer-signatures">
           <div style="width: 30%;">
-            <div>Signature de l'Élève / Parent</div>
+            <div style="font-weight: 600; color: #475569;">Signature du Parent / Payeur</div>
             <div style="height: 40px;"></div>
-            <div style="color: #64748b;">(Lu et approuvé)</div>
+            <div style="color: #94a3b8;">(Lu et approuvé)</div>
           </div>
           <div style="width: 30%;">
             <div class="stamp-box">Cachet Officiel</div>
           </div>
           <div style="width: 30%;">
-            <div>Signature du Gestionnaire / Directeur</div>
+            <div style="font-weight: 600; color: #1e293b;">La Caisse — ${schoolName}</div>
             <div style="height: 40px;"></div>
             <div style="font-weight: bold; color: #0f172a;">${payment.recordedBy}</div>
           </div>
         </div>
 
         <div style="margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #94a3b8;">
-          <div>Authenticité d'origine GESCO | Empreinte : ${checksum}</div>
+          <div>Authenticité certifiée — ${schoolName} | Empreinte : ${checksum}</div>
           <img src="${qrCodeUrl}" width="60" height="60" alt="QR Code d'Authenticité" />
         </div>
       </body>
@@ -152,10 +170,11 @@ export const paymentReceiptService = {
       id: payment.id,
       paymentId: payment.id,
       receiptNumber: payment.receiptNumber,
-      schoolName: 'ÉTABLISSEMENT GESCO',
-      schoolAddress: "Abidjan, Côte d'Ivoire",
-      schoolPhone: '+225 07 00 00 00 00',
-      academicYear: enrollment.academicYearId || payment.academicYearId || '',
+      schoolName,
+      schoolAddress,
+      schoolPhone,
+      schoolLogoUrl: schoolLogo || undefined,
+      academicYear,
       studentName: enrollment.studentName,
       matricule: enrollment.matricule,
       className: enrollment.className,

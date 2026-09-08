@@ -82,7 +82,7 @@ const CanteenReceiptModal: React.FC<CanteenReceiptModalProps> = ({ isOpen, recei
           <div style="height: 50px;"></div>
         </div>
         <div style="text-align: center; width: 200px;">
-          <p style="margin: 0; font-weight: bold; color: #1e3a8a;">La Caisse GESCO</p>
+          <p style="margin: 0; font-weight: bold; color: #1e3a8a;">La Caisse — ${receipt.schoolName}</p>
           <div style="height: 50px;"></div>
           <p style="margin: 0; color: #94a3b8;">Cachet Officiel</p>
         </div>

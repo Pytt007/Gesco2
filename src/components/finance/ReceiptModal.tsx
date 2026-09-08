@@ -69,6 +69,17 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
 
         {/* Corps du Reçu */}
         <div style={{ padding: '24px', backgroundColor: '#ffffff' }}>
+          {receipt.schoolName && (
+            <div style={{ textAlign: 'center', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px dashed #e2e8f0' }}>
+              <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#1e293b' }}>{receipt.schoolName}</div>
+              <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
+                {receipt.schoolAddress && <span>{receipt.schoolAddress} · </span>}
+                {receipt.schoolPhone && <span>Tél : {receipt.schoolPhone} · </span>}
+                <span>Année : {receipt.academicYear}</span>
+              </div>
+            </div>
+          )}
+
           <div
             style={{
               backgroundColor: '#f8fafc',
@@ -92,6 +103,10 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 <strong style={{ color: '#0f172a' }}>{receipt.className}</strong>
               </div>
               <div className="col-6 mt-2">
+                <span className="text-xs text-muted display-block">Responsable :</span>
+                <strong style={{ color: '#0f172a' }}>{receipt.parentSponsor || receipt.parentSponsorName || '—'}</strong>
+              </div>
+              <div className="col-6 mt-2">
                 <span className="text-xs text-muted display-block">Date du règlement :</span>
                 <strong style={{ color: '#0f172a' }}>{receipt.paymentDate}</strong>
               </div>
@@ -99,7 +114,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 <span className="text-xs text-muted display-block">Mode de Paiement :</span>
                 <strong style={{ color: '#2563eb' }}>{receipt.paymentModeLabel}</strong>
               </div>
-              <div className="col-6 mt-2">
+              <div className="col-12 mt-2">
                 <span className="text-xs text-muted display-block">Référence :</span>
                 <strong style={{ color: '#0f172a' }}>{receipt.referenceNumber || 'N/A'}</strong>
               </div>

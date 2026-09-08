@@ -8,6 +8,7 @@ import { canteenEnrollmentService } from './canteenEnrollmentService';
 import { ServiceResponse } from '../academic/academicYearsService';
 import { supabase } from '../common/supabaseClient';
 import { generateSecureReceiptNumber } from '../finance/receiptSequenceService';
+import { fetchSchoolInfo } from '../settings/settingsService';
 
 export const CANTEEN_PAYMENT_MODE_LABELS: Record<CanteenPaymentMode, string> = {
   CASH: 'Espèces',
@@ -265,17 +266,31 @@ export const canteenPaymentService = {
     const statusLabel = newBalance === 0 ? 'Soldé' : newTotalPaid > 0 ? 'Paiement partiel' : 'Impayé';
 
     // Génération du reçu
+    let realSchoolName = schoolSettings?.name;
+    let realSchoolAddress = schoolSettings?.address;
+    let realSchoolPhone = schoolSettings?.phone;
+    let realAcademicYear = schoolSettings?.academicYear || enrollment.academicYearId || '2026-2027';
+
+    if (!realSchoolName || !realSchoolPhone) {
+      try {
+        const info = await fetchSchoolInfo();
+        if (info.name) realSchoolName = info.name;
+        if (info.address || info.city) realSchoolAddress = [info.address, info.city, info.country].filter(Boolean).join(' - ');
+        if (info.phone) realSchoolPhone = info.phone;
+      } catch {}
+    }
+
     const periodLabel = input.periodNumber ? `Période ${input.periodNumber}` : undefined;
     const receipt: CanteenReceiptData = {
       receiptNumber,
-      schoolName: schoolSettings?.name || 'École Privée GESCO',
-      schoolAddress: schoolSettings?.address || 'Abidjan, Côte d\'Ivoire',
-      schoolPhone: schoolSettings?.phone || '+225 00 00 00 00',
-      academicYear: enrollment.academicYearId || schoolSettings?.academicYear || '',
+      schoolName: realSchoolName || 'Groupe Scolaire Les SCHTROUMPFS',
+      schoolAddress: realSchoolAddress || 'BP - Bassam, Côte d\'Ivoire',
+      schoolPhone: realSchoolPhone || '0709570047',
+      academicYear: realAcademicYear,
       studentName: enrollment.studentName,
       matricule: enrollment.matricule,
       className: enrollment.className,
-      parentSponsorName: enrollment.parentSponsor || '-',
+      parentSponsorName: enrollment.parentSponsor || 'Parent d’Élève',
       paymentDate: input.paymentDate,
       amountPaid: input.amount,
       paymentModeLabel: CANTEEN_PAYMENT_MODE_LABELS[input.paymentMode],

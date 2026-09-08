@@ -11,6 +11,7 @@ import { ServiceResponse } from '../academic/academicYearsService';
 import { supabase } from '../common/supabaseClient';
 import { generateSecureReceiptNumber } from './receiptSequenceService';
 import { auditLogService } from '../common/auditLogService';
+import { fetchSchoolInfo } from '../settings/settingsService';
 
 const STORAGE_KEY_PAYMENTS = 'gesco_tuition_payments_store';
 const STORAGE_KEY_OUTBOX = 'gesco_tuition_offline_outbox';
@@ -382,6 +383,20 @@ export const tuitionPaymentService = {
   ): Promise<ReceiptData> {
     const modeLabel = PAYMENT_MODE_LABELS[payment.paymentMode] || payment.paymentMode;
 
+    let schoolInfo: any = {};
+    try {
+      schoolInfo = await fetchSchoolInfo();
+    } catch {
+      schoolInfo = {};
+    }
+
+    const schoolName = schoolInfo.name || 'Groupe Scolaire Les SCHTROUMPFS';
+    const schoolAddress = [schoolInfo.address, schoolInfo.city, schoolInfo.country].filter(Boolean).join(' - ') || 'BP - Bassam, Côte d\'Ivoire';
+    const schoolPhone = schoolInfo.phone || '0709570047';
+    const schoolEmail = schoolInfo.email || '';
+    const schoolLogo = schoolInfo.logoUrl || '';
+    const academicYear = enrollment.academicYearId || payment.academicYearId || '2026-2027';
+
     const payloadText = `GESCO-PAY|${payment.receiptNumber}|${enrollment.studentId}|${payment.amount}|${payment.paymentDate}`;
     const checksum = await qrCodeService.generateChecksum(payloadText);
     const qrCodeUrl = await qrCodeService.generateQRCodeDataURL({
@@ -400,42 +415,80 @@ export const tuitionPaymentService = {
         <meta charset="utf-8" />
         <title>Reçu de Paiement ${payment.receiptNumber}</title>
         <style>
-          body { font-family: 'Inter', sans-serif; padding: 24px; color: #0f172a; line-height: 1.5; }
-          .header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 20px; }
-          .receipt-no { color: #2563eb; font-weight: 700; font-size: 1.2rem; }
-          .info-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-          .info-table td { padding: 8px; border-bottom: 1px solid #e2e8f0; }
-          .amount-box { background-color: #f0fdf4; border: 2px solid #22c55e; padding: 16px; text-align: center; border-radius: 8px; margin: 20px 0; }
-          .footer { display: flex; justify-content: space-between; align-items: center; margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 16px; }
+          body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; color: #0f172a; line-height: 1.5; font-size: 13px; }
+          .header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 14px; margin-bottom: 20px; }
+          .receipt-no { color: #2563eb; font-weight: 800; font-size: 1.15rem; }
+          .info-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+          .info-table td { padding: 7px 10px; border-bottom: 1px solid #e2e8f0; }
+          .amount-box { background-color: #f0fdf4; border: 2px solid #22c55e; padding: 14px; text-align: center; border-radius: 8px; margin: 18px 0; }
+          .footer { display: flex; justify-content: space-between; align-items: center; margin-top: 26px; border-top: 1px solid #e2e8f0; padding-top: 14px; }
+          .stamp-box { border: 2px dashed #94a3b8; border-radius: 50%; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; margin: 0 auto; color: #2563eb; font-weight: bold; font-size: 9px; text-transform: uppercase; }
         </style>
       </head>
       <body>
         <div class="header">
-          <h2 style="margin:0;">ÉTABLISSEMENT GESCO</h2>
-          <p style="margin:4px 0 0 0; font-size:14px; color:#64748b;">Reçu officiel de paiement des frais de scolarité</p>
-          <div class="receipt-no">N° Reçu : ${payment.receiptNumber}</div>
+          <div style="display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 8px;">
+            ${schoolLogo ? `<img src="${schoolLogo}" style="height: 48px; max-width: 90px; object-fit: contain;" alt="Logo" />` : ''}
+            <div>
+              <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #1e293b;">${schoolName}</h2>
+              <p style="margin: 2px 0 0 0; font-size: 11px; color: #64748b;">${schoolAddress} · Tél : ${schoolPhone}${schoolEmail ? ` · ${schoolEmail}` : ''}</p>
+            </div>
+          </div>
+          <div style="font-size: 12px; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px;">
+            Reçu Officiel de Paiement — Frais de Scolarité
+          </div>
+          <div class="receipt-no" style="margin-top: 4px;">N° Reçu : ${payment.receiptNumber}</div>
         </div>
 
         <table class="info-table">
-          <tr><td><strong>Élève :</strong> ${enrollment.studentName}</td><td><strong>Matricule :</strong> ${enrollment.matricule}</td></tr>
-          <tr><td><strong>Classe :</strong> ${enrollment.className}</td><td><strong>Année Scolaire :</strong> ${enrollment.academicYearId || ''}</td></tr>
-          <tr><td><strong>Responsable Payeur :</strong> ${enrollment.parentSponsor || 'Parent d’Élève'}</td><td><strong>Date du Versement :</strong> ${payment.paymentDate}</td></tr>
-          <tr><td><strong>Mode de Règlement :</strong> ${modeLabel}</td><td><strong>Référence :</strong> ${payment.referenceNumber || 'N/A'}</td></tr>
+          <tr>
+            <td><strong>Élève :</strong> ${enrollment.studentName}</td>
+            <td><strong>Matricule :</strong> ${enrollment.matricule}</td>
+          </tr>
+          <tr>
+            <td><strong>Classe :</strong> ${enrollment.className}</td>
+            <td><strong>Année Scolaire :</strong> ${academicYear}</td>
+          </tr>
+          <tr>
+            <td><strong>Responsable Payeur :</strong> ${enrollment.parentSponsor || 'Parent d’Élève'}${enrollment.parentPhone ? ` (${enrollment.parentPhone})` : ''}</td>
+            <td><strong>Date du Versement :</strong> ${payment.paymentDate}</td>
+          </tr>
+          <tr>
+            <td><strong>Mode de Règlement :</strong> ${modeLabel}</td>
+            <td><strong>Référence :</strong> ${payment.referenceNumber || 'N/A'}</td>
+          </tr>
         </table>
 
         <div class="amount-box">
-          <span style="font-size:14px; color:#166534; font-weight:600;">MONTANT VERSE</span>
-          <div style="font-size:28px; font-weight:800; color:#15803d;">${payment.amount.toLocaleString('fr-FR')} FCFA</div>
+          <span style="font-size: 12px; color: #166534; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">MONTANT VERSÉ</span>
+          <div style="font-size: 26px; font-weight: 800; color: #15803d; margin: 4px 0;">${payment.amount.toLocaleString('fr-FR')} FCFA</div>
+          <div style="font-size: 12px; color: #475569;">
+            Solde Restant à Payer : <strong style="color: ${enrollment.remainingBalance <= 0 ? '#16a34a' : '#dc2626'};">${enrollment.remainingBalance.toLocaleString('fr-FR')} FCFA</strong>
+          </div>
         </div>
 
-        <p style="font-size:14px;"><strong>Solde Restant à Payer :</strong> ${enrollment.remainingBalance.toLocaleString('fr-FR')} FCFA</p>
+        <div style="display: flex; justify-content: space-between; margin-top: 24px; text-align: center; font-size: 11px;">
+          <div style="width: 32%;">
+            <div style="font-weight: 600; color: #475569;">Signature du Parent / Payeur</div>
+            <div style="height: 38px;"></div>
+            <div style="color: #94a3b8; font-size: 10px;">(Lu et approuvé)</div>
+          </div>
+          <div style="width: 32%;">
+            <div class="stamp-box">Cachet Officiel</div>
+          </div>
+          <div style="width: 32%;">
+            <div style="font-weight: 600; color: #1e293b;">La Caisse — ${schoolName}</div>
+            <div style="height: 38px;"></div>
+            <div style="color: #64748b; font-size: 11px; font-weight: 600;">${payment.recordedBy || 'Le Gestionnaire'}</div>
+          </div>
+        </div>
 
         <div class="footer">
           <div>
-            <span style="font-size:12px; color:#64748b; display:block;">Signé par : ${payment.recordedBy}</span>
-            <span style="font-size:11px; color:#94a3b8;">Empriente : ${checksum}</span>
+            <span style="font-size: 11px; color: #64748b; display: block;">Enregistré par : ${payment.recordedBy}</span>
+            <span style="font-size: 10px; color: #94a3b8;">Empreinte numérique : ${checksum}</span>
           </div>
-          <img src="${qrCodeUrl}" width="80" height="80" alt="QR Code d'Authenticité" />
+          <img src="${qrCodeUrl}" width="70" height="70" alt="QR Code d'Authenticité" />
         </div>
       </body>
       </html>
@@ -443,11 +496,17 @@ export const tuitionPaymentService = {
 
     return {
       receiptNumber: payment.receiptNumber,
+      schoolName,
+      schoolAddress,
+      schoolPhone,
+      schoolLogoUrl: schoolLogo || undefined,
       studentName: enrollment.studentName,
       matricule: enrollment.matricule,
       className: enrollment.className,
-      academicYear: enrollment.academicYearId || payment.academicYearId || '',
+      academicYear,
       parentSponsor: enrollment.parentSponsor || 'Parent d’Élève',
+      parentSponsorName: enrollment.parentSponsor || 'Parent d’Élève',
+      parentSponsorPhone: enrollment.parentPhone || '',
       paymentDate: payment.paymentDate,
       amountPaid: payment.amount,
       paymentModeLabel: modeLabel,

@@ -229,6 +229,7 @@ export interface TransportReceiptData {
   paymentModeLabel: string;
   periodLabel?: string;
   netAmountDue: number;
+  annualRate?: number;
   totalPaidAfter: number;
   remainingBalance: number;
   statusLabel: string;

@@ -54,10 +54,10 @@ export const previewEngine = {
 
       case 'SCHOOL_INFORMATION':
         return `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: ${cfg.fontSize || '12px'}; color: ${cfg.color || '#475569'}; padding: 8px; background: #f8fafc; border-radius: 4px;">
-          <div><strong>Établissement :</strong> ${this.escapeHtml(data.schoolName || 'GESCO School')}</div>
-          <div><strong>Code École :</strong> ${this.escapeHtml(data.schoolCode || 'CI-ABJ-001')}</div>
-          <div><strong>Ville :</strong> ${this.escapeHtml(data.city || 'Abidjan')}</div>
-          <div><strong>Téléphone :</strong> ${this.escapeHtml(data.phone || '+225 07 00 00 00 00')}</div>
+          <div><strong>Établissement :</strong> ${this.escapeHtml(data.schoolName || 'Groupe Scolaire Les SCHTROUMPFS')}</div>
+          <div><strong>Code École :</strong> ${this.escapeHtml(data.schoolCode || 'CI-BAS-001')}</div>
+          <div><strong>Ville :</strong> ${this.escapeHtml(data.city || 'Bassam')}</div>
+          <div><strong>Téléphone :</strong> ${this.escapeHtml(data.phone || '0709570047')}</div>
         </div>`;
 
       case 'STUDENT_INFORMATION':

@@ -67,7 +67,7 @@ const TransportReceiptModal: React.FC<{
       <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 30px;">
         <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
           <tr>
-            <td style="color: #64748b;">Tarif Annuel Navette : ${receipt.annualRate.toLocaleString('fr-FR')} FCFA</td>
+            <td style="color: #64748b;">Tarif Annuel Navette : ${(receipt.annualRate ?? receipt.netAmountDue ?? 0).toLocaleString('fr-FR')} FCFA</td>
             <td style="color: #16a34a; font-weight: bold; text-align: center;">Total Payé : ${receipt.totalPaidAfter.toLocaleString('fr-FR')} FCFA</td>
             <td style="color: ${receipt.remainingBalance === 0 ? '#16a34a' : '#ef4444'}; font-weight: bold; text-align: right;">
               Solde : ${receipt.remainingBalance === 0 ? 'SOLDÉ' : receipt.remainingBalance.toLocaleString('fr-FR') + ' FCFA'}
@@ -82,7 +82,7 @@ const TransportReceiptModal: React.FC<{
           <div style="height: 50px;"></div>
         </div>
         <div style="text-align: center; width: 200px;">
-          <p style="margin: 0; font-weight: bold; color: #4f46e5;">La Caisse GESCO</p>
+          <p style="margin: 0; font-weight: bold; color: #4f46e5;">La Caisse — ${receipt.schoolName}</p>
           <div style="height: 50px;"></div>
           <p style="margin: 0; color: #94a3b8;">Cachet Officiel</p>
         </div>

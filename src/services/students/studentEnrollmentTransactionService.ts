@@ -13,6 +13,7 @@ import { logStudentEvent } from './studentHistoryService';
 import { Student } from '../../types';
 import { TuitionLevelCode } from '../finance/types';
 import { supabase } from '../common/supabaseClient';
+import { fetchSchoolInfo } from '../settings/settingsService';
 
 export interface CompleteStudentRegistrationInput {
   student: {
@@ -263,6 +264,18 @@ export async function executeStudentRegistrationTransaction(
       receiptNumber = payment.receiptNumber;
 
       // G. Génération automatique du document / reçu d'inscription via le Document Engine
+      let schoolInfo: any = {};
+      try {
+        schoolInfo = await fetchSchoolInfo();
+      } catch {
+        schoolInfo = {};
+      }
+      const schoolName = schoolInfo.name || 'Groupe Scolaire Les SCHTROUMPFS';
+      const schoolAddress = [schoolInfo.address, schoolInfo.city, schoolInfo.country].filter(Boolean).join(' - ') || 'BP - Bassam, Côte d\'Ivoire';
+      const schoolPhone = schoolInfo.phone || '0709570047';
+      const parentName = input.parents.fatherName || input.parents.motherName || input.parents.guardianName || 'Parent d’Élève';
+      const parentPhone = input.parents.fatherPhone || input.parents.motherPhone || input.parents.guardianPhone || '—';
+
       try {
         const docGenResult = await documentEngine.generateDocument({
           documentType: 'SCHOOL_RECEIPT',
@@ -270,6 +283,10 @@ export async function executeStudentRegistrationTransaction(
           entityId: createdStudent.id,
           generatedBy: recordedBy,
           data: {
+            schoolName,
+            schoolAddress,
+            schoolPhone,
+            academicYear: schoolYear || '2026-2027',
             studentName: `${createdStudent.lastName} ${createdStudent.firstName}`,
             matricule,
             className: classroom.name,
@@ -277,20 +294,31 @@ export async function executeStudentRegistrationTransaction(
             receiptNumber: payment.receiptNumber,
             paymentDate: payment.paymentDate,
             paymentMode: payment.paymentMode,
+            parentName,
+            parentPhone,
           },
         });
         receiptHtml = docGenResult.compiled.fullHtml;
       } catch {
         receiptHtml = `
-          <div style="padding: 2rem; font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #cbd5e1; border-radius: 12px;">
-            <h2 style="color: #1e3a5f; margin-top: 0;">REÇU OFFICIEL D'INSCRIPTION — GESCO</h2>
-            <p><strong>N° Reçu :</strong> ${payment.receiptNumber}</p>
-            <p><strong>Élève :</strong> ${createdStudent.lastName} ${createdStudent.firstName} (${matricule})</p>
-            <p><strong>Classe :</strong> ${classroom.name} — Année ${schoolYear}</p>
-            <hr />
-            <p style="font-size: 1.2rem; color: #16a34a;"><strong>Montant Réglé :</strong> ${payment.amount.toLocaleString('fr-FR')} FCFA</p>
-            <p><strong>Mode de Paiement :</strong> ${payment.paymentMode}</p>
-            <p><strong>Date :</strong> ${payment.paymentDate}</p>
+          <div style="padding: 2rem; font-family: 'Inter', -apple-system, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #cbd5e1; border-radius: 12px; background: #ffffff;">
+            <div style="text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 16px;">
+              <h2 style="color: #1e3a5f; margin: 0; font-size: 18px;">${schoolName}</h2>
+              <p style="margin: 3px 0 0 0; color: #64748b; font-size: 12px;">${schoolAddress} · Tél : ${schoolPhone}</p>
+              <div style="font-weight: 700; color: #2563eb; margin-top: 8px; font-size: 14px;">REÇU OFFICIEL D'INSCRIPTION</div>
+            </div>
+            <p style="margin: 4px 0;"><strong>N° Reçu :</strong> ${payment.receiptNumber}</p>
+            <p style="margin: 4px 0;"><strong>Élève :</strong> ${createdStudent.lastName} ${createdStudent.firstName} (${matricule})</p>
+            <p style="margin: 4px 0;"><strong>Classe :</strong> ${classroom.name} — Année ${schoolYear || '2026-2027'}</p>
+            <p style="margin: 4px 0;"><strong>Responsable :</strong> ${parentName} (${parentPhone})</p>
+            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 12px 0;" />
+            <p style="font-size: 1.2rem; color: #16a34a; margin: 8px 0;"><strong>Montant Réglé :</strong> ${payment.amount.toLocaleString('fr-FR')} FCFA</p>
+            <p style="margin: 4px 0;"><strong>Mode de Paiement :</strong> ${payment.paymentMode}</p>
+            <p style="margin: 4px 0;"><strong>Date :</strong> ${payment.paymentDate}</p>
+            <div style="display: flex; justify-content: space-between; margin-top: 30px; font-size: 11px; text-align: center;">
+              <div>Signature du Parent</div>
+              <div style="font-weight: 600;">La Caisse — ${schoolName}</div>
+            </div>
           </div>
         `;
       }
