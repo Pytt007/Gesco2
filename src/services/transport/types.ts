@@ -37,8 +37,8 @@ export interface TransportVehicle {
 
 export interface TransportVehicleInput {
   name: string;
-  brand: string;
-  model: string;
+  brand?: string;
+  model?: string;
   licensePlate: string;
   capacity: number;
 }
@@ -58,6 +58,8 @@ export interface TransportDriver {
 export interface TransportDriverInput {
   name: string;
   phone: string;
+  /** Legacy import alias retained for older callers. */
+  licenseNumber?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -171,13 +173,13 @@ export interface TransportEnrollmentInput {
   matricule: string;
   photoUrl?: string;
   className: string;
-  levelCode: string;
+  levelCode?: string;
   parentSponsor?: string;
   parentPhone?: string;
   lineId: string;
   academicYearId: string;
-  discountType: TransportDiscountType;
-  discountValue: number;
+  discountType?: TransportDiscountType;
+  discountValue?: number;
   customPeriods?: { number: number; label: string; dueDate?: string; amountDue: number }[];
 }
 

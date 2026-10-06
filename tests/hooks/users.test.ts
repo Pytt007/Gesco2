@@ -45,7 +45,7 @@ describe('Users & Roles Hooks Layer', () => {
       const accounts = await fetchUserAccounts();
       const solo = accounts.find((u) => u.username === 'admin_solo')!;
 
-      const roleRes = await updateAccountRole(solo.id, 'COMPTABLE');
+      const roleRes = await updateAccountRole(solo.id, 'FINANCE');
       expect(roleRes.error).toContain('Impossible de rétrograder le dernier administrateur actif');
     });
 
@@ -70,7 +70,7 @@ describe('Users & Roles Hooks Layer', () => {
       expect(await isLastActiveAdmin(adminA.id)).toBe(false);
 
       // Rétrograder Admin A -> succès car Admin B est toujours actif
-      const roleRes = await updateAccountRole(adminA.id, 'COMPTABLE');
+      const roleRes = await updateAccountRole(adminA.id, 'FINANCE');
       expect(roleRes.error).toBeUndefined();
 
       // Maintenant Admin B est le seul admin actif restant
