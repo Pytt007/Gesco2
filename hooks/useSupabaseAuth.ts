@@ -127,17 +127,6 @@ function useSupabaseAuth() {
 
       return gescoUser;
     } catch (err: any) {
-      if (trimmedUser === 'admin' && (trimmedPass === 'admin123' || trimmedPass === 'admin')) {
-        const demoAdmin: GescoUser = {
-          id: 'usr-demo-01',
-          username: 'admin',
-          role: 'ADMIN_GENERALE',
-          fullName: 'Direction Générale (Admin)',
-          avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=admin',
-        };
-        setCurrentUser(demoAdmin);
-        return demoAdmin;
-      }
       throw new Error(err?.message || 'Identifiant ou mot de passe incorrect.');
     }
   }, []);
