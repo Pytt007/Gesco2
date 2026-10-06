@@ -95,3 +95,7 @@ metadata.json
 # ─── TypeScript cache ────────────────────────────────────────────
 *.tsbuildinfo
 .vercel
+
+# One-time local account setup pages
+/admin-setup.html
+/recovery-setup.html

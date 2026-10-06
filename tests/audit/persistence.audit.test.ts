@@ -37,6 +37,14 @@ beforeEach(() => {
 });
 
 describe('Production persistence and authentication contracts', () => {
+  it('does not announce a vehicle or driver saved when Neon rejects the write', async () => {
+    const { transportVehicleService, transportDriverService } = await import('../../src/services/transport/transportVehicleDriverService');
+    const vehicle = await transportVehicleService.create({ name: 'Test', licensePlate: 'TEST', capacity: 10 });
+    const driver = await transportDriverService.create({ name: 'Test', phone: 'TEST' });
+    expect(vehicle.success).toBe(false);
+    expect(driver.success).toBe(false);
+    await expect(transportVehicleService.getAll()).rejects.toThrow('database unavailable');
+  });
   it('does not announce student creation when all remote writes fail', async () => {
     const service = await import('../../src/services/students/studentsService');
     const result = await service.createStudent({ firstName: 'Audit', lastName: 'Synthetic', matricule: 'AUDIT-ONLY' });

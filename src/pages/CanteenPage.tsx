@@ -5,7 +5,7 @@ import { CanteenPaymentView } from '../components/canteen/CanteenPaymentView';
 import { MealListView } from '../components/canteen/MealListView';
 import { CanteenTrackingView } from '../components/canteen/CanteenTrackingView';
 import { UtensilsCrossed, CreditCard, ClipboardList, BarChart3, UserPlus, Settings } from 'lucide-react';
-import { useRealtimeSync } from '../hooks/useRealtimeSync';
+
 
 type CanteenTab = 'PAYMENT' | 'MEAL_LIST' | 'TRACKING' | 'ENROLLMENT' | 'CONFIG';
 
@@ -19,16 +19,10 @@ const TABS: { id: CanteenTab; label: string; icon: React.ReactNode }[] = [
 
 export default function CanteenPage() {
   const [activeTab, setActiveTab] = useState<CanteenTab>('PAYMENT');
-  const [syncKey, setSyncKey] = useState(0);
-
-  // Synchronisation temps réel automatique
-  useRealtimeSync({
-    tables: ['school_settings', 'canteen_enrollments'],
-    onDataChange: () => setSyncKey((prev) => prev + 1),
-  });
+  // Keep mounted forms intact; each view refreshes its data after saving.
 
   return (
-    <div key={syncKey} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
       {/* ── BANNIÈRE HERO SAAS ─────────────────────────────────────────────── */}
       <div
@@ -102,3 +96,4 @@ export default function CanteenPage() {
     </div>
   );
 }
+

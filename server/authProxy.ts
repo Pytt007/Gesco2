@@ -33,6 +33,13 @@ export async function proxyAuth(request: Request, env: AuthEnvironment): Promise
     headers.delete('content-length');
     request = new Request(request.url, { method: 'POST', headers, body: JSON.stringify(body) });
   }
+  if (path === 'get-session') {
+    // The SDK's server cookie cache contains an opaque session token and omits
+    // set-auth-jwt. The Data API needs the signed JWT supplied by upstream.
+    const sessionUrl = new URL(request.url);
+    sessionUrl.searchParams.set('disableCookieCache', 'true');
+    request = new Request(sessionUrl, request);
+  }
   const response = await handleAuthProxyRequest({ request, path, baseUrl: env.NEON_AUTH_URL, cookieSecret: env.NEON_AUTH_COOKIE_SECRET, sessionDataTtl: 60, sameSite: 'lax' });
   response.headers.set('Cache-Control', 'no-store');
   return response;
