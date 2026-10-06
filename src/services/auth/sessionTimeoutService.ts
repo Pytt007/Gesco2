@@ -95,7 +95,7 @@ class SessionTimeoutService {
   public logSessionTimeout(username?: string): void {
     auditLogService.log({
       action: 'DECONNEXION_INACTIVITE',
-      module: 'AUTH',
+      module: 'SYSTEM',
       details: `Session de l'utilisateur "${username || 'Session courante'}" clôturée automatiquement après ${Math.round(this.timeoutMs / 60000)} minutes d'inactivité.`,
       severity: 'INFO',
     });

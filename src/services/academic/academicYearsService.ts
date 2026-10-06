@@ -36,306 +36,43 @@ function createError<T>(error: any, fallbackMessage: string): ServiceResponse<T>
   return { success: false, error: errMsg };
 }
 
-// Aucune année scolaire fictive — source unique : Supabase
-const localYearsCache: Map<string, AcademicYear> = new Map();
-
-
-import { fetchSchoolYearsList } from '../settings/settingsService';
-
+// Les paramètres et le module pédagogique partagent la même source d'années.
+import { fetchSchoolYearsList, saveSchoolYearsList, setActiveSchoolYear, closeSchoolYear } from '../settings/settingsService';
+import type { SchoolYearItem } from '../../types';
+const mapYear = (y: SchoolYearItem): AcademicYear => ({ id:y.id,name:y.label,startDate:y.startDate,endDate:y.endDate,isCurrent:y.isActive,status:y.isActive?'Active':y.isClosed?'Clôturée':'Préparation' });
 export async function getAcademicYears(): Promise<ServiceResponse<AcademicYear[]>> {
-  try {
-    const { data: rows, error } = await supabase
-      .from('academic_years')
-      .select('id, school_id, name, start_date, end_date, is_current, status, created_at, updated_at')
-      .eq('is_deleted', false)
-      .order('start_date', { ascending: false });
-
-    if (!error && rows && rows.length > 0) {
-      const years: AcademicYear[] = rows.map((r: any) => ({
-        id: r.id,
-        schoolId: r.school_id,
-        name: r.name,
-        startDate: r.start_date,
-        endDate: r.end_date,
-        isCurrent: r.is_current ?? false,
-        status: r.status || 'Active',
-        createdAt: r.created_at,
-        updatedAt: r.updated_at,
-      }));
-      return createSuccess(years);
-    }
-
-    const settingsYears = await fetchSchoolYearsList();
-    if (settingsYears && settingsYears.length > 0) {
-      const mappedYears: AcademicYear[] = settingsYears.map((y) => ({
-        id: y.id,
-        name: y.label,
-        startDate: y.startDate,
-        endDate: y.endDate,
-        isCurrent: y.isActive,
-        status: y.isActive ? 'Active' : (y.isClosed ? 'Clôturée' : 'Préparation'),
-      }));
-      return createSuccess(mappedYears);
-    }
-
-    if (localYearsCache.size > 0) {
-      return createSuccess(Array.from(localYearsCache.values()));
-    }
-
-    // Aucun résultat Supabase — liste vide
-    return createSuccess([]);
-
-  } catch (err) {
-    return createError(err, 'Erreur lors de la récupération des années scolaires.');
-  }
+ try { return createSuccess((await fetchSchoolYearsList()).filter(y=>!y.isArchived).map(mapYear)); }
+ catch(e){return createError(e,'Chargement des années impossible.');}
 }
-
-/**
- * Récupère l'année scolaire active courante
- */
-export async function getCurrentAcademicYear(): Promise<ServiceResponse<AcademicYear>> {
-  try {
-    const { data, error } = await supabase
-      .from('academic_years')
-      .select('id, school_id, name, start_date, end_date, is_current, status, created_at, updated_at')
-      .eq('is_current', true)
-      .eq('is_deleted', false)
-      .maybeSingle();
-
-    if (!error && data) {
-      const year: AcademicYear = {
-        id: data.id,
-        schoolId: data.school_id,
-        name: data.name,
-        startDate: data.start_date,
-        endDate: data.end_date,
-        isCurrent: true,
-        status: data.status,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-      };
-      localYearsCache.set(year.id, year);
-      return createSuccess(year);
-    }
-
-    for (const y of localYearsCache.values()) {
-      if (y.isCurrent) return createSuccess(y);
-    }
-
-    return createError(null, 'Aucune année scolaire courante trouvée. Veuillez en configurer une dans les paramètres.');
-
-  } catch (err) {
-    return createError(err, 'Erreur lors de la recherche de l\'année scolaire courante.');
-  }
+export async function getAcademicYear(id:string):Promise<ServiceResponse<AcademicYear>> {
+ const result=await getAcademicYears(); if(!result.success)return createError(result.error,'Chargement impossible.');
+ const year=result.data?.find(y=>y.id===id); return year?createSuccess(year):createError(null,'Année scolaire introuvable.');
 }
-
-/**
- * Récupère une année scolaire par son identifiant unique
- * @param id Identifiant de l'année scolaire
- */
-export async function getAcademicYear(id: string): Promise<ServiceResponse<AcademicYear>> {
-  try {
-    if (!id) return createError(null, 'Identifiant année scolaire requis.');
-
-    const { data, error } = await supabase
-      .from('academic_years')
-      .select('id, school_id, name, start_date, end_date, is_current, status, created_at, updated_at')
-      .eq('id', id)
-      .maybeSingle();
-
-    if (!error && data) {
-      const year: AcademicYear = {
-        id: data.id,
-        schoolId: data.school_id,
-        name: data.name,
-        startDate: data.start_date,
-        endDate: data.end_date,
-        isCurrent: data.is_current,
-        status: data.status,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-      };
-      localYearsCache.set(id, year);
-      return createSuccess(year);
-    }
-
-    const cached = localYearsCache.get(id);
-    if (cached) return createSuccess(cached);
-
-    return createError(null, `Année scolaire introuvable pour l'identifiant ${id}.`);
-  } catch (err) {
-    return createError(err, 'Erreur de récupération de l\'année scolaire.');
-  }
+export async function getCurrentAcademicYear():Promise<ServiceResponse<AcademicYear>> {
+ const result=await getAcademicYears(); if(!result.success)return createError(result.error,'Chargement impossible.');
+ const year=result.data?.find(y=>y.isCurrent);return year?createSuccess(year):createError(null,'Aucune année scolaire active. Configurez les paramètres.');
 }
-
-/**
- * Crée une nouvelle année scolaire
- * @param yearData Métadonnées de l'année scolaire
- */
-export async function createAcademicYear(yearData: Partial<AcademicYear>): Promise<ServiceResponse<AcademicYear>> {
-  try {
-    if (!yearData.name?.trim() || !yearData.startDate || !yearData.endDate) {
-      return createError(null, 'Le libellé, la date de début et la date de fin sont obligatoires.');
-    }
-
-    const newId = yearData.id || crypto.randomUUID();
-    const now = new Date().toISOString();
-
-    const createdYear: AcademicYear = {
-      id: newId,
-      name: yearData.name.trim(),
-      startDate: yearData.startDate,
-      endDate: yearData.endDate,
-      isCurrent: yearData.isCurrent ?? false,
-      status: yearData.status || 'Préparation',
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    if (createdYear.isCurrent) {
-      await deactivateAllAcademicYears();
-    }
-
-    const { error } = await supabase.from('academic_years').insert({
-      id: createdYear.id,
-      name: createdYear.name,
-      start_date: createdYear.startDate,
-      end_date: createdYear.endDate,
-      is_current: createdYear.isCurrent,
-      status: createdYear.status,
-      created_at: createdYear.createdAt,
-      updated_at: createdYear.updatedAt,
-    });
-
-    if (error) {
-      console.warn('[academicYearsService:createAcademicYear] Fallback local:', error.message);
-    }
-    localYearsCache.set(createdYear.id, createdYear);
-
-    return createSuccess(createdYear, 'Année scolaire créée avec succès.');
-  } catch (err) {
-    return createError(err, 'Erreur lors de la création de l\'année scolaire.');
-  }
+export async function createAcademicYear(input:Partial<AcademicYear>):Promise<ServiceResponse<AcademicYear>> {
+ try {
+  if(!input.name?.trim()||!input.startDate||!input.endDate||input.startDate>=input.endDate)throw new Error('Libellé et dates valides requis.');
+  const years=await fetchSchoolYearsList();
+  const year:SchoolYearItem={id:input.id||crypto.randomUUID(),label:input.name.trim(),startDate:input.startDate,endDate:input.endDate,isActive:!!input.isCurrent,isClosed:input.status==='Clôturée'};
+  const result=await saveSchoolYearsList([...years.map(y=>year.isActive?{...y,isActive:false}:y),year]);
+  if(result.error)throw new Error(result.error);return createSuccess(mapYear(year),'Année enregistrée.');
+ }catch(e){return createError(e,'Enregistrement impossible.');}
 }
-
-/**
- * Met à jour une année scolaire
- * @param id Identifiant de l'année scolaire
- * @param updates Attributs à modifier
- */
-export async function updateAcademicYear(id: string, updates: Partial<AcademicYear>): Promise<ServiceResponse<AcademicYear>> {
-  try {
-    if (!id) return createError(null, 'Identifiant année scolaire manquant.');
-
-    const existingRes = await getAcademicYear(id);
-    const existing = existingRes.data;
-    if (!existing) return createError(null, 'Année scolaire introuvable.');
-
-    if (updates.isCurrent && !existing.isCurrent) {
-      await deactivateAllAcademicYears();
-    }
-
-    const updatedYear: AcademicYear = {
-      ...existing,
-      ...updates,
-      id,
-      updatedAt: new Date().toISOString(),
-    };
-
-    const { error } = await supabase
-      .from('academic_years')
-      .update({
-        name: updatedYear.name,
-        start_date: updatedYear.startDate,
-        end_date: updatedYear.endDate,
-        is_current: updatedYear.isCurrent,
-        status: updatedYear.status,
-        updated_at: updatedYear.updatedAt,
-      })
-      .eq('id', id);
-
-    if (error) {
-      console.warn('[academicYearsService:updateAcademicYear] Fallback local:', error.message);
-    }
-    localYearsCache.set(id, updatedYear);
-
-    return createSuccess(updatedYear, 'Année scolaire mise à jour avec succès.');
-  } catch (err) {
-    return createError(err, 'Erreur lors de la mise à jour de l\'année scolaire.');
-  }
+export async function updateAcademicYear(id:string,input:Partial<AcademicYear>):Promise<ServiceResponse<AcademicYear>> {
+ try{
+  const years=await fetchSchoolYearsList(),existing=years.find(y=>y.id===id);if(!existing)throw new Error('Année introuvable.');
+  const year={...existing,label:input.name?.trim()??existing.label,startDate:input.startDate??existing.startDate,endDate:input.endDate??existing.endDate,isActive:input.isCurrent??existing.isActive,isClosed:input.status?input.status==='Clôturée':existing.isClosed};
+  if(!year.label||year.startDate>=year.endDate)throw new Error('Libellé et dates valides requis.');
+  const result=await saveSchoolYearsList(years.map(y=>y.id===id?year:year.isActive?{...y,isActive:false}:y));if(result.error)throw new Error(result.error);
+  return createSuccess(mapYear(year),'Année enregistrée.');
+ }catch(e){return createError(e,'Enregistrement impossible.');}
 }
-
-/**
- * Active une année scolaire (Désactive automatiquement toute autre année courante)
- * @param id Identifiant de l'année scolaire à activer
- */
-export async function activateAcademicYear(id: string): Promise<ServiceResponse<AcademicYear>> {
-  try {
-    if (!id) return createError(null, 'Identifiant manquant.');
-
-    await deactivateAllAcademicYears();
-
-    const updateRes = await updateAcademicYear(id, {
-      isCurrent: true,
-      status: 'Active',
-    });
-
-    if (!updateRes.success || !updateRes.data) {
-      return createError(updateRes.error, 'Erreur lors de l\'activation de l\'année scolaire.');
-    }
-
-    return createSuccess(updateRes.data, 'Année scolaire activée comme année courante.');
-  } catch (err) {
-    return createError(err, 'Erreur lors de l\'activation de l\'année scolaire.');
-  }
+export async function activateAcademicYear(id:string):Promise<ServiceResponse<AcademicYear>> {
+ try { const r=await setActiveSchoolYear(id);if(r.error)throw new Error(r.error);return getAcademicYear(id); }catch(e){return createError(e,'Activation impossible.');}
 }
-
-/**
- * Archive une année scolaire
- * @param id Identifiant
- */
-export async function archiveAcademicYear(id: string): Promise<ServiceResponse<boolean>> {
-  try {
-    if (!id) return createError(null, 'Identifiant manquant.');
-
-    const { error } = await supabase
-      .from('academic_years')
-      .update({
-        status: 'Clôturée',
-        is_current: false,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id);
-
-    if (error) {
-      console.warn('[academicYearsService:archiveAcademicYear] Fallback local:', error.message);
-    }
-
-    const cached = localYearsCache.get(id);
-    if (cached) {
-      localYearsCache.set(id, { ...cached, isCurrent: false, status: 'Clôturée', updatedAt: new Date().toISOString() });
-    }
-
-    return createSuccess(true, 'Année scolaire clôturée / archivée.');
-  } catch (err) {
-    return createError(err, 'Erreur lors de l\'archivage de l\'année scolaire.');
-  }
-}
-
-/**
- * Helper interne pour désactiver toutes les années scolaires courantes
- */
-async function deactivateAllAcademicYears(): Promise<void> {
-  try {
-    await supabase
-      .from('academic_years')
-      .update({ is_current: false })
-      .eq('is_current', true);
-
-    for (const [key, val] of localYearsCache.entries()) {
-      localYearsCache.set(key, { ...val, isCurrent: false });
-    }
-  } catch (err) {
-    console.warn('[academicYearsService:deactivateAll] Warning:', err);
-  }
+export async function archiveAcademicYear(id:string):Promise<ServiceResponse<boolean>> {
+ try { const r=await closeSchoolYear(id);if(r.error)throw new Error(r.error);return createSuccess(true); }catch(e){return createError(e,'Clôture impossible.');}
 }

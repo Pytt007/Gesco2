@@ -239,7 +239,7 @@ export const reportCardsService = {
     // Traçabilité d'audit
     auditLogService.log({
       action: 'BULLETIN_GENERATION',
-      module: 'ACADEMIC',
+      module: 'PEDAGOGY',
       details: `Génération de ${reportCards.length} bulletin(s) pour la classe ${levelCode} (Session: ${sessionId})`,
       severity: 'SUCCESS',
       user: generatedBy,

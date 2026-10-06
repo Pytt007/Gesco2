@@ -31,6 +31,7 @@ export const UsersAccessLayout: React.FC = () => {
     refresh,
     createUser,
     updateUserRole,
+    updateUserStatus,
     archiveUser,
   } = useUsers({ pageSize: 100 });
 
@@ -103,7 +104,11 @@ export const UsersAccessLayout: React.FC = () => {
       }
       return false;
     } else {
-      const pwd = userData.password || 'gesco2026';
+      if (!userData.password || userData.password.length < 12) {
+        addNotification('error', 'Un mot de passe initial de 12 caractères minimum est obligatoire.');
+        return false;
+      }
+      const pwd = userData.password;
       const ok = await createUser(userData.username, pwd, userData.role, userData.fullName);
       if (ok) {
         addNotification('success', `Nouveau membre ${userData.fullName} ajouté avec succès !`);
@@ -126,9 +131,9 @@ export const UsersAccessLayout: React.FC = () => {
     });
     if (!ok) return;
 
-    // Simulation de modification de statut
-    addNotification('success', `Statut de l'utilisateur mis à jour (${actionName}).`);
-    refresh();
+    const statusResult = await updateUserStatus(userId, isSuspended ? 'ACTIF' : 'SUSPENDU');
+    if (!statusResult) addNotification('error', 'Modification du statut refusée par le serveur.');
+    else { addNotification('success', `Statut de l'utilisateur mis à jour (${actionName}).`); refresh(); }
   };
 
   const handleResetPassword = async (user: UserAccount) => {

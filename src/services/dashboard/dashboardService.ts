@@ -322,7 +322,7 @@ export const dashboardService = {
         staffRes,
         classroomsRes,
       ] = await Promise.all([
-        studentFinancialEnrollmentService.getEnrollmentsByYear(academicYearId).catch(() => []),
+        studentFinancialEnrollmentService.getEnrollmentsByYear(academicYearId).catch((): Awaited<ReturnType<typeof studentFinancialEnrollmentService.getEnrollmentsByYear>> => []),
         canteenEnrollmentService.getEnrollmentsByYear(academicYearId).catch(() => []),
         transportEnrollmentService.getEnrollmentsByYear(academicYearId).catch(() => []),
         expenseService.getKPIs(academicYearId).catch(() => ({ totalMonth: 0 })),

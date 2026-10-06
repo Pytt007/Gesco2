@@ -1,15 +1,23 @@
 import path from 'path';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
+import { nodeAuthHandler } from './server/authProxy';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
+    const serverEnv = loadEnv(mode, process.cwd(), '');
     return {
       server: {
         port: 3000,
         host: '0.0.0.0',
       },
       plugins: [
+        { name: 'gesco-auth-api', configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (!req.url?.startsWith('/api/auth/')) return next();
+            void nodeAuthHandler(req, res, serverEnv);
+          });
+        } },
         react(),
         VitePWA({
           registerType: 'autoUpdate',
@@ -57,9 +65,9 @@ export default defineConfig(() => {
               if (id.includes('@e965/xlsx') || id.includes('xlsx')) {
                 return 'xlsx';
               }
-              // Separate Supabase client
-              if (id.includes('@supabase')) {
-                return 'supabase';
+              // Keep legacy migration utilities out of the main vendor chunk.
+              if (id.includes('@neondatabase')) {
+                return 'neon';
               }
               // Separate icon library (lucide-react is large ~200KB unpacked)
               if (id.includes('lucide-react')) {

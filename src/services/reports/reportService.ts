@@ -220,7 +220,7 @@ export const reportService = {
             e.matricule,
             e.studentName,
             e.className,
-            e.planLabel || 'Standard',
+            `${e.periodsCount} périodes`,
             `${e.netAmountDue.toLocaleString('fr-FR')} FCFA`,
             `${e.totalPaid.toLocaleString('fr-FR')} FCFA`,
             `${e.remainingBalance.toLocaleString('fr-FR')} FCFA`,

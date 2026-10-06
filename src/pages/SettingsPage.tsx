@@ -226,7 +226,7 @@ export default function SettingsPage() {
     e.preventDefault();
     if (!newUserForm.fullName.trim()) { addNotification('error', 'Nom complet requis.'); return; }
     if (!newUserForm.username.trim()) { addNotification('error', 'Identifiant requis.'); return; }
-    if (newUserForm.password.length < 6) { addNotification('error', 'Mot de passe minimum 6 caractères.'); return; }
+    if (newUserForm.password.length < 12) { addNotification('error', 'Mot de passe minimum 12 caractères.'); return; }
 
     const ok = await createAccountViaHook(
       newUserForm.username.trim().toLowerCase(),

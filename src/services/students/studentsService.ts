@@ -73,86 +73,18 @@ export const OFFICIAL_GIRL_AVATAR = 'https://api.dicebear.com/7.x/adventurer/svg
 
 export const DEFAULT_STUDENTS: Student[] = [];
 
-let localStudentsStore: Student[] = [];
-
+function rowToStudent(row: any): Student {
+  return { ...row.data, id: row.id, matricule: row.matricule };
+}
 async function syncStudentsFromSupabase(): Promise<Student[]> {
-  try {
-    const { data: settingsRow } = await supabase
-      .from('school_settings')
-      .select('data')
-      .eq('id', 'students_data')
-      .maybeSingle();
-
-    if (settingsRow && Array.isArray(settingsRow.data)) {
-      const sanitized = settingsRow.data.filter((s: any) => s && typeof s === 'object');
-      localStudentsStore = sanitized;
-      return sanitized;
-    }
-
-    // Chargement paginé sans limite arbitraire (toutes les pages de 500 lignes)
-    const PAGE_SIZE = 500;
-    let offset = 0;
-    let allRows: any[] = [];
-    let keepFetching = true;
-    while (keepFetching) {
-      const { data: rows, error } = await supabase
-        .from('students')
-        .select('*')
-        .range(offset, offset + PAGE_SIZE - 1);
-      if (error || !Array.isArray(rows) || rows.length === 0) {
-        keepFetching = false;
-      } else {
-        allRows = allRows.concat(rows);
-        offset += PAGE_SIZE;
-        if (rows.length < PAGE_SIZE) keepFetching = false;
-      }
-    }
-    if (allRows.length > 0) {
-      const list: Student[] = allRows.map((row: any) => {
-        const d = row.data as any;
-        return {
-          id: row.id,
-          matricule: d?.matricule || row.matricule || row.registration_number || `MAT-${row.id.slice(0, 6)}`,
-          firstName: d?.firstName || row.first_name || 'Élève',
-          lastName: d?.lastName || row.last_name || 'GESCO',
-          gender: d?.gender || (row.gender === 'F' ? 'Féminin' : 'Masculin'),
-          photo: d?.photo || row.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${row.id}`,
-          grade: (d?.grade && !['6ème', '5ème', '4ème', '3ème'].includes(d.grade)) ? d.grade : (row.class_id && !['6ème', '5ème', '4ème', '3ème'].includes(row.class_id) ? row.class_id : 'CP1'),
-          status: d?.status || (row.status === 'ACTIVE' ? 'Actif' : (row.status || 'Actif')),
-          feesStatus: d?.feesStatus || 'En attente',
-          attendance: d?.attendance ?? 100,
-          parentName: d?.parentName || '',
-          parentPhone: d?.parentPhone || '',
-          address: d?.address || '',
-          schoolYear: row.school_year_id || row.school_year || '2026-2027',
-        };
-      });
-      localStudentsStore = list;
-      return list;
-    }
-  } catch (err) {
-    console.warn('[studentsService] syncStudentsFromSupabase warning:', err);
-  }
-  return localStudentsStore;
-}
-
-async function persistStudentsToSupabase(allStudents: Student[]) {
-  try {
-    await supabase
-      .from('school_settings')
-      .upsert({
-        id: 'students_data',
-        data: allStudents,
-        updated_at: new Date().toISOString(),
-      });
-  } catch (err) {
-    console.warn('[studentsService] persistStudentsToSupabase warning:', err);
+  const all: Student[] = [];
+  for (let offset = 0; ; offset += 500) {
+    const { data, error } = await supabase.from('students').select('*').order('id').range(offset, offset + 499);
+    if (error) throw new Error(error.message);
+    all.push(...(data || []).map(rowToStudent));
+    if (!data || data.length < 500) return all;
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// MÉTHODES DU SERVICE ÉLÈVES
-// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Crée un nouvel élève dans la base de données
@@ -166,56 +98,31 @@ export async function createStudent(studentData: Partial<Student>): Promise<Serv
       return createError(null, 'Le nom de famille de l\'élève est obligatoire.');
     }
 
-    await syncStudentsFromSupabase();
-
-    const matricule = studentData.matricule || `MAT-${new Date().getFullYear()}-${String(localStudentsStore.length + 1).padStart(4, '0')}`;
     const newId = studentData.id || crypto.randomUUID();
-
-    const duplicate = localStudentsStore.find(
-      (s) => s.matricule.toLowerCase() === matricule.toLowerCase()
-    );
-    if (duplicate) {
-      return createError(null, `Le matricule "${matricule}" est déjà attribué à l'élève ${duplicate.firstName} ${duplicate.lastName}.`);
-    }
+    const matricule = studentData.matricule || `MAT-${new Date().getFullYear()}-${newId.slice(0, 8).toUpperCase()}`;
 
     const createdStudent: Student = {
+      ...studentData,
       id: newId,
       matricule,
       firstName: studentData.firstName.trim(),
       lastName: studentData.lastName.trim(),
       gender: studentData.gender || 'Masculin',
       photo: studentData.photo || (studentData.gender === 'Féminin' ? OFFICIAL_GIRL_AVATAR : OFFICIAL_BOY_AVATAR),
-      grade: studentData.grade && !['6ème', '5ème', '4ème', '3ème'].includes(studentData.grade) ? studentData.grade : 'CP1',
+      grade: studentData.grade || '',
       status: studentData.status || 'Actif',
       feesStatus: studentData.feesStatus || 'En attente',
       attendance: studentData.attendance ?? 100,
       parentName: studentData.parentName || '',
       parentPhone: studentData.parentPhone || '',
       address: studentData.address || '',
-      schoolYear: studentData.schoolYear || '2026-2027',
+      schoolYear: studentData.schoolYear || '',
     };
 
-    localStudentsStore.unshift(createdStudent);
-    await persistStudentsToSupabase(localStudentsStore);
-
-    // Résolution de classe et persistance table SQL students
-    try {
-      await supabase.from('students').insert({
-        id: newId,
-        matricule: createdStudent.matricule,
-        first_name: createdStudent.firstName,
-        last_name: createdStudent.lastName,
-        gender: createdStudent.gender === 'Féminin' ? 'F' : 'M',
-        birth_date: '2014-06-15',
-        nationality: 'Ivoirienne',
-        school_year_id: createdStudent.schoolYear,
-        avatar_url: createdStudent.photo,
-        status: 'ACTIVE',
-        school_year: createdStudent.schoolYear,
-      });
-    } catch (err) {
-      console.warn('[studentsService] Supabase insert fallback:', err);
-    }
+    const { error } = await supabase.from('students').insert({
+      id: newId, matricule, data: createdStudent,
+    });
+    if (error) throw new Error(error.message);
 
     broadcastDataChange('students', 'insert', createdStudent);
 
@@ -238,66 +145,21 @@ export async function createStudent(studentData: Partial<Student>): Promise<Serv
  */
 export async function updateStudent(id: string, updates: Partial<Student>): Promise<ServiceResponse<Student>> {
   try {
-    await syncStudentsFromSupabase();
-    const idx = localStudentsStore.findIndex((s) => s.id === id);
-    if (idx !== -1) {
-      localStudentsStore[idx] = { ...localStudentsStore[idx], ...updates };
-    }
-
-    try {
-      await supabase.from('students').update({
-        first_name: updates.firstName,
-        last_name: updates.lastName,
-        gender: updates.gender ? (updates.gender === 'Féminin' ? 'F' : 'M') : undefined,
-        class_id: updates.grade,
-        avatar_url: updates.photo,
-        status: updates.status ? (updates.status === 'Actif' ? 'ACTIVE' : updates.status) : undefined,
-      }).eq('id', id);
-    } catch (err) {
-      console.warn('[studentsService] Supabase update fallback:', err);
-    }
-
-    const updated = localStudentsStore.find((s) => s.id === id) || (updates as Student);
-    await persistStudentsToSupabase(localStudentsStore);
-    broadcastDataChange('students', 'update', updated);
+    const { data, error } = await supabase.rpc('patch_student', { p_id: id, p_updates: updates });
+    if (error) throw new Error(error.message);
+    if (!data) throw new Error('Élève introuvable ou modification non autorisée.');
+    const updated = rowToStudent(data);
+    broadcastDataChange('students', 'update');
     return createSuccess(updated, 'Élève mis à jour avec succès.');
-  } catch (err) {
-    return createError(err, 'Erreur lors de la mise à jour.');
-  }
+  } catch (err) { return createError(err, 'Erreur lors de la mise à jour.'); }
 }
-
-/**
- * Archive un élève (Soft Delete)
- */
 export async function archiveStudent(id: string): Promise<ServiceResponse<boolean>> {
-  try {
-    const idx = localStudentsStore.findIndex((s) => s.id === id);
-    if (idx !== -1) {
-      localStudentsStore[idx].status = 'Archivé';
-    }
-    await persistStudentsToSupabase(localStudentsStore);
-    broadcastDataChange('students', 'update', { id, status: 'Archivé' });
-    return createSuccess(true, 'Élève archivé avec succès.');
-  } catch (err) {
-    return createError(err, 'Erreur lors de l\'archivage.');
-  }
+  const result = await updateStudent(id, { status: 'Archivé' });
+  return result.success ? createSuccess(true) : { success: false, error: result.error };
 }
-
-/**
- * Restaure un élève archivé
- */
 export async function restoreStudent(id: string): Promise<ServiceResponse<boolean>> {
-  try {
-    const idx = localStudentsStore.findIndex((s) => s.id === id);
-    if (idx !== -1) {
-      localStudentsStore[idx].status = 'Actif';
-    }
-    await persistStudentsToSupabase(localStudentsStore);
-    broadcastDataChange('students', 'update', { id, status: 'Actif' });
-    return createSuccess(true, 'Élève restauré avec succès.');
-  } catch (err) {
-    return createError(err, 'Erreur lors de la restauration.');
-  }
+  const result = await updateStudent(id, { status: 'Actif' });
+  return result.success ? createSuccess(true) : { success: false, error: result.error };
 }
 
 /**
@@ -305,7 +167,9 @@ export async function restoreStudent(id: string): Promise<ServiceResponse<boolea
  */
 export async function getStudentById(id: string): Promise<ServiceResponse<Student>> {
   try {
-    const student = localStudentsStore.find((s) => s.id === id);
+    const { data, error } = await supabase.from('students').select('*').eq('id', id).maybeSingle();
+    if (error) throw new Error(error.message);
+    const student = data ? rowToStudent(data) : null;
     if (!student) {
       return createError(null, `Elève introuvable (ID: ${id}).`);
     }
@@ -320,7 +184,9 @@ export async function getStudentById(id: string): Promise<ServiceResponse<Studen
  */
 export async function getStudentByMatricule(matricule: string): Promise<ServiceResponse<Student>> {
   try {
-    const student = localStudentsStore.find((s) => s.matricule.toLowerCase() === matricule.toLowerCase());
+    const { data, error } = await supabase.from('students').select('*').ilike('matricule', matricule).maybeSingle();
+    if (error) throw new Error(error.message);
+    const student = data ? rowToStudent(data) : null;
     if (student) return createSuccess(student);
     return createError(null, 'Aucun élève trouvé avec ce matricule.');
   } catch (err) {
@@ -350,10 +216,10 @@ export async function listStudents(filters: StudentFilters = {}): Promise<Servic
     // Filtre par année scolaire
     if (schoolYear) {
       const yearFiltered = rawList.filter((s) => !s.schoolYear || s.schoolYear === schoolYear);
-      if (yearFiltered.length > 0) {
-        rawList = yearFiltered;
-      }
+      rawList = yearFiltered;
     }
+
+    if (filters.classId) rawList = rawList.filter(s => s.classId === filters.classId);
 
     // Filtre par statut (all / Actif / Inactif / Archivé)
     if (status !== 'all') {
@@ -417,17 +283,8 @@ export async function searchStudents(filters: StudentFilters): Promise<ServiceRe
 
 export async function deleteStudent(id: string): Promise<ServiceResponse<boolean>> {
   try {
-    await syncStudentsFromSupabase();
-    const idx = localStudentsStore.findIndex((s) => s.id === id);
-    if (idx !== -1) {
-      localStudentsStore.splice(idx, 1);
-    }
-    try {
-      await supabase.from('students').delete().eq('id', id);
-    } catch (err) {
-      console.warn('[studentsService:deleteStudent] Supabase delete fallback:', err);
-    }
-    await persistStudentsToSupabase(localStudentsStore);
+    const { data, error } = await supabase.from('students').delete().eq('id', id).select('id').single();
+    if (error || !data) throw new Error(error?.message || 'Suppression refusée.');
     broadcastDataChange('students', 'delete', { id });
 
     // Traçabilité d'audit
@@ -444,26 +301,25 @@ export async function deleteStudent(id: string): Promise<ServiceResponse<boolean
   }
 }
 
-export async function createEnrollment(data: EnrollmentData): Promise<ServiceResponse<EnrollmentData>> {
-  return createSuccess({ ...data, id: data.id || crypto.randomUUID() }, 'Inscription enregistrée.');
+export async function createEnrollment(input: EnrollmentData): Promise<ServiceResponse<EnrollmentData>> {
+  try {
+    const enrollment = { ...input, id: input.id || crypto.randomUUID() };
+    const { error } = await supabase.from('student_enrollments').insert({
+      id: enrollment.id, student_id: input.studentId, school_year_id: input.schoolYearId, data: enrollment,
+    });
+    if (error) throw new Error(error.message);
+    return createSuccess(enrollment);
+  } catch (error) { return createError(error, 'Inscription non enregistrée.'); }
 }
-
-export async function updateEnrollment(enrollmentId: string, updates: Partial<EnrollmentData>): Promise<ServiceResponse<boolean>> {
-  return createSuccess(true, 'Inscription mise à jour.');
+export async function updateEnrollment(id: string, updates: Partial<EnrollmentData>): Promise<ServiceResponse<boolean>> {
+  const { error } = await supabase.rpc('patch_student_enrollment', { p_id: id, p_updates: updates });
+  return error ? createError(error, 'Modification refusée.') : createSuccess(true);
 }
-
 export async function getCurrentEnrollment(studentId: string, schoolYearId: string): Promise<ServiceResponse<EnrollmentData>> {
-  return createSuccess({
-    id: crypto.randomUUID(),
-    studentId,
-    schoolYearId,
-    enrollmentStatus: 'Inscrit',
-    hasScholarship: false,
-  });
+  const { data, error } = await supabase.from('student_enrollments').select('data').eq('student_id', studentId).eq('school_year_id', schoolYearId).maybeSingle();
+  return error || !data ? createError(error, 'Inscription introuvable.') : createSuccess(data.data);
 }
-
 export async function getEnrollmentHistory(studentId: string): Promise<ServiceResponse<EnrollmentData[]>> {
-  return createSuccess([
-    { id: crypto.randomUUID(), studentId, schoolYearId: '2026-2027', enrollmentStatus: 'Inscrit' },
-  ]);
+  const { data, error } = await supabase.from('student_enrollments').select('data').eq('student_id', studentId).order('created_at');
+  return error ? createError(error, 'Historique indisponible.') : createSuccess((data || []).map(row => row.data));
 }

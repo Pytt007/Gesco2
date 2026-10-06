@@ -228,7 +228,7 @@ async function persistStaffToSupabase(member: StaffMember, allMembers?: StaffMem
       specialty: member.jobTitle || member.positionTitle || null,
       hire_date: member.hireDate || new Date().toISOString().split('T')[0],
       base_salary: member.baseSalary ?? 0,
-      status: member.status === 'Actif' || member.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
+      status: member.status === 'Actif' ? 'ACTIVE' : 'INACTIVE',
       updated_at: new Date().toISOString(),
     }, { onConflict: 'id' });
   } catch (e) {
