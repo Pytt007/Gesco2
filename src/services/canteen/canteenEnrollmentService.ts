@@ -8,7 +8,7 @@ import {
 } from './types';
 import { canteenFeesService, normalizeCanteenLevelCode } from './canteenFeesService';
 import { ServiceResponse } from '../academic/academicYearsService';
-import { supabase } from '../common/supabaseClient';
+import { readSettingsArray, writeSettingsArray } from '../common/settingsArray';
 
 const localCanteenEnrollmentsStore: Map<string, CanteenEnrollment> = new Map();
 
@@ -31,39 +31,14 @@ export function clearCanteenEnrollmentsStore() {
 }
 
 async function syncEnrollmentsFromSupabase(): Promise<CanteenEnrollment[]> {
-  try {
-    const { data: settingsRow } = await supabase
-      .from('school_settings')
-      .select('data')
-      .eq('id', 'canteen_enrollments_data')
-      .maybeSingle();
-
-    if (settingsRow?.data && Array.isArray(settingsRow.data)) {
-      localCanteenEnrollmentsStore.clear();
-      for (const item of settingsRow.data) {
-        localCanteenEnrollmentsStore.set(item.id, item);
-      }
-      return settingsRow.data;
-    }
-  } catch (err) {
-    console.warn('[canteenEnrollmentService] Supabase sync error:', err);
-  }
-  return Array.from(localCanteenEnrollmentsStore.values());
+  const rows = await readSettingsArray<CanteenEnrollment>('canteen_enrollments_data');
+  localCanteenEnrollmentsStore.clear();
+  for (const item of rows) localCanteenEnrollmentsStore.set(item.id, item);
+  return rows;
 }
 
 async function persistEnrollmentsToSupabase() {
-  try {
-    const list = Array.from(localCanteenEnrollmentsStore.values());
-    await supabase
-      .from('school_settings')
-      .upsert({
-        id: 'canteen_enrollments_data',
-        data: list,
-        updated_at: new Date().toISOString(),
-      });
-  } catch (err) {
-    console.warn('[canteenEnrollmentService] Supabase persist error:', err);
-  }
+  await writeSettingsArray('canteen_enrollments_data', Array.from(localCanteenEnrollmentsStore.values()));
 }
 
 export const canteenEnrollmentService = {

@@ -10,7 +10,7 @@ import {
 } from './types';
 import { transportLineService, updateLineEnrollmentCount } from './transportLineService';
 import { ServiceResponse } from '../academic/academicYearsService';
-import { supabase } from '../common/supabaseClient';
+import { readSettingsArray, writeSettingsArray } from '../common/settingsArray';
 
 // ─── Stockage local & Synchro Supabase ─────────────────────────────────────────
 
@@ -19,39 +19,14 @@ const enrollmentStore: Map<string, TransportEnrollment> = new Map();
 export function clearTransportEnrollmentStore() { enrollmentStore.clear(); }
 
 async function syncEnrollmentsFromSupabase(): Promise<TransportEnrollment[]> {
-  try {
-    const { data: settingsRow } = await supabase
-      .from('school_settings')
-      .select('data')
-      .eq('id', 'transport_enrollments_data')
-      .maybeSingle();
-
-    if (settingsRow?.data && Array.isArray(settingsRow.data)) {
-      enrollmentStore.clear();
-      for (const item of settingsRow.data) {
-        enrollmentStore.set(item.id, item);
-      }
-      return settingsRow.data;
-    }
-  } catch (err) {
-    console.warn('[transportEnrollmentService] Supabase sync error:', err);
-  }
-  return Array.from(enrollmentStore.values());
+  const rows = await readSettingsArray<TransportEnrollment>('transport_enrollments_data');
+  enrollmentStore.clear();
+  for (const item of rows) enrollmentStore.set(item.id, item);
+  return rows;
 }
 
 async function persistEnrollmentsToSupabase() {
-  try {
-    const list = Array.from(enrollmentStore.values());
-    await supabase
-      .from('school_settings')
-      .upsert({
-        id: 'transport_enrollments_data',
-        data: list,
-        updated_at: new Date().toISOString(),
-      });
-  } catch (err) {
-    console.warn('[transportEnrollmentService] Supabase persist error:', err);
-  }
+  await writeSettingsArray('transport_enrollments_data', Array.from(enrollmentStore.values()));
 }
 
 // ─── Génération des périodes ──────────────────────────────────────────────────
@@ -202,7 +177,7 @@ export const transportEnrollmentService = {
     await persistEnrollmentsToSupabase();
 
     // Mise à jour du compteur de la ligne
-    updateLineEnrollmentCount(line.id, +1);
+    await updateLineEnrollmentCount(line.id, +1);
 
     return { success: true, data: record, message: 'Inscription transport enregistrée avec succès.' };
   },
@@ -250,7 +225,7 @@ export const transportEnrollmentService = {
     await persistEnrollmentsToSupabase();
 
     // Libérer la place sur la ligne
-    updateLineEnrollmentCount(enrollment.lineId, -1);
+    await updateLineEnrollmentCount(enrollment.lineId, -1);
 
     return { success: true, data: enrollment, message: 'Inscription transport annulée et place libérée.' };
   },
@@ -283,9 +258,9 @@ export const transportEnrollmentService = {
       if (newLine.availableSeats <= 0) return { success: false, error: `La ligne "${newLine.name}" n'a plus de place disponible.` };
 
       // Libérer la place sur l'ancienne ligne
-      updateLineEnrollmentCount(enrollment.lineId, -1);
+      await updateLineEnrollmentCount(enrollment.lineId, -1);
       // Réserver la place sur la nouvelle ligne
-      updateLineEnrollmentCount(newLine.id, +1);
+      await updateLineEnrollmentCount(newLine.id, +1);
 
       enrollment.lineId = newLine.id;
       enrollment.lineName = newLine.name;
@@ -351,7 +326,7 @@ export const transportEnrollmentService = {
     if (!enrollment) return { success: false, error: 'Inscription transport introuvable.' };
 
     if (enrollment.status !== 'CANCELLED') {
-      updateLineEnrollmentCount(enrollment.lineId, -1);
+      await updateLineEnrollmentCount(enrollment.lineId, -1);
     }
 
     enrollmentStore.delete(enrollmentId);

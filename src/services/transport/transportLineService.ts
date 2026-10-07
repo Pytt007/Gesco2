@@ -7,7 +7,7 @@ import {
 } from './types';
 import { ServiceResponse } from '../academic/academicYearsService';
 import { transportVehicleService, transportDriverService } from './transportVehicleDriverService';
-import { supabase } from '../common/supabaseClient';
+import { readSettingsArray, writeSettingsArray } from '../common/settingsArray';
 
 // ─── Stockage local & Synchro Supabase ─────────────────────────────────────────
 
@@ -22,43 +22,21 @@ export function clearTransportLineStore() {
 const enrollmentCountByLine: Map<string, number> = new Map();
 
 async function syncLinesFromSupabase(): Promise<TransportLine[]> {
-  try {
-    const { data: settingsRow } = await supabase
-      .from('school_settings')
-      .select('data')
-      .eq('id', 'transport_lines_data')
-      .maybeSingle();
-
-    if (settingsRow?.data && Array.isArray(settingsRow.data)) {
-      lineStore.clear();
-      for (const item of settingsRow.data) {
-        lineStore.set(item.id, item);
-        enrollmentCountByLine.set(item.id, item.enrolledCount || 0);
-      }
-      return settingsRow.data;
-    }
-  } catch (err) {
-    console.warn('[transportLineService] Supabase sync error:', err);
+  const rows = await readSettingsArray<TransportLine>('transport_lines_data');
+  lineStore.clear();
+  enrollmentCountByLine.clear();
+  for (const item of rows) {
+    lineStore.set(item.id, item);
+    enrollmentCountByLine.set(item.id, item.enrolledCount || 0);
   }
-  return Array.from(lineStore.values());
+  return rows;
 }
 
 async function persistLinesToSupabase() {
-  try {
-    const list = Array.from(lineStore.values());
-    await supabase
-      .from('school_settings')
-      .upsert({
-        id: 'transport_lines_data',
-        data: list,
-        updated_at: new Date().toISOString(),
-      });
-  } catch (err) {
-    console.warn('[transportLineService] Supabase persist error:', err);
-  }
+  await writeSettingsArray('transport_lines_data', Array.from(lineStore.values()));
 }
 
-export function updateLineEnrollmentCount(lineId: string, delta: number) {
+export async function updateLineEnrollmentCount(lineId: string, delta: number) {
   const current = enrollmentCountByLine.get(lineId) ?? 0;
   const next = Math.max(0, current + delta);
   enrollmentCountByLine.set(lineId, next);
@@ -71,7 +49,7 @@ export function updateLineEnrollmentCount(lineId: string, delta: number) {
     line.occupancyRate = line.vehicleCapacity > 0 ? Math.round((next / line.vehicleCapacity) * 100) : 0;
     line.updatedAt = new Date().toISOString();
     lineStore.set(lineId, line);
-    persistLinesToSupabase();
+    await persistLinesToSupabase();
   }
 }
 

@@ -37,6 +37,11 @@ beforeEach(() => {
 });
 
 describe('Production persistence and authentication contracts', () => {
+  it('does not treat a rejected Neon settings write or read as a local success', async () => {
+    const { readSettingsArray, writeSettingsArray } = await import('../../src/services/common/settingsArray');
+    await expect(readSettingsArray('canteen_fee_schedules')).rejects.toThrow('database unavailable');
+    await expect(writeSettingsArray('canteen_fee_schedules', [{ id: 'test' }])).rejects.toThrow('database unavailable');
+  });
   it('does not announce a vehicle or driver saved when Neon rejects the write', async () => {
     const { transportVehicleService, transportDriverService } = await import('../../src/services/transport/transportVehicleDriverService');
     const vehicle = await transportVehicleService.create({ name: 'Test', licensePlate: 'TEST', capacity: 10 });

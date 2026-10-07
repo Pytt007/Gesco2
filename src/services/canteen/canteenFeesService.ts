@@ -4,7 +4,7 @@ import {
   CanteenLevelCode,
 } from './types';
 import { ServiceResponse } from '../academic/academicYearsService';
-import { supabase } from '../common/supabaseClient';
+import { readSettingsArray, writeSettingsArray } from '../common/settingsArray';
 
 const levelNamesMap: Record<CanteenLevelCode, string> = {
   GARDERIE: 'Garderie',
@@ -58,39 +58,14 @@ export function clearCanteenSchedulesStore() {
 }
 
 async function syncSchedulesFromSupabase(): Promise<CanteenFeeSchedule[]> {
-  try {
-    const { data: settingsRow } = await supabase
-      .from('school_settings')
-      .select('data')
-      .eq('id', 'canteen_fee_schedules')
-      .maybeSingle();
-
-    if (settingsRow?.data && Array.isArray(settingsRow.data)) {
-      localCanteenSchedulesStore.clear();
-      for (const item of settingsRow.data) {
-        localCanteenSchedulesStore.set(item.id, item);
-      }
-      return settingsRow.data;
-    }
-  } catch (err) {
-    console.warn('[canteenFeesService] Supabase sync error:', err);
-  }
-  return Array.from(localCanteenSchedulesStore.values());
+  const rows = await readSettingsArray<CanteenFeeSchedule>('canteen_fee_schedules');
+  localCanteenSchedulesStore.clear();
+  for (const item of rows) localCanteenSchedulesStore.set(item.id, item);
+  return rows;
 }
 
 async function persistSchedulesToSupabase() {
-  try {
-    const list = Array.from(localCanteenSchedulesStore.values());
-    await supabase
-      .from('school_settings')
-      .upsert({
-        id: 'canteen_fee_schedules',
-        data: list,
-        updated_at: new Date().toISOString(),
-      });
-  } catch (err) {
-    console.warn('[canteenFeesService] Supabase persist error:', err);
-  }
+  await writeSettingsArray('canteen_fee_schedules', Array.from(localCanteenSchedulesStore.values()));
 }
 
 export const canteenFeesService = {
