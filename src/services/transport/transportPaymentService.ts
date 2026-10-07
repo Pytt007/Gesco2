@@ -10,7 +10,8 @@ import {
 } from './types';
 import { transportEnrollmentService } from './transportEnrollmentService';
 import { ServiceResponse } from '../academic/academicYearsService';
-import { supabase } from '../common/supabaseClient';
+import { cancelModulePayment, readModulePayments, recordModulePayment } from '../common/modulePayments';
+import { failure } from '../common/remoteRows';
 import { generateSecureReceiptNumber } from '../finance/receiptSequenceService';
 import { fetchSchoolInfo } from '../settings/settingsService';
 
@@ -25,70 +26,8 @@ export const TRANSPORT_PAYMENT_MODE_LABELS: Record<TransportPaymentMode, string>
   CHECK: 'Chèque',
 };
 
-const STORAGE_KEY_TRANSPORT_PAYMENTS = 'gesco_transport_payments_store';
-const STORAGE_KEY_TRANSPORT_OUTBOX = 'gesco_transport_offline_outbox';
-
-function loadPersistedTransportPayments(): Map<string, TransportPaymentRecord> {
-  const store = new Map<string, TransportPaymentRecord>();
-  try {
-    if (typeof localStorage !== 'undefined') {
-      const raw = localStorage.getItem(STORAGE_KEY_TRANSPORT_PAYMENTS);
-      if (raw) {
-        const parsed: TransportPaymentRecord[] = JSON.parse(raw);
-        parsed.forEach((p) => store.set(p.id, p));
-      }
-    }
-  } catch { /* Silent */ }
-  return store;
-}
-
-function persistTransportPayments(store: Map<string, TransportPaymentRecord>) {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY_TRANSPORT_PAYMENTS, JSON.stringify(Array.from(store.values())));
-    }
-  } catch { /* Silent */ }
-}
-
-function loadPersistedTransportOutbox(): string[] {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      const raw = localStorage.getItem(STORAGE_KEY_TRANSPORT_OUTBOX);
-      if (raw) return JSON.parse(raw);
-    }
-  } catch { /* Silent */ }
-  return [];
-}
-
-function persistTransportOutbox(queue: string[]) {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY_TRANSPORT_OUTBOX, JSON.stringify(queue));
-    }
-  } catch { /* Silent */ }
-}
-
-let paymentStore: Map<string, TransportPaymentRecord> = loadPersistedTransportPayments();
-let offlineTransportOutboxQueue: string[] = loadPersistedTransportOutbox();
-
-if (typeof window !== 'undefined') {
-  window.addEventListener('online', () => {
-    transportPaymentService.syncPendingPayments().catch((err) => {
-      console.warn('[transportPaymentService] Échec sync automatique hors-ligne:', err);
-    });
-  });
-}
-
-export function clearTransportPaymentsStore(): void {
-  paymentStore.clear();
-  offlineTransportOutboxQueue = [];
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem(STORAGE_KEY_TRANSPORT_PAYMENTS);
-      localStorage.removeItem(STORAGE_KEY_TRANSPORT_OUTBOX);
-    }
-  } catch { /* Silent */ }
-}
+// Kept for callers that previously reset the browser-only cache.
+export function clearTransportPaymentsStore(): void {}
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -98,71 +37,15 @@ export const transportPaymentService = {
   },
 
   getPendingSyncCount(): number {
-    return offlineTransportOutboxQueue.length;
+    return 0;
   },
 
   getPendingPayments(): TransportPaymentRecord[] {
-    return offlineTransportOutboxQueue
-      .map((id) => paymentStore.get(id))
-      .filter((p): p is TransportPaymentRecord => Boolean(p));
+    return [];
   },
 
   async syncPendingPayments(): Promise<{ syncedCount: number; failedCount: number; errors: string[] }> {
-    if (offlineTransportOutboxQueue.length === 0) {
-      return { syncedCount: 0, failedCount: 0, errors: [] };
-    }
-
-    let syncedCount = 0;
-    let failedCount = 0;
-    const errors: string[] = [];
-    const remainingQueue: string[] = [];
-
-    for (const paymentId of offlineTransportOutboxQueue) {
-      const payment = paymentStore.get(paymentId);
-      if (!payment) continue;
-
-      try {
-        if (supabase) {
-          const { error } = await supabase.from('tuition_payments').insert({
-            id: crypto.randomUUID(),
-            receipt_number: payment.receiptNumber,
-            student_id: null,
-            amount: payment.amount,
-            payment_method: payment.paymentMode || 'CASH',
-            payment_date: payment.paymentDate || new Date().toISOString(),
-            payer_name: 'Parent',
-            notes: `TRANSPORT | Reçu: ${payment.receiptNumber}`,
-            received_by: null,
-          });
-
-          if (error) {
-            failedCount++;
-            remainingQueue.push(paymentId);
-            errors.push(error.message);
-          } else {
-            payment.status = 'VALIDATED';
-            payment.updatedAt = new Date().toISOString();
-            paymentStore.set(paymentId, payment);
-            syncedCount++;
-          }
-        } else {
-          payment.status = 'VALIDATED';
-          payment.updatedAt = new Date().toISOString();
-          paymentStore.set(paymentId, payment);
-          syncedCount++;
-        }
-      } catch (err: any) {
-        failedCount++;
-        remainingQueue.push(paymentId);
-        errors.push(err?.message || 'Erreur sync transport');
-      }
-    }
-
-    offlineTransportOutboxQueue = remainingQueue;
-    persistTransportOutbox(offlineTransportOutboxQueue);
-    persistTransportPayments(paymentStore);
-
-    return { syncedCount, failedCount, errors };
+    return { syncedCount: 0, failedCount: 0, errors: [] };
   },
 
   /**
@@ -196,10 +79,7 @@ export const transportPaymentService = {
 
     const receiptNumber = await generateSecureReceiptNumber('TRP');
     const id = `tp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const totalPaidBefore = enrollment.totalPaid;
-    const isOnlineMode = this.isOnline();
-
-    let initialStatus: 'VALIDATED' | 'CANCELLED' | 'PENDING_SYNC' = 'VALIDATED';
+    if (!this.isOnline()) return { success: false, error: 'Connexion Internet requise pour enregistrer un paiement.' };
 
     const payment: TransportPaymentRecord = {
       id,
@@ -212,52 +92,20 @@ export const transportPaymentService = {
       referenceNumber: input.referenceNumber,
       remarks: input.remarks,
       recordedBy: input.recordedBy || 'Gestionnaire',
-      status: initialStatus,
+      status: 'VALIDATED',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    // Mise à jour du solde
-    transportEnrollmentService.applyPayment(input.enrollmentId, input.amount, input.periodNumber);
-
-    let remoteInserted = false;
-
-    // Persistance Supabase — enregistrement dans tuition_payments (type=TRANSPORT)
-    if (isOnlineMode && supabase) {
-      try {
-        const { error } = await supabase.from('tuition_payments').insert({
-          id: crypto.randomUUID(),
-          receipt_number: receiptNumber,
-          student_id: null,
-          amount: input.amount,
-          payment_method: input.paymentMode || 'CASH',
-          payment_date: new Date().toISOString(),
-          payer_name: enrollment.parentSponsor || enrollment.studentName || null,
-          notes: `TRANSPORT | Inscription: ${input.enrollmentId} | Reçu: ${receiptNumber}`,
-          received_by: null,
-        });
-
-        if (!error) {
-          remoteInserted = true;
-        }
-      } catch (dbErr) {
-        console.warn('[transportPaymentService] Supabase fallback:', dbErr);
-      }
+    let updatedBalance;
+    try {
+      updatedBalance = await recordModulePayment('TRANSPORT', payment);
+    } catch (error) {
+      return failure(error);
     }
 
-    if (!isOnlineMode || (!remoteInserted && supabase)) {
-      payment.status = 'PENDING_SYNC';
-      if (!offlineTransportOutboxQueue.includes(id)) {
-        offlineTransportOutboxQueue.push(id);
-        persistTransportOutbox(offlineTransportOutboxQueue);
-      }
-    }
-
-    paymentStore.set(id, payment);
-    persistTransportPayments(paymentStore);
-
-    const newTotalPaid = totalPaidBefore + input.amount;
-    const newBalance = Math.max(0, enrollment.netAmountDue - newTotalPaid);
+    const newTotalPaid = updatedBalance.totalPaid;
+    const newBalance = updatedBalance.remainingBalance;
     const statusLabel = newBalance === 0 ? 'Soldé' : newTotalPaid > 0 ? 'Paiement partiel' : 'Impayé';
 
     let realSchoolName = schoolSettings?.name;
@@ -309,8 +157,8 @@ export const transportPaymentService = {
    * Historique des paiements d'une inscription
    */
   async getPaymentsByEnrollment(enrollmentId: string): Promise<TransportPaymentRecord[]> {
-    return Array.from(paymentStore.values())
-      .filter((p) => p.enrollmentId === enrollmentId && p.status !== 'CANCELLED')
+    return (await readModulePayments<TransportPaymentRecord>('TRANSPORT', enrollmentId))
+      .filter((p) => p.status !== 'CANCELLED')
       .sort((a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime());
   },
 
@@ -318,15 +166,11 @@ export const transportPaymentService = {
    * Annule un paiement
    */
   async cancelPayment(paymentId: string): Promise<ServiceResponse<boolean>> {
-    const payment = paymentStore.get(paymentId);
-    if (!payment) return { success: false, error: 'Paiement introuvable.' };
-    if (payment.status === 'CANCELLED') return { success: false, error: 'Ce paiement est déjà annulé.' };
-
-    payment.status = 'CANCELLED';
-    payment.updatedAt = new Date().toISOString();
-    paymentStore.set(paymentId, payment);
-    persistTransportPayments(paymentStore);
-
-    return { success: true, data: true, message: 'Paiement annulé.' };
+    try {
+      await cancelModulePayment('TRANSPORT', paymentId);
+      return { success: true, data: true, message: 'Paiement annulé.' };
+    } catch (error) {
+      return failure(error);
+    }
   },
 };
