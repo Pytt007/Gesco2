@@ -15,7 +15,7 @@ import {
 import { expenseService } from '../../services/expenses/expenseService';
 import { useToast } from '../../context/ToastContext';
 
-export function useExpenses(academicYearId: string = 'ay-2026') {
+export function useExpenses(academicYearId: string = '') {
   const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
   const [categories, setCategories] = useState<ExpenseCategoryItem[]>([]);
   const [kpis, setKpis] = useState<ExpenseKPIs>({

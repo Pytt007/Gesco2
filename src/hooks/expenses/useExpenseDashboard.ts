@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ExpenseDashboardStats, ExpenseFilter } from '../../services/expenses/types';
 import { expenseService } from '../../services/expenses/expenseService';
 
-export function useExpenseDashboard(academicYearId: string = 'ay-2026') {
+export function useExpenseDashboard(academicYearId: string = '') {
   const [stats, setStats] = useState<ExpenseDashboardStats>({
     totalMonth: 0,
     totalYear: 0,

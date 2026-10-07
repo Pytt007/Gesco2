@@ -51,6 +51,8 @@ describe('Dépenses enregistrées exclusivement dans Neon', () => {
   it('rejette les champs invalides avant toute écriture', async () => {
     expect((await expenseService.createExpense({ ...input, amount: 0 })).success).toBe(false);
     expect((await expenseService.createExpense({ ...input, description: ' ' })).success).toBe(false);
+    expect((await expenseService.createExpense({ ...input, academicYearId: '' })).success).toBe(false);
+    expect((await expenseService.setBudget('', 100_000)).success).toBe(false);
     expect(state.from).not.toHaveBeenCalled();
   });
 

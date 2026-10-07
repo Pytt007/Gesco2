@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useExpenses } from '../hooks/expenses/useExpenses';
 import { useAcademicYears } from '../hooks/academic';
 import { useSchoolYear } from '../context/SchoolYearContext';
@@ -34,7 +34,8 @@ type MainTab = 'DASHBOARD' | 'LIST';
 export default function ExpensesPage() {
   const { schoolYear } = useSchoolYear();
   const { academicYears } = useAcademicYears();
-  const [selectedYearId, setSelectedYearId] = useState<string>(schoolYear || 'ay-2026');
+  const [selectedYearId, setSelectedYearId] = useState<string>(schoolYear);
+  useEffect(() => setSelectedYearId(schoolYear), [schoolYear]);
   const [activeTab, setActiveTab] = useState<MainTab>('DASHBOARD');
 
   const {
@@ -263,6 +264,7 @@ export default function ExpensesPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      {!selectedYearId && <div role="status" className="alert alert-warning">Configurez l’année scolaire et ses dates réelles dans Paramètres avant d’enregistrer des dépenses ou un budget.</div>}
       {error && <div role="alert" className="alert alert-danger">{error}</div>}
       
       {/* ONGLETS PRINCIPAUX */}
@@ -295,7 +297,7 @@ export default function ExpensesPage() {
             <button className="btn btn-outline-primary text-sm fw-semibold" onClick={() => setShowCatModal(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, borderRadius: 8 }}>
               <Tag size={14} /> Nouvelle Catégorie
             </button>
-            <button className="btn btn-primary fw-semibold text-sm" onClick={openAddModal} style={{ display: 'flex', alignItems: 'center', gap: 6, borderRadius: 8 }}>
+            <button className="btn btn-primary fw-semibold text-sm" onClick={openAddModal} disabled={!selectedYearId} style={{ display: 'flex', alignItems: 'center', gap: 6, borderRadius: 8 }}>
               <Plus size={14} /> Saisir une dépense
             </button>
           </div>
@@ -337,7 +339,7 @@ export default function ExpensesPage() {
             {/* Budget (cliquable) */}
             <div
               style={{ borderRadius: 18, background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', padding: '18px 20px', color: '#ffffff', boxShadow: '0 4px 20px rgba(16,185,129,0.30)', display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer', transition: 'transform 0.15s ease, box-shadow 0.15s ease' }}
-              onClick={() => { setNewBudgetVal(String(kpis.annualBudget)); setShowBudgetModal(true); }}
+              onClick={() => { if (!selectedYearId) return; setNewBudgetVal(String(kpis.annualBudget)); setShowBudgetModal(true); }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 8px 28px rgba(16,185,129,0.40)'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.transform = ''; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 20px rgba(16,185,129,0.30)'; }}
             >

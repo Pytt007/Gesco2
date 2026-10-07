@@ -110,6 +110,7 @@ export const expenseService = {
   },
 
   async setBudget(academicYearId: string, amount: number): Promise<ServiceResponse<number>> {
+    if (!academicYearId.trim()) return { success: false, error: 'Année scolaire active requise.' };
     if (amount < 0) return { success: false, error: 'Le budget ne peut pas être négatif.' };
     try {
       const { data, error } = await supabase
@@ -247,6 +248,7 @@ export const expenseService = {
    * Calcul des statistiques complètes du Tableau de Bord — 100% Supabase
    */
   async getDashboardStats(filter: ExpenseFilter = {}): Promise<ExpenseDashboardStats> {
+      if (!filter.academicYearId) throw new Error('Année scolaire active non configurée.');
       const yearId = filter.academicYearId || '2024-2025';
       const allExpenses = await this.getExpenses({ academicYearId: yearId });
       const activeExpenses = allExpenses.filter((e) => e.status !== 'CANCELLED');
@@ -320,7 +322,7 @@ export const expenseService = {
       };
   },
 
-  async getKPIs(academicYearId: string = '2024-2025'): Promise<ExpenseKPIs> {
+  async getKPIs(academicYearId: string = ''): Promise<ExpenseKPIs> {
     const stats = await this.getDashboardStats({ academicYearId });
     const byCategory: Record<string, number> = {};
     stats.categoryDistribution.forEach((c) => { byCategory[c.name] = c.amount; });
