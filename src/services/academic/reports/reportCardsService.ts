@@ -237,13 +237,13 @@ export const reportCardsService = {
     }
 
     // Traçabilité d'audit
-    void auditLogService.log({
+    void Promise.resolve().then(() => auditLogService.log({
       action: 'BULLETIN_GENERATION',
       module: 'PEDAGOGY',
       details: `Génération de ${reportCards.length} bulletin(s) pour la classe ${levelCode} (Session: ${sessionId})`,
       severity: 'SUCCESS',
       user: generatedBy,
-    }).catch(error => console.error('Échec du journal d’audit pour les bulletins', error));
+    })).catch(error => console.error('Échec du journal d’audit pour les bulletins', error));
 
     return {
       sessionId,

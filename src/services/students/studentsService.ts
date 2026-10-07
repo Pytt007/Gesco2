@@ -127,12 +127,12 @@ export async function createStudent(studentData: Partial<Student>): Promise<Serv
     broadcastDataChange('students', 'insert', createdStudent);
 
     // Traçabilité d'audit
-    void auditLogService.log({
+    void Promise.resolve().then(() => auditLogService.log({
       action: 'CREATION_ELEVE',
       module: 'PEDAGOGY',
       details: `Création de l'élève ${createdStudent.lastName} ${createdStudent.firstName} (Matricule: ${createdStudent.matricule}, Classe: ${createdStudent.grade})`,
       severity: 'INFO',
-    }).catch(error => console.error('Échec du journal d’audit pour la création d’élève', error));
+    })).catch(error => console.error('Échec du journal d’audit pour la création d’élève', error));
 
     return createSuccess(createdStudent, 'Elève créé avec succès.');
   } catch (err) {
@@ -288,12 +288,12 @@ export async function deleteStudent(id: string): Promise<ServiceResponse<boolean
     broadcastDataChange('students', 'delete', { id });
 
     // Traçabilité d'audit
-    void auditLogService.log({
+    void Promise.resolve().then(() => auditLogService.log({
       action: 'SUPPRESSION_ELEVE',
       module: 'PEDAGOGY',
       details: `Suppression définitive de l'élève ID: ${id}`,
       severity: 'WARNING',
-    }).catch(error => console.error('Échec du journal d’audit pour la suppression d’élève', error));
+    })).catch(error => console.error('Échec du journal d’audit pour la suppression d’élève', error));
 
     return createSuccess(true, 'Élève supprimé avec succès.');
   } catch (err) {
