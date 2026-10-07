@@ -42,6 +42,7 @@ export default function ExpensesPage() {
     categories,
     kpis,
     loading,
+    error,
     searchQuery,
     setSearchQuery,
     selectedCategory,
@@ -262,6 +263,7 @@ export default function ExpensesPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      {error && <div role="alert" className="alert alert-danger">{error}</div>}
       
       {/* ONGLETS PRINCIPAUX */}
       <div style={{ display: 'flex', gap: 8, borderBottom: '2px solid #e2e8f0', paddingBottom: 8, flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center' }}>
