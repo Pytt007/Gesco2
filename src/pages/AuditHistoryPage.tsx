@@ -33,11 +33,13 @@ export default function AuditHistoryPage() {
   const [severityFilter, setSeverityFilter] = useState<string>('ALL');
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   React.useEffect(() => {
     let isMounted = true;
     async function loadAuditLogs() {
       setLoading(true);
+      setLoadError(null);
       try {
         const data = await auditLogService.getLogs(200);
         if (isMounted) {
@@ -48,14 +50,17 @@ export default function AuditHistoryPage() {
             role: d.role || 'Admin',
             action: d.action || 'Action',
             module: d.module,
-            ipAddress: d.ipAddress || '127.0.0.1',
+            ipAddress: d.ipAddress || '',
             severity: d.severity,
             details: d.details || '',
           }));
           setLogs(mapped);
         }
-      } catch {
-        if (isMounted) setLogs([]);
+      } catch (error) {
+        if (isMounted) {
+          setLogs([]);
+          setLoadError(error instanceof Error ? error.message : 'Journal d’audit indisponible.');
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -92,6 +97,7 @@ export default function AuditHistoryPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      {loadError && <div role="alert" className="alert alert-danger">Impossible de charger le journal depuis Neon : {loadError}</div>}
 
       {/* ── 1. BANNIÈRE HERO SAAS JOURNAL D'AUDIT ───────────────────────────── */}
       <div
@@ -112,13 +118,13 @@ export default function AuditHistoryPage() {
             </div>
             <div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', background: 'rgba(59,130,246,0.3)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, fontSize: '0.725rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
-                <ShieldCheck size={12} color="#93c5fd" /> Traçabilité &amp; Sécurité Infalsifiable
+                <ShieldCheck size={12} color="#93c5fd" /> Traçabilité GESCO
               </div>
               <h1 style={{ margin: 0, fontSize: '1.625rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em' }}>
                 Journal d'Audit &amp; Historique des Actions
               </h1>
               <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: '#93c5fd', fontWeight: 500 }}>
-                Registre certifié et horodaté de toutes les modifications financières, pédagogiques et administratives
+                Événements confirmés par Neon, horodatés et associés à leur auteur
               </p>
             </div>
           </div>

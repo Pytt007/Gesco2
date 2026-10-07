@@ -106,7 +106,7 @@ L'application intègre un système d'habilitation basé sur les rôles (RBAC) po
 Pour initialiser la base de données et l'authentification du SaaS :
 
 1. Créez un projet Neon et activez Better Auth et Data API.
-2. Dans l'éditeur SQL d'une **base neuve**, appliquez `neon/001_core.sql`, `002_academic.sql`, `003_modules.sql`, `004_module_settings_roles.sql`, puis `005_module_payments.sql` dans cet ordre. Ces scripts de création ne doivent pas être rejoués sur une base déjà migrée.
+2. Dans l'éditeur SQL d'une **base neuve**, appliquez `neon/001_core.sql`, `002_academic.sql`, `003_modules.sql`, `004_module_settings_roles.sql`, `005_module_payments.sql`, puis `006_audit_logs.sql` dans cet ordre. Les scripts de création 001 à 003 ne doivent pas être rejoués sur une base déjà migrée ; vérifiez le schéma existant avant d'appliquer une migration ultérieure.
 3. Copiez `.env.example` en `.env.local` et renseignez les URL Neon. Générez un secret de cookie aléatoire d'au moins 32 caractères pour `NEON_AUTH_COOKIE_SECRET`. Gardez ce fichier hors de Git.
 4. Dans Vercel, ajoutez les mêmes variables aux environnements concernés. Dans Neon Auth, autorisez explicitement chaque domaine Vercel utilisé pour la connexion. La base de la Preview manuelle est partagée avec la production Neon ; utilisez uniquement des données de test contrôlées tant que la branche n'est pas publiée.
 5. Configurez les secrets GitHub `NEON_DATABASE_URL` et `GESCO_BACKUP_PASSPHRASE` pour la sauvegarde quotidienne chiffrée. Vérifiez une restauration sur une branche Neon isolée avant de compter sur cette sauvegarde.
