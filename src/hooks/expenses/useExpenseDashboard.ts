@@ -38,8 +38,9 @@ export function useExpenseDashboard(academicYearId: string = 'ay-2026') {
         month: selectedMonth || undefined,
       });
       setStats(data);
-    } catch {
-      setError('Erreur lors du calcul des statistiques des dépenses.');
+    } catch (cause) {
+      console.error('Statistiques des dépenses indisponibles', cause);
+      setError('Impossible de charger les statistiques des dépenses depuis Neon.');
     } finally {
       setLoading(false);
     }

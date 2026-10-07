@@ -60,8 +60,9 @@ export function useExpenses(academicYearId: string = 'ay-2026') {
       setCategories(catList);
       setExpenses(expList);
       setKpis(kpiData);
-    } catch {
-      setError('Erreur lors du chargement des dépenses.');
+    } catch (cause) {
+      console.error('Chargement des dépenses refusé par Neon', cause);
+      setError('Impossible de charger les dépenses depuis Neon. Réessayez ou contactez l’administrateur.');
     } finally {
       setLoading(false);
     }
