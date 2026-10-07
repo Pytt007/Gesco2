@@ -93,12 +93,12 @@ class SessionTimeoutService {
    * Journalise la fin de session par inactivité dans les logs d'audit.
    */
   public logSessionTimeout(username?: string): void {
-    auditLogService.log({
+    void auditLogService.log({
       action: 'DECONNEXION_INACTIVITE',
       module: 'SYSTEM',
       details: `Session de l'utilisateur "${username || 'Session courante'}" clôturée automatiquement après ${Math.round(this.timeoutMs / 60000)} minutes d'inactivité.`,
       severity: 'INFO',
-    });
+    }).catch(error => console.error('Échec du journal d’audit pour la fin de session', error));
   }
 
   /**
