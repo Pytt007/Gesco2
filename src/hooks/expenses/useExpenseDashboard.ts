@@ -32,6 +32,14 @@ export function useExpenseDashboard(academicYearId: string = '') {
     setLoading(true);
     setError(null);
     try {
+      if (!academicYearId.trim()) {
+        setStats({
+          totalMonth: 0, totalYear: 0, annualBudget: 0, remainingBudget: 0,
+          totalExpenseCount: 0, averagePerMonth: 0, budgetUsedPct: 0,
+          monthlyEvolution: [], categoryDistribution: [], topExpenses: [], alerts: [],
+        });
+        return;
+      }
       const data = await expenseService.getDashboardStats({
         academicYearId,
         categoryId: selectedCategory,

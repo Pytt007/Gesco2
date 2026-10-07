@@ -45,6 +45,16 @@ export function useExpenses(academicYearId: string = '') {
     setLoading(true);
     setError(null);
     try {
+      if (!academicYearId.trim()) {
+        setCategories(await expenseService.getCategories());
+        setExpenses([]);
+        setKpis({
+          totalMonth: 0, totalYear: 0, annualBudget: 0, remainingBudget: 0,
+          budgetUsedPct: 0, byCategory: {}, countPending: 0,
+          countValidated: 0, countCancelled: 0,
+        });
+        return;
+      }
       const [catList, expList, kpiData] = await Promise.all([
         expenseService.getCategories(),
         expenseService.getExpenses({
