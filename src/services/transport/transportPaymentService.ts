@@ -60,6 +60,7 @@ export const transportPaymentService = {
     if (!input.amount || input.amount <= 0) return { success: false, error: 'Le montant doit être supérieur à 0.' };
     if (!input.paymentDate) return { success: false, error: 'La date de paiement est obligatoire.' };
     if (!input.paymentMode) return { success: false, error: 'Le mode de paiement est obligatoire.' };
+    if (!this.isOnline()) return { success: false, error: 'Connexion Internet requise pour enregistrer un paiement.' };
 
     // Récupération de l'inscription
     const allEnrollments = await transportEnrollmentService.getEnrollmentsByYear(schoolSettings?.academicYear);
@@ -79,7 +80,6 @@ export const transportPaymentService = {
 
     const receiptNumber = await generateSecureReceiptNumber('TRP');
     const id = `tp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    if (!this.isOnline()) return { success: false, error: 'Connexion Internet requise pour enregistrer un paiement.' };
 
     const payment: TransportPaymentRecord = {
       id,

@@ -60,6 +60,7 @@ export const canteenPaymentService = {
     if (!input.paymentMode) {
       return { success: false, error: 'Le mode de paiement est obligatoire.' };
     }
+    if (!this.isOnline()) return { success: false, error: 'Connexion Internet requise pour enregistrer un paiement.' };
 
     // Récupération de l'inscription
     const enrollments = await canteenEnrollmentService.getEnrollmentsByYear(schoolSettings?.academicYear);
@@ -83,7 +84,6 @@ export const canteenPaymentService = {
 
     const receiptNumber = await generateSecureReceiptNumber('CANT');
     const id = `cp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    if (!this.isOnline()) return { success: false, error: 'Connexion Internet requise pour enregistrer un paiement.' };
 
     // Création du paiement
     const payment: CanteenPaymentRecord = {
