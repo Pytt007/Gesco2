@@ -45,9 +45,10 @@ L'application est construite sur une pile technique robuste et moderne :
 - **Styling :** Tailwind CSS (avec un design system adaptatif fluide personnalisé)
 - **Icônes :** Lucide React (mises à l'échelle proportionnellement avec le texte)
 - **Graphiques :** Recharts
-- **Persistance & Base de Données :** Supabase (PostgreSQL avec support Realtime)
+- **Persistance & Base de Données :** Neon PostgreSQL et Data API
+- **Authentification :** Neon Auth via le proxy `/api/auth` de Vercel
 - **Sécurité :** Row Level Security (RLS) et politiques d'accès configurées par rôle
-- **Stockage :** Supabase Storage (bucket `gesco-assets` pour les logos et avatars)
+- **Sauvegarde :** export PostgreSQL chiffré via GitHub Actions, après configuration des secrets
 - **Tests :** Vitest & Testing Library
 
 ---
@@ -98,19 +99,17 @@ L'application intègre un système d'habilitation basé sur les rôles (RBAC) po
 ### Prérequis
 - [Node.js](https://nodejs.org/) (Version 18 ou supérieure recommandée)
 - npm (installé par défaut avec Node.js)
-- Un compte [Supabase](https://supabase.com)
+- Un projet [Neon](https://neon.tech) avec Better Auth et Data API activés
 
-### 💻 Configuration du Backend (Supabase)
+### 💻 Configuration du backend (Neon)
 
 Pour initialiser la base de données et l'authentification du SaaS :
 
-1. **Créer un nouveau projet** sur la console [Supabase](https://supabase.com).
-2. **Exécuter le schéma SQL :**
-   - Ouvrez l'**Éditeur SQL** (*SQL Editor*) de votre projet Supabase.
-   - Copiez-collez et exécutez l'intégralité du contenu du fichier [supabase/schema.sql](file:///c:/Users/SUPREME%20COM/Documents/Gesco-main/Gesco-main/supabase/schema.sql). Cela va configurer les tables, les index, le bucket de stockage de médias (`gesco-assets`), l'écoute temps réel (*Realtime*) et les politiques de sécurité par rôle (RLS).
-3. **Configurer les variables d'environnement :**
-   - Créez un fichier `.env.local` à la racine du projet (copiez le modèle de `.env.example`).
-   - Renseignez les variables `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` récupérées dans **Settings > API** de votre tableau de bord Supabase.
+1. Créez un projet Neon et activez Better Auth et Data API.
+2. Dans l'éditeur SQL d'une **base neuve**, appliquez `neon/001_core.sql`, `002_academic.sql`, `003_modules.sql`, `004_module_settings_roles.sql`, puis `005_module_payments.sql` dans cet ordre. Ces scripts de création ne doivent pas être rejoués sur une base déjà migrée.
+3. Copiez `.env.example` en `.env.local` et renseignez les URL Neon. Générez un secret de cookie aléatoire d'au moins 32 caractères pour `NEON_AUTH_COOKIE_SECRET`. Gardez ce fichier hors de Git.
+4. Dans Vercel, ajoutez les mêmes variables aux environnements concernés. Dans Neon Auth, autorisez explicitement chaque domaine Vercel utilisé pour la connexion. La base de la Preview manuelle est partagée avec la production Neon ; utilisez uniquement des données de test contrôlées tant que la branche n'est pas publiée.
+5. Configurez les secrets GitHub `NEON_DATABASE_URL` et `GESCO_BACKUP_PASSPHRASE` pour la sauvegarde quotidienne chiffrée. Vérifiez une restauration sur une branche Neon isolée avant de compter sur cette sauvegarde.
 
 ### 🚀 Étapes de lancement
 
@@ -139,3 +138,9 @@ Pour initialiser la base de données et l'authentification du SaaS :
    ```bash
    npm run build
    ```
+
+### Sauvegarde Neon
+
+Le workflow `.github/workflows/database-backup.yml` produit chaque jour à 02:00 UTC un `pg_dump` PostgreSQL 18 chiffré avec GPG. Il exige deux secrets GitHub : `NEON_DATABASE_URL` (chaîne de connexion de la branche de production) et `GESCO_BACKUP_PASSPHRASE` (phrase de chiffrement forte, conservée aussi hors de GitHub). Aucun export ne doit être publié sans chiffrement. Les artefacts sont conservés sept jours.
+
+Après configuration, lancez une exécution manuelle du workflow, téléchargez l'artefact et vérifiez qu'il peut être déchiffré et restauré sur **une branche Neon isolée**. Ne restaurez jamais directement sur la branche de production sans procédure de reprise vérifiée. Le workflow n'est pas considéré opérationnel tant que cette restauration n'a pas réussi.

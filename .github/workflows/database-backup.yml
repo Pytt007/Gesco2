@@ -1,37 +1,46 @@
-name: Database Daily Backup
+name: Neon Daily Backup
 
 on:
   schedule:
-    # Tous les jours à 02h00 UTC
     - cron: '0 2 * * *'
-  workflow_dispatch: # Déclenchement manuel autorisé
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   backup:
-    name: Execute Automated Backup
+    name: Encrypted PostgreSQL Backup
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.GESCO_BACKUP_PASSPHRASE }}
     steps:
-      - name: Checkout Codebase
-        uses: actions/checkout@v4
+      - name: Check backup secrets
+        shell: bash
+        run: |
+          if [[ -z "${DATABASE_URL:-}" || -z "${BACKUP_PASSPHRASE:-}" ]]; then
+            echo '::error::Configure NEON_DATABASE_URL and GESCO_BACKUP_PASSPHRASE repository secrets.'
+            exit 1
+          fi
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
+      - name: Dump and encrypt Neon database
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p backups
+          umask 077
+          docker run --rm -e DATABASE_URL postgres:18 sh -c 'pg_dump --format=custom --no-owner --no-acl "$DATABASE_URL"' \
+            | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 \
+                --symmetric --cipher-algo AES256 \
+                --output "backups/gesco-neon-${GITHUB_RUN_ID}.dump.gpg" \
+                3<<<"$BACKUP_PASSPHRASE"
 
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Run Supabase Backup
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-        run: node scripts/backup_supabase.cjs
-
-      - name: Upload Backup Artifact
+      - name: Upload encrypted backup
         uses: actions/upload-artifact@v4
         with:
-          name: gesco-database-backup-${{ github.run_id }}
-          path: backups/*.gz
-          retention-days: 30
+          name: gesco-neon-backup-${{ github.run_id }}
+          path: backups/*.dump.gpg
+          if-no-files-found: error
+          retention-days: 7
