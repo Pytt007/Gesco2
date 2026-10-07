@@ -61,7 +61,7 @@ export function useExpenses(academicYearId: string = 'ay-2026') {
       setExpenses(expList);
       setKpis(kpiData);
     } catch (cause) {
-      console.error('Chargement des dépenses refusé par Neon', cause);
+      console.error('Chargement des dépenses refusé par Neon', cause instanceof Error ? cause.message : JSON.stringify(cause));
       setError('Impossible de charger les dépenses depuis Neon. Réessayez ou contactez l’administrateur.');
     } finally {
       setLoading(false);
