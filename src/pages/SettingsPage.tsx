@@ -4,14 +4,13 @@ import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmContext';
 import { useSettings } from '../hooks/useSettings';
 import { useUsers, useRoles, usePermissions } from '../hooks/users';
-import { UserRole, UserAccount, SchoolYearItem } from '../types';
+import { UserRole, UserAccount } from '../types';
 import { ROLE_MODULES } from '../constants/permissions';
 import {
   Building, Calendar, Clock, Sliders, Users, Shield, Plus, Save,
   Trash2, Lock, Eye, EyeOff, X, Search, Settings2, Check, RotateCcw, ShieldCheck,
-  Upload, Image, Copy,
+  Upload, Image,
 } from 'lucide-react';
-import DuplicateSchoolYearWizardModal from '../components/settings/DuplicateSchoolYearWizardModal';
 import PermissionsManager from '../components/settings/PermissionsManager/index';
 import UsersManager from '../components/settings/UsersManager/index';
 import UsersAndRolesManager from '../components/settings/UsersManager/UsersAndRolesManager';
@@ -55,8 +54,6 @@ export default function SettingsPage() {
       totalRecordsCount: number;
     };
   } | null>(null);
-
-  const [duplicateYearTarget, setDuplicateYearTarget] = useState<SchoolYearItem | null>(null);
 
   const {
     users: userAccountsList, allUsers, loading: usersLoading, saving: usersSaving,
@@ -588,15 +585,6 @@ export default function SettingsPage() {
                       </td>
                       <td>
                         <div className="flex gap-2" style={{ alignItems: 'center' }}>
-                          {isAdmin && (
-                            <button
-                              className="btn btn-outline btn-sm fw-bold"
-                              style={{ borderColor: '#6366f1', color: '#4f46e5', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 4 }}
-                              onClick={() => setDuplicateYearTarget(year)}
-                            >
-                              <Copy size={13} /> Dupliquer
-                            </button>
-                          )}
                           {isAdmin && !year.isActive && (
                             <button
                               className="btn btn-outline btn-sm fw-bold"
@@ -747,23 +735,6 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
-      )}
-
-      {/* ── MODAL ASSISTANT DUPLICATION D'ANNÉE SCOLAIRE ──────────────────────── */}
-      {duplicateYearTarget && (
-        <DuplicateSchoolYearWizardModal
-          sourceYear={duplicateYearTarget}
-          existingYears={schoolYears}
-          onClose={() => setDuplicateYearTarget(null)}
-          onSuccess={(newYearLabel) => {
-            addNotification('success', `Année scolaire ${newYearLabel} préparée et dupliquée avec succès !`);
-            addSchoolYear({
-              label: newYearLabel,
-              startDate: '2026-09-15',
-              endDate: '2027-06-30',
-            });
-          }}
-        />
       )}
 
       {/* 3. TRIMESTRES / SEMESTRES */}
