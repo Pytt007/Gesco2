@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const state = vi.hoisted(() => ({ fail: false, from: vi.fn() }));
+const state = vi.hoisted(() => ({ fail: false, from: vi.fn(), selectArgs: [] as string[] }));
 vi.mock('../../src/services/common/supabaseClient', () => ({
   supabase: { from: state.from },
 }));
@@ -9,7 +9,7 @@ import { expenseService, clearExpensesStore } from '../../src/services/expenses'
 
 function query() {
   const chain: any = {
-    select: vi.fn(() => chain),
+    select: vi.fn((columns: string) => { state.selectArgs.push(columns); return chain; }),
     order: vi.fn(() => chain),
     eq: vi.fn(() => chain),
     gte: vi.fn(() => chain),
@@ -33,6 +33,7 @@ function query() {
 
 beforeEach(() => {
   state.fail = false;
+  state.selectArgs = [];
   state.from.mockReset().mockImplementation(query);
   clearExpensesStore();
 });
@@ -73,5 +74,6 @@ describe('Dépenses enregistrées exclusivement dans Neon', () => {
     expect((await expenseService.createExpense(input)).success).toBe(true);
     clearExpensesStore();
     expect(await expenseService.getExpenses({ academicYearId: 'year-1' })).toEqual([]);
+    expect(state.selectArgs.every(columns => !columns.includes('expense_categories('))).toBe(true);
   });
 });

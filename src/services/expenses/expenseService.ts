@@ -42,13 +42,13 @@ function mapCategoryFromDb(d: any): ExpenseCategoryItem {
   };
 }
 
-function mapExpenseFromDb(d: any): ExpenseRecord {
+function mapExpenseFromDb(d: any, category?: ExpenseCategoryItem): ExpenseRecord {
   return {
     id: d.id,
     date: d.date,
     categoryId: d.category_id,
-    categoryName: d.expense_categories?.name || d.category_name || '—',
-    categoryColor: d.expense_categories?.color || d.category_color || '#6b7280',
+    categoryName: category?.name || d.category_name || '—',
+    categoryColor: category?.color || d.category_color || '#6b7280',
     description: d.description,
     amount: d.amount || 0,
     paymentMode: d.payment_mode as ExpensePaymentMode,
@@ -128,7 +128,7 @@ export const expenseService = {
   async getExpenses(filter: ExpenseFilter = {}): Promise<ExpenseRecord[]> {
       let query = supabase
         .from('expenses')
-        .select('*, expense_categories(name, color)')
+        .select('*')
         .order('date', { ascending: false });
 
       if (filter.academicYearId) {
@@ -149,7 +149,10 @@ export const expenseService = {
 
       const { data, error } = await query;
       if (error) throw error;
-      return (data || []).map(mapExpenseFromDb);
+      if (!data?.length) return [];
+      const categories: ExpenseCategoryItem[] = await this.getCategories();
+      const byId = new Map<string, ExpenseCategoryItem>(categories.map(category => [category.id, category]));
+      return data.map(row => mapExpenseFromDb(row, byId.get(row.category_id)));
   },
 
   async createExpense(input: ExpenseInput): Promise<ServiceResponse<ExpenseRecord>> {
@@ -177,7 +180,7 @@ export const expenseService = {
           academic_year_id: input.academicYearId,
           created_by: input.createdBy || 'Gestionnaire',
         }])
-        .select('*, expense_categories(name, color)')
+        .select('*')
         .single();
       if (error) throw error;
       if (!data) throw new Error('Neon n’a pas confirmé la création de la dépense.');
@@ -209,7 +212,7 @@ export const expenseService = {
         .from('expenses')
         .update(updates)
         .eq('id', id)
-        .select('*, expense_categories(name, color)')
+        .select('*')
         .single();
       if (error) throw error;
       if (!data) throw new Error('Dépense introuvable ou mise à jour non confirmée.');
@@ -230,7 +233,7 @@ export const expenseService = {
           updated_at: new Date().toISOString(),
         })
         .eq('id', id)
-        .select('*, expense_categories(name, color)')
+        .select('*')
         .single();
       if (error) throw error;
       if (!data) throw new Error('Dépense introuvable ou annulation non confirmée.');
