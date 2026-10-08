@@ -35,9 +35,16 @@ export default defineConfig(({ mode }) => {
             ]
           },
           workbox: {
-            // Cache all static assets aggressively
-            globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+            // Never precache the HTML shell: a stale service worker can otherwise
+            // keep booting a retired JS bundle after a Vercel deployment.
+            globPatterns: ['**/*.{js,css,ico,png,svg,woff2}'],
+            navigateFallback: null,
             runtimeCaching: [
+              {
+                urlPattern: ({ request }) => request.mode === 'navigate',
+                handler: 'NetworkFirst',
+                options: { cacheName: 'gesco-pages', networkTimeoutSeconds: 5, expiration: { maxEntries: 10 } },
+              },
               {
                 urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
                 handler: 'CacheFirst',
