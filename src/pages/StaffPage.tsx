@@ -17,6 +17,10 @@ import {
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
 
 const ROLE_BADGES: Record<string, React.ReactNode> = {
+  Enseignant: <span className="badge badge-info">Enseignant</span>,
+  Secrétaire: <span className="badge badge-neutral">Secrétaire</span>,
+  Chauffeur: <span className="badge badge-warning">Chauffeur</span>,
+  Cuisinier: <span className="badge badge-warning">Cuisinier</span>,
   TEACHER: <span className="badge badge-info">Enseignant</span>,
   ADMINISTRATIVE: <span className="badge badge-neutral">Administratif</span>,
   SUPPORT: <span className="badge badge-neutral">Support / Service</span>,
@@ -118,7 +122,7 @@ export default function StaffPage() {
       jobTitle: cleanTitle,
       positionTitle: cleanTitle,
       baseSalary: form.baseSalary !== undefined ? Number(form.baseSalary) : 250000,
-      role: form.role || 'TEACHER',
+      role: form.role || 'Enseignant',
     };
 
     if (editingStaff) {
@@ -202,7 +206,7 @@ export default function StaffPage() {
               </div>
             </div>
             <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>Enseignants</span>
-            <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{(staff || []).filter((s) => s.role === 'TEACHER').length}</div>
+            <div style={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1.1, fontFamily: "'Outfit', sans-serif", marginTop: '4px' }}>{(staff || []).filter((s) => s.role === 'Enseignant' || s.role === 'TEACHER').length}</div>
           </div>
 
           {/* Actifs - Émeraude */}
@@ -246,11 +250,11 @@ export default function StaffPage() {
               onChange={(e) => setRoleFilter(e.target.value)}
             >
               <option value="all">Tous les rôles</option>
-              <option value="TEACHER">Enseignants</option>
-              <option value="ADMINISTRATIVE">Administratif</option>
-              <option value="DRIVER">Chauffeurs</option>
-              <option value="COOK">Cuisiniers</option>
-              <option value="SUPPORT">Support</option>
+              <option value="Enseignant">Enseignants</option>
+              <option value="Secrétaire">Secrétaires</option>
+              <option value="Chauffeur">Chauffeurs</option>
+              <option value="Cuisinier">Cuisiniers</option>
+              <option value="Autre">Autre</option>
             </select>
 
             <select
@@ -447,11 +451,11 @@ export default function StaffPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <div>
                     <label className="form-label">Rôle / Categorie</label>
-                    <select className="form-select" value={form.role || 'TEACHER'} onChange={(e) => setForm({ ...form, role: e.target.value as any })}>
-                      <option value="TEACHER">Enseignant</option>
-                      <option value="ADMINISTRATIVE">Administratif</option>
-                      <option value="DRIVER">Chauffeur</option>
-                      <option value="COOK">Cuisinier</option>
+                    <select className="form-select" value={form.role || 'Enseignant'} onChange={(e) => setForm({ ...form, role: e.target.value as StaffMember['role'] })}>
+                      <option value="Enseignant">Enseignant</option>
+                      <option value="Secrétaire">Secrétaire</option>
+                      <option value="Chauffeur">Chauffeur</option>
+                      <option value="Cuisinier">Cuisinier</option>
                     </select>
                   </div>
                   <div>
@@ -460,7 +464,7 @@ export default function StaffPage() {
                   </div>
                   <div style={{ gridColumn: 'span 2' }}>
                     <label className="form-label">Salaire de Base Mensuel (FCFA)</label>
-                    <input type="number" className="form-input" value={form.baseSalary || 250000} onChange={(e) => setForm({ ...form, baseSalary: Number(e.target.value) })} />
+                    <input type="number" className="form-input" value={form.baseSalary ?? 250000} onChange={(e) => setForm({ ...form, baseSalary: Number(e.target.value) })} />
                   </div>
                 </div>
               )}
@@ -505,7 +509,7 @@ export default function StaffPage() {
                   onClick={() => {
                     setShowAddModal(false);
                     setEditingStaff(null);
-                    setForm({ role: 'TEACHER', baseSalary: 250000 });
+                    setForm(emptyForm());
                     setWizardStep(1);
                   }}
                 >
