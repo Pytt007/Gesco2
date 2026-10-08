@@ -30,10 +30,8 @@ function createError<T>(error: any, fallbackMessage: string): ServiceResponse<T>
   return { success: false, error: errMsg };
 }
 
-const localDocsCache: Map<string, StaffDocumentData> = new Map();
-
 /**
- * Enregistre les métadonnées d'un document RH téléversé sur Supabase Storage
+ * Enregistre les métadonnées d'un document RH dans Neon.
  * @param doc Métadonnées du document
  */
 export async function uploadDocument(doc: StaffDocumentData): Promise<ServiceResponse<StaffDocumentData>> {
@@ -51,23 +49,17 @@ export async function uploadDocument(doc: StaffDocumentData): Promise<ServiceRes
       createdAt: now,
     };
 
-    const { error } = await supabase.from('staff_documents').insert({
+    const { data, error } = await supabase.from('staff_documents').insert({
       id: createdDoc.id,
       staff_id: createdDoc.staffId,
-      doc_name: createdDoc.docName,
-      doc_type: createdDoc.docType || 'Autre',
-      storage_path: createdDoc.storagePath,
-      file_size: createdDoc.fileSize || 0,
-      mime_type: createdDoc.mimeType || 'application/pdf',
-      created_at: createdDoc.createdAt,
-    });
+      document_type: createdDoc.docType || 'Autre',
+      file_name: createdDoc.docName,
+      file_url: createdDoc.storagePath,
+      data: createdDoc,
+    }).select('id').single();
+    if (error || data?.id !== newId) throw new Error(error?.message || 'Enregistrement du document RH non confirmé par Neon.');
 
-    if (error) {
-      console.warn('[staffDocumentsService:uploadDocument] Fallback local:', error.message);
-    }
-    localDocsCache.set(newId, createdDoc);
-
-    return createSuccess(createdDoc, 'Document RH enregistré avec succès.');
+    return createSuccess(createdDoc, 'Référence du document RH enregistrée.');
   } catch (err) {
     return createError(err, 'Erreur lors de l\'enregistrement du document.');
   }
@@ -87,26 +79,16 @@ export async function listDocuments(staffId: string): Promise<ServiceResponse<St
       .eq('staff_id', staffId)
       .eq('is_deleted', false);
 
-    if (!error && data && data.length > 0) {
-      const docs: StaffDocumentData[] = data.map((row: any) => ({
+    if (error) throw new Error(error.message);
+    const docs: StaffDocumentData[] = (data || []).map((row: any) => ({
+        ...(row.data || {}),
         id: row.id,
         staffId: row.staff_id,
-        docName: row.doc_name,
-        docType: row.doc_type,
-        storagePath: row.storage_path,
-        fileSize: row.file_size,
-        mimeType: row.mime_type,
-        uploadedBy: row.uploaded_by,
+        docName: row.file_name,
+        docType: row.document_type,
+        storagePath: row.file_url,
         createdAt: row.created_at,
       }));
-      return createSuccess(docs);
-    }
-
-    const docs: StaffDocumentData[] = [];
-    for (const d of localDocsCache.values()) {
-      if (d.staffId === staffId) docs.push(d);
-    }
-
     return createSuccess(docs);
   } catch (err) {
     return createError(err, 'Erreur lors de la récupération des documents RH.');
@@ -121,16 +103,11 @@ export async function deleteDocument(documentId: string): Promise<ServiceRespons
   try {
     if (!documentId) return createError(null, 'Identifiant document requis.');
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('staff_documents')
       .update({ is_deleted: true, deleted_at: new Date().toISOString() })
-      .eq('id', documentId);
-
-    if (error) {
-      console.warn('[staffDocumentsService:deleteDocument] Fallback local:', error.message);
-    }
-
-    localDocsCache.delete(documentId);
+      .eq('id', documentId).select('id').single();
+    if (error || data?.id !== documentId) throw new Error(error?.message || 'Archivage du document RH non confirmé par Neon.');
 
     return createSuccess(true, 'Document RH supprimé avec succès.');
   } catch (err) {

@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // GESCO — Service Documents Élèves (src/services/students/studentDocumentsService.ts)
-// Couche de gestion des pièces jointes et documents stockés sur Supabase Storage
+// Métadonnées des documents élèves conservées dans Neon.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { supabase } from '../common/supabaseClient';
@@ -33,8 +33,17 @@ function createError<T>(error: any, fallbackMessage: string): ServiceResponse<T>
  */
 export async function uploadDocument(doc: StudentDocumentData): Promise<ServiceResponse<StudentDocumentData>> {
   try {
+    if (!doc.studentId || !doc.docName?.trim() || !doc.docType || !doc.storagePath?.trim()) {
+      return createError(null, 'Informations de document incomplètes.');
+    }
     const newId = doc.id || crypto.randomUUID();
-    return createSuccess({ ...doc, id: newId }, 'Document enregistré avec succès.');
+    const record = { ...doc, id: newId, createdAt: new Date().toISOString() };
+    const { data, error } = await supabase.from('student_documents').insert({
+      id: newId, student_id: doc.studentId, document_type: doc.docType,
+      file_name: doc.docName, file_url: doc.storagePath, data: record,
+    }).select('id').single();
+    if (error || data?.id !== newId) throw new Error(error?.message || 'Enregistrement du document non confirmé par Neon.');
+    return createSuccess(record, 'Référence du document enregistrée.');
   } catch (err) {
     return createError(err, 'Erreur lors du téléversement.');
   }
@@ -45,20 +54,19 @@ export async function uploadDocument(doc: StudentDocumentData): Promise<ServiceR
  */
 export async function listDocuments(studentId: string): Promise<ServiceResponse<StudentDocumentData[]>> {
   try {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('student_documents')
       .select('*')
       .eq('student_id', studentId);
+    if (error) throw new Error(error.message);
 
-    const docs: StudentDocumentData[] = (data || []).map((row: any) => ({
+    const docs: StudentDocumentData[] = (data || []).filter((row: any) => row.data?.isDeleted !== true).map((row: any) => ({
+      ...(row.data || {}),
       id: row.id,
       studentId: row.student_id,
-      docName: row.doc_name,
-      docType: row.doc_type,
-      storagePath: row.storage_path,
-      fileSize: row.file_size,
-      mimeType: row.mime_type,
-      uploadedBy: row.uploaded_by,
+      docName: row.file_name,
+      docType: row.document_type,
+      storagePath: row.file_url,
       createdAt: row.created_at,
     }));
 
@@ -73,7 +81,15 @@ export async function listDocuments(studentId: string): Promise<ServiceResponse<
  */
 export async function deleteDocument(documentId: string): Promise<ServiceResponse<boolean>> {
   try {
-    return createSuccess(true, 'Document supprimé.');
+    if (!documentId) return createError(null, 'Identifiant document requis.');
+    const { data: row, error: readError } = await supabase.from('student_documents').select('id,data').eq('id', documentId).maybeSingle();
+    if (readError) throw new Error(readError.message);
+    if (!row) return createError(null, 'Document introuvable.');
+    const { data, error } = await supabase.from('student_documents')
+      .update({ data: { ...(row.data || {}), isDeleted: true }, updated_at: new Date().toISOString() })
+      .eq('id', documentId).select('id').single();
+    if (error || data?.id !== documentId) throw new Error(error?.message || 'Suppression du document non confirmée par Neon.');
+    return createSuccess(true, 'Référence du document archivée.');
   } catch (err) {
     return createError(err, 'Erreur lors de la suppression.');
   }

@@ -37,7 +37,35 @@ function createError<T>(error: any, fallbackMessage: string): ServiceResponse<T>
   return { success: false, error: errMsg };
 }
 
-const localContractsCache: Map<string, StaffContract> = new Map();
+function mapContract(row: any): StaffContract {
+  const details = row.data && typeof row.data === 'object' && !Array.isArray(row.data) ? row.data : {};
+  return {
+    ...details,
+    id: row.id,
+    staffId: row.staff_id,
+    contractType: row.contract_type,
+    startDate: row.start_date,
+    endDate: row.end_date || undefined,
+    baseSalary: Number(row.salary ?? 0),
+    workScheduleType: details.workScheduleType || 'Temps Plein',
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+async function saveContract(contract: StaffContract, create: boolean): Promise<void> {
+  const row = {
+    id: contract.id, staff_id: contract.staffId, contract_type: contract.contractType,
+    start_date: contract.startDate, end_date: contract.endDate || null,
+    status: contract.status, salary: contract.baseSalary, data: contract,
+    updated_at: contract.updatedAt || new Date().toISOString(),
+  };
+  const mutation = create ? supabase.from('staff_contracts').insert(row) :
+    supabase.from('staff_contracts').update(row).eq('id', contract.id);
+  const { data, error } = await mutation.select('id').single();
+  if (error || data?.id !== contract.id) throw new Error(error?.message || 'Enregistrement du contrat non confirmé par Neon.');
+}
 
 /**
  * Crée un contrat de travail pour un membre du personnel
@@ -62,7 +90,7 @@ export async function createContract(contractData: Partial<StaffContract>): Prom
       contractType: contractData.contractType || 'CDI',
       startDate: contractData.startDate,
       endDate: contractData.endDate,
-      baseSalary: contractData.baseSalary ?? 150000,
+      baseSalary: contractData.baseSalary ?? 0,
       workScheduleType: contractData.workScheduleType || 'Temps Plein',
       status: 'ACTIF',
       observations: contractData.observations?.trim() || '',
@@ -70,25 +98,7 @@ export async function createContract(contractData: Partial<StaffContract>): Prom
       updatedAt: now,
     };
 
-    const { error } = await supabase.from('staff_contracts').insert({
-      id: createdContract.id,
-      staff_id: createdContract.staffId,
-      position_id: createdContract.positionId,
-      contract_type: createdContract.contractType,
-      start_date: createdContract.startDate,
-      end_date: createdContract.endDate || null,
-      base_salary: createdContract.baseSalary,
-      work_schedule_type: createdContract.workScheduleType,
-      status: createdContract.status,
-      observations: createdContract.observations,
-      created_at: createdContract.createdAt,
-      updated_at: createdContract.updatedAt,
-    });
-
-    if (error) {
-      console.warn('[staffContractsService:createContract] Fallback local:', error.message);
-    }
-    localContractsCache.set(createdContract.id, createdContract);
+    await saveContract(createdContract, true);
 
     return createSuccess(createdContract, 'Contrat de travail enregistré.');
   } catch (err) {
@@ -105,38 +115,18 @@ export async function updateContract(contractId: string, updates: Partial<StaffC
   try {
     if (!contractId) return createError(null, 'Identifiant contrat manquant.');
 
-    const existing = localContractsCache.get(contractId);
+    const { data: row, error: readError } = await supabase.from('staff_contracts').select('*').eq('id', contractId).maybeSingle();
+    if (readError) throw new Error(readError.message);
+    if (!row) return createError(null, 'Contrat introuvable.');
+    const existing = mapContract(row);
     const updated: StaffContract = {
+      ...existing, ...updates,
       id: contractId,
-      staffId: updates.staffId || existing?.staffId || 'stf-1',
-      contractType: updates.contractType || existing?.contractType || 'CDI',
-      startDate: updates.startDate || existing?.startDate || new Date().toISOString().split('T')[0],
-      endDate: updates.endDate ?? existing?.endDate,
-      baseSalary: updates.baseSalary ?? existing?.baseSalary ?? 150000,
-      workScheduleType: updates.workScheduleType || existing?.workScheduleType || 'Temps Plein',
-      status: updates.status || existing?.status || 'ACTIF',
-      observations: updates.observations ?? existing?.observations,
+      staffId: existing.staffId,
+      createdAt: existing.createdAt,
       updatedAt: new Date().toISOString(),
     };
-
-    const { error } = await supabase
-      .from('staff_contracts')
-      .update({
-        contract_type: updated.contractType,
-        start_date: updated.startDate,
-        end_date: updated.endDate || null,
-        base_salary: updated.baseSalary,
-        work_schedule_type: updated.workScheduleType,
-        status: updated.status,
-        observations: updated.observations,
-        updated_at: updated.updatedAt,
-      })
-      .eq('id', contractId);
-
-    if (error) {
-      console.warn('[staffContractsService:updateContract] Fallback local:', error.message);
-    }
-    localContractsCache.set(contractId, updated);
+    await saveContract(updated, false);
 
     return createSuccess(updated, 'Contrat mis à jour.');
   } catch (err) {
@@ -180,30 +170,11 @@ export async function terminateContract(contractId: string, terminationDate: str
   try {
     if (!contractId) return createError(null, 'Identifiant contrat manquant.');
 
-    const { error } = await supabase
-      .from('staff_contracts')
-      .update({
-        status: 'RÉSILIÉ',
-        end_date: terminationDate,
-        observations: reason ? `Résiliation: ${reason}` : 'Résiliation de contrat',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', contractId);
-
-    if (error) {
-      console.warn('[staffContractsService:terminateContract] Fallback local:', error.message);
-    }
-
-    const cached = localContractsCache.get(contractId);
-    if (cached) {
-      localContractsCache.set(contractId, {
-        ...cached,
-        status: 'RÉSILIÉ',
-        endDate: terminationDate,
-        observations: reason ? `Résiliation: ${reason}` : cached.observations,
-        updatedAt: new Date().toISOString(),
-      });
-    }
+    const result = await updateContract(contractId, {
+      status: 'RÉSILIÉ', endDate: terminationDate,
+      observations: reason ? `Résiliation: ${reason}` : 'Résiliation de contrat',
+    });
+    if (!result.success) return createError(result.error, 'Résiliation impossible.');
 
     return createSuccess(true, 'Contrat résilié avec succès.');
   } catch (err) {
@@ -219,38 +190,9 @@ export async function getCurrentContract(staffId: string): Promise<ServiceRespon
   try {
     if (!staffId) return createError(null, 'Identifiant employé requis.');
 
-    const { data, error } = await supabase
-      .from('staff_contracts')
-      .select('*')
-      .eq('staff_id', staffId)
-      .in('status', ['ACTIF', 'RENOUVELÉ'])
-      .maybeSingle();
-
-    if (!error && data) {
-      const contract: StaffContract = {
-        id: data.id,
-        staffId: data.staff_id,
-        positionId: data.position_id,
-        contractType: data.contract_type,
-        startDate: data.start_date,
-        endDate: data.end_date,
-        baseSalary: Number(data.base_salary),
-        workScheduleType: data.work_schedule_type,
-        status: data.status,
-        observations: data.observations,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-      };
-      return createSuccess(contract);
-    }
-
-    for (const c of localContractsCache.values()) {
-      if (c.staffId === staffId && (c.status === 'ACTIF' || c.status === 'RENOUVELÉ')) {
-        return createSuccess(c);
-      }
-    }
-
-    return createSuccess(null);
+    const history = await getContractHistory(staffId);
+    if (!history.success || !history.data) return createError(history.error, 'Lecture du contrat impossible.');
+    return createSuccess(history.data.find((contract) => contract.status === 'ACTIF' || contract.status === 'RENOUVELÉ') || null);
   } catch (err) {
     return createError(err, 'Erreur lors de la recherche du contrat courant.');
   }
@@ -270,30 +212,8 @@ export async function getContractHistory(staffId: string): Promise<ServiceRespon
       .eq('staff_id', staffId)
       .order('start_date', { ascending: false });
 
-    if (!error && data && data.length > 0) {
-      const contracts: StaffContract[] = data.map((d: any) => ({
-        id: d.id,
-        staffId: d.staff_id,
-        positionId: d.position_id,
-        contractType: d.contract_type,
-        startDate: d.start_date,
-        endDate: d.end_date,
-        baseSalary: Number(d.base_salary),
-        workScheduleType: d.work_schedule_type,
-        status: d.status,
-        observations: d.observations,
-        createdAt: d.created_at,
-        updatedAt: d.updated_at,
-      }));
-      return createSuccess(contracts);
-    }
-
-    const history: StaffContract[] = [];
-    for (const c of localContractsCache.values()) {
-      if (c.staffId === staffId) history.push(c);
-    }
-
-    return createSuccess(history);
+    if (error) throw new Error(error.message);
+    return createSuccess((data || []).map(mapContract));
   } catch (err) {
     return createError(err, 'Erreur lors de la récupération de l\'historique des contrats.');
   }
