@@ -54,9 +54,9 @@ export async function getCurrentAcademicYear():Promise<ServiceResponse<AcademicY
 }
 export async function createAcademicYear(input:Partial<AcademicYear>):Promise<ServiceResponse<AcademicYear>> {
  try {
-  if(!input.name?.trim()||!input.startDate||!input.endDate||input.startDate>=input.endDate)throw new Error('Libellé et dates valides requis.');
+  if(!input.name?.trim()||!input.startDate||(input.endDate && input.startDate>=input.endDate))throw new Error('Libellé et dates valides requis.');
   const years=await fetchSchoolYearsList();
-  const year:SchoolYearItem={id:input.id||crypto.randomUUID(),label:input.name.trim(),startDate:input.startDate,endDate:input.endDate,isActive:!!input.isCurrent,isClosed:input.status==='Clôturée'};
+  const year:SchoolYearItem={id:input.id||crypto.randomUUID(),label:input.name.trim(),startDate:input.startDate,endDate:input.endDate||'',isActive:!!input.isCurrent,isClosed:input.status==='Clôturée'};
   const result=await saveSchoolYearsList([...years.map(y=>year.isActive?{...y,isActive:false}:y),year]);
   if(result.error)throw new Error(result.error);return createSuccess(mapYear(year),'Année enregistrée.');
  }catch(e){return createError(e,'Enregistrement impossible.');}
@@ -65,7 +65,7 @@ export async function updateAcademicYear(id:string,input:Partial<AcademicYear>):
  try{
   const years=await fetchSchoolYearsList(),existing=years.find(y=>y.id===id);if(!existing)throw new Error('Année introuvable.');
   const year={...existing,label:input.name?.trim()??existing.label,startDate:input.startDate??existing.startDate,endDate:input.endDate??existing.endDate,isActive:input.isCurrent??existing.isActive,isClosed:input.status?input.status==='Clôturée':existing.isClosed};
-  if(!year.label||year.startDate>=year.endDate)throw new Error('Libellé et dates valides requis.');
+  if(!year.label||!year.startDate||(year.endDate && year.startDate>=year.endDate))throw new Error('Libellé et dates valides requis.');
   const result=await saveSchoolYearsList(years.map(y=>y.id===id?year:year.isActive?{...y,isActive:false}:y));if(result.error)throw new Error(result.error);
   return createSuccess(mapYear(year),'Année enregistrée.');
  }catch(e){return createError(e,'Enregistrement impossible.');}

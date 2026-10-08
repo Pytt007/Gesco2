@@ -93,7 +93,8 @@ export function useSettings() {
   // Créer une nouvelle année scolaire
   const handleAddSchoolYear = async (newYear: { label: string; startDate: string; endDate: string }): Promise<{ error?: string }> => {
     if (!newYear.label.trim()) return { error: 'Le libellé est requis.' };
-    if (newYear.startDate >= newYear.endDate) return { error: 'La date de début doit être antérieure à la date de fin.' };
+    if (!newYear.startDate) return { error: 'La date de début est requise.' };
+    if (newYear.endDate && newYear.startDate >= newYear.endDate) return { error: 'La date de début doit être antérieure à la date de fin.' };
 
     setSaving(true);
     const newItem: SchoolYearItem = {
