@@ -73,7 +73,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
   const { currentUser, canAccess } = useAuth();
   const { schoolInfo } = useSettings();
   
-  const currentAcademicYearId = schoolYear || 'ay-2026';
+  const currentAcademicYearId = schoolYear;
   
   const {
     kpis,
