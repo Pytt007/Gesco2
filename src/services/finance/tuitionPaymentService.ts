@@ -81,12 +81,12 @@ export const tuitionPaymentService = {
       schoolInfo = {};
     }
 
-    const schoolName = schoolInfo.name || 'Groupe Scolaire Les SCHTROUMPFS';
-    const schoolAddress = [schoolInfo.address, schoolInfo.city, schoolInfo.country].filter(Boolean).join(' - ') || 'BP - Bassam, Côte d\'Ivoire';
-    const schoolPhone = schoolInfo.phone || '0709570047';
+    const schoolName = schoolInfo.name || 'Établissement non configuré';
+    const schoolAddress = [schoolInfo.address, schoolInfo.city, schoolInfo.country].filter(Boolean).join(' - ');
+    const schoolPhone = schoolInfo.phone || '';
     const schoolEmail = schoolInfo.email || '';
     const schoolLogo = schoolInfo.logoUrl || '';
-    const academicYear = enrollment.academicYearId || payment.academicYearId || '2026-2027';
+    const academicYear = enrollment.academicYearId || payment.academicYearId || '';
 
     const payloadText = `GESCO-PAY|${payment.receiptNumber}|${enrollment.studentId}|${payment.amount}|${payment.paymentDate}`;
     const checksum = await qrCodeService.generateChecksum(payloadText);
@@ -94,7 +94,7 @@ export const tuitionPaymentService = {
       documentId: payment.receiptNumber,
       documentType: 'RECEIPT',
       entityId: enrollment.studentId,
-      schoolId: 'sch-01',
+      schoolId: schoolInfo.id || '',
       checksum,
       createdAt: payment.paymentDate,
     });

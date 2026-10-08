@@ -29,7 +29,7 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Run Core Unit & Service Tests
-        run: npx vitest run tests/academicEngine.test.ts tests/finance.test.ts tests/useLocalStorage.test.ts tests/audit/authProxy.test.ts tests/audit/persistence.audit.test.ts tests/audit/transportDraft.test.tsx tests/audit/staffNeonPersistence.test.ts tests/audit/timetableNeonPersistence.test.ts tests/audit/parentsNeonPersistence.test.ts tests/audit/parentLinksNeonPersistence.test.ts tests/audit/medicalRecordsNeonPersistence.test.ts tests/audit/documentsContractsNeonPersistence.test.ts tests/services/timetableService.test.ts tests/services/staffAttendanceService.test.ts tests/services/attendanceService.test.ts tests/services/auditLogService.test.ts
+        run: npx vitest run tests/academicEngine.test.ts tests/finance.test.ts tests/useLocalStorage.test.ts tests/audit/authProxy.test.ts tests/audit/persistence.audit.test.ts tests/audit/transportDraft.test.tsx tests/audit/staffNeonPersistence.test.ts tests/audit/timetableNeonPersistence.test.ts tests/audit/parentsNeonPersistence.test.ts tests/audit/parentLinksNeonPersistence.test.ts tests/audit/medicalRecordsNeonPersistence.test.ts tests/audit/documentsContractsNeonPersistence.test.ts tests/audit/financialEnrollmentRealIdentity.test.ts tests/services/timetableService.test.ts tests/services/staffAttendanceService.test.ts tests/services/attendanceService.test.ts tests/services/auditLogService.test.ts
 
       - name: Production Build
         run: npm run build

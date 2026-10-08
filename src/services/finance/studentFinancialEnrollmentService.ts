@@ -113,7 +113,7 @@ export const studentFinancialEnrollmentService = {
   /**
    * Obtient le dossier financier d'un élève pour une année scolaire
    */
-  async getEnrollmentByStudent(studentId: string, academicYearId: string = 'ay-2026'): Promise<StudentFinancialEnrollment | null> {
+  async getEnrollmentByStudent(studentId: string, academicYearId = ''): Promise<StudentFinancialEnrollment | null> {
     const list = await this.getEnrollmentsByYear(academicYearId);
     return list.find((e) => e.studentId === studentId) || null;
   },
@@ -140,15 +140,15 @@ export const studentFinancialEnrollmentService = {
     }
 
     // 3. Résolution des informations de classe et niveau
-    let className = 'Classe';
-    let levelCode: TuitionLevelCode = input.levelCode || 'CP1';
-    try {
-      const clsRes = await getClassroom(input.classroomId);
-      if (clsRes.success && clsRes.data) {
-        className = clsRes.data.name;
-        levelCode = input.levelCode || (clsRes.data.levelCode as TuitionLevelCode) || 'CP1';
-      }
-    } catch { /* Fallback */ }
+    let clsRes;
+    try { clsRes = await getClassroom(input.classroomId); }
+    catch (error) { return { success: false, error: error instanceof Error ? error.message : 'Lecture de la classe impossible.' }; }
+    if (!clsRes.success || !clsRes.data) {
+      return { success: false, error: clsRes.error || 'Classe introuvable dans Neon.' };
+    }
+    const className = clsRes.data.name;
+    const levelCode = input.levelCode || (clsRes.data.levelCode as TuitionLevelCode);
+    if (!levelCode) return { success: false, error: 'Niveau scolaire de la classe manquant.' };
 
     // 4. Récupération des tarifs officiels configurés
     const schedules = await tuitionFeesService.getSchedulesByYear(input.academicYearId);
@@ -159,14 +159,15 @@ export const studentFinancialEnrollmentService = {
     const tuitionFee = schedule.tuitionFee;
     const totalAnnualFee = registrationFee + tuitionFee;
 
-    if (!Number.isFinite(input.discountValue) || input.discountValue < 0) return { success: false, error: 'Remise invalide.' };
+    const discountValue = input.discountValue ?? 0;
+    if (!Number.isFinite(discountValue) || discountValue < 0) return { success: false, error: 'Remise invalide.' };
 
     // 5. Calcul de la remise éventuelle
     let discountAmount = 0;
     if (input.discountType === 'FIXED') {
-      discountAmount = input.discountValue;
+      discountAmount = discountValue;
     } else if (input.discountType === 'PERCENTAGE') {
-      discountAmount = Math.round((tuitionFee * input.discountValue) / 100);
+      discountAmount = Math.round((tuitionFee * discountValue) / 100);
     }
 
     if (discountAmount > totalAnnualFee) {
@@ -184,16 +185,15 @@ export const studentFinancialEnrollmentService = {
     );
 
     // 7. Assemblage du dossier financier
-    let studentName = `ÉLÈVE ${input.studentId}`;
-    let matricule = `MAT-2026-${Math.floor(100 + Math.random() * 900)}`;
-
-    try {
-      const studentRes = await getStudentById(input.studentId);
-      if (studentRes.success && studentRes.data) {
-        studentName = `${studentRes.data.lastName} ${studentRes.data.firstName}`;
-        matricule = studentRes.data.matricule;
-      }
-    } catch { /* Fallback */ }
+    let studentRes;
+    try { studentRes = await getStudentById(input.studentId); }
+    catch (error) { return { success: false, error: error instanceof Error ? error.message : 'Lecture de l’élève impossible.' }; }
+    if (!studentRes.success || !studentRes.data) {
+      return { success: false, error: studentRes.error || 'Élève introuvable dans Neon.' };
+    }
+    const studentName = `${studentRes.data.lastName} ${studentRes.data.firstName}`;
+    const matricule = studentRes.data.matricule;
+    if (!matricule) return { success: false, error: 'Matricule de l’élève manquant.' };
 
     const id = `fin-${input.studentId}-${input.academicYearId}`;
 
@@ -210,7 +210,7 @@ export const studentFinancialEnrollmentService = {
       tuitionFee,
       totalAnnualFee,
       discountType: input.discountType,
-      discountValue: input.discountValue,
+      discountValue,
       discountAmount,
       netTotalDue,
       totalPaid: 0,
