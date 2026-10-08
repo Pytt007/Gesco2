@@ -7,6 +7,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { fetchSchoolYearSetting, persistSchoolYearSetting } from '../services/common/schoolYearService';
 import { fetchSchoolYearsList } from '../services/settings/settingsService';
 import { SchoolYearItem } from '../types';
+import { useAuth } from './AuthContext';
 
 interface SchoolYearContextValue {
   schoolYear: string;
@@ -17,6 +18,7 @@ interface SchoolYearContextValue {
 const SchoolYearContext = createContext<SchoolYearContextValue | null>(null);
 
 export function SchoolYearProvider({ children }: { children: ReactNode }) {
+  const { currentUser, loading: authLoading } = useAuth();
   const [schoolYear, setSchoolYearState] = useState<string>('');
   const [settingsId, setSettingsId] = useState<string | null>(null);
   const [schoolYearsItems, setSchoolYearsItems] = useState<SchoolYearItem[]>([]);
@@ -34,14 +36,16 @@ export function SchoolYearProvider({ children }: { children: ReactNode }) {
 
   // Charger l'année scolaire et la liste dynamique
   useEffect(() => {
-    fetchSchoolYearSetting().then(({ id, currentSchoolYear }) => {
+    if (authLoading || !currentUser) {
+      setSchoolYearState('');
+      setSchoolYearsItems([]);
+      return;
+    }
+    fetchSchoolYearSetting().then(({ id }) => {
       setSettingsId(id);
-      if (currentSchoolYear) {
-        setSchoolYearState(currentSchoolYear);
-      }
-    });
+    }).catch(() => { /* La liste des années reste la source de vérité. */ });
 
-    loadYearsList();
+    loadYearsList().catch((error) => console.warn('[SchoolYearContext] Chargement impossible:', error));
 
     const handleYearsUpdated = (evt: Event) => {
       const customEvt = evt as CustomEvent<SchoolYearItem[]>;
@@ -51,7 +55,7 @@ export function SchoolYearProvider({ children }: { children: ReactNode }) {
         if (active) setSchoolYearState(active.label);
         else if (customEvt.detail.length === 0) setSchoolYearState('');
       } else {
-        loadYearsList();
+        loadYearsList().catch((error) => console.warn('[SchoolYearContext] Actualisation impossible:', error));
       }
     };
 
@@ -62,7 +66,7 @@ export function SchoolYearProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('gesco_school_years_updated', handleYearsUpdated);
       window.removeEventListener('storage', handleYearsUpdated);
     };
-  }, [loadYearsList]);
+  }, [authLoading, currentUser?.id, loadYearsList]);
 
   // Changer l'année scolaire
   const setSchoolYear = useCallback(async (year: string) => {
