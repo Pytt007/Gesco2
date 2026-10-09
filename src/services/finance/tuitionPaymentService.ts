@@ -225,7 +225,13 @@ export const tuitionPaymentService = {
    * Annule un versement avec traçabilité d'audit au lieu d'une suppression sauvage
    */
   async cancelPayment(paymentId: string, _cancelledBy = 'Direction', reason = 'Erreur de saisie'): Promise<ServiceResponse<boolean>> {
-    const { error } = await supabase.rpc('cancel_tuition_payment', { p_id: paymentId, p_reason: reason });
-    return error ? { success: false, error: error.message } : { success: true, data: true, message: 'Paiement annulé.' };
+    if (!this.isOnline()) return { success: false, error: 'Connexion Internet requise : aucune annulation n’a été enregistrée.' };
+    try {
+      const { data, error } = await supabase.rpc('cancel_tuition_payment', { p_id: paymentId, p_reason: reason });
+      if (error || data !== true) return { success: false, error: error?.message || 'Le serveur n’a pas confirmé l’annulation.' };
+      return { success: true, data: true, message: 'Paiement annulé.' };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Annulation non confirmée.' };
+    }
   },
 };
