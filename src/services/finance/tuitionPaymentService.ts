@@ -10,6 +10,15 @@ import { ServiceResponse } from '../academic/academicYearsService';
 import { supabase } from '../common/supabaseClient';
 import { fetchSchoolInfo } from '../settings/settingsService';
 
+const escapeHtml = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, (character) => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+})[character] || character);
+
+const printableImageUrl = (value: unknown): string => {
+  const url = String(value ?? '').trim();
+  return /^(https:\/\/|data:image\/(?:png|jpeg|webp);base64,)/i.test(url) ? escapeHtml(url) : '';
+};
+
 export function clearTuitionPaymentsStore() { /* No browser persistence. */ }
 
 export const PAYMENT_MODE_LABELS: Record<PaymentMode, string> = {
@@ -87,6 +96,9 @@ export const tuitionPaymentService = {
     const schoolEmail = schoolInfo.email || '';
     const schoolLogo = schoolInfo.logoUrl || '';
     const academicYear = enrollment.academicYearId || payment.academicYearId || '';
+    const printableLogo = printableImageUrl(schoolLogo);
+    const payerName = enrollment.parentSponsor || 'Non renseigné';
+    const cashierName = payment.recordedBy || 'Non renseigné';
 
     const payloadText = `GESCO-PAY|${payment.receiptNumber}|${enrollment.studentId}|${payment.amount}|${payment.paymentDate}`;
     const checksum = await qrCodeService.generateChecksum(payloadText);
@@ -104,7 +116,7 @@ export const tuitionPaymentService = {
       <html>
       <head>
         <meta charset="utf-8" />
-        <title>Reçu de Paiement ${payment.receiptNumber}</title>
+        <title>Reçu de Paiement ${escapeHtml(payment.receiptNumber)}</title>
         <style>
           body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; color: #0f172a; line-height: 1.5; font-size: 13px; }
           .header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 14px; margin-bottom: 20px; }
@@ -119,34 +131,34 @@ export const tuitionPaymentService = {
       <body>
         <div class="header">
           <div style="display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 8px;">
-            ${schoolLogo ? `<img src="${schoolLogo}" style="height: 48px; max-width: 90px; object-fit: contain;" alt="Logo" />` : ''}
+            ${printableLogo ? `<img src="${printableLogo}" style="height: 48px; max-width: 90px; object-fit: contain;" alt="Logo" />` : ''}
             <div>
-              <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #1e293b;">${schoolName}</h2>
-              <p style="margin: 2px 0 0 0; font-size: 11px; color: #64748b;">${schoolAddress} · Tél : ${schoolPhone}${schoolEmail ? ` · ${schoolEmail}` : ''}</p>
+              <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #1e293b;">${escapeHtml(schoolName)}</h2>
+              <p style="margin: 2px 0 0 0; font-size: 11px; color: #64748b;">${escapeHtml(schoolAddress)} · Tél : ${escapeHtml(schoolPhone)}${schoolEmail ? ` · ${escapeHtml(schoolEmail)}` : ''}</p>
             </div>
           </div>
           <div style="font-size: 12px; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px;">
             Reçu Officiel de Paiement — Frais de Scolarité
           </div>
-          <div class="receipt-no" style="margin-top: 4px;">N° Reçu : ${payment.receiptNumber}</div>
+          <div class="receipt-no" style="margin-top: 4px;">N° Reçu : ${escapeHtml(payment.receiptNumber)}</div>
         </div>
 
         <table class="info-table">
           <tr>
-            <td><strong>Élève :</strong> ${enrollment.studentName}</td>
-            <td><strong>Matricule :</strong> ${enrollment.matricule}</td>
+            <td><strong>Élève :</strong> ${escapeHtml(enrollment.studentName)}</td>
+            <td><strong>Matricule :</strong> ${escapeHtml(enrollment.matricule)}</td>
           </tr>
           <tr>
-            <td><strong>Classe :</strong> ${enrollment.className}</td>
-            <td><strong>Année Scolaire :</strong> ${academicYear}</td>
+            <td><strong>Classe :</strong> ${escapeHtml(enrollment.className)}</td>
+            <td><strong>Année Scolaire :</strong> ${escapeHtml(academicYear)}</td>
           </tr>
           <tr>
-            <td><strong>Responsable Payeur :</strong> ${enrollment.parentSponsor || 'Parent d’Élève'}${enrollment.parentPhone ? ` (${enrollment.parentPhone})` : ''}</td>
-            <td><strong>Date du Versement :</strong> ${payment.paymentDate}</td>
+            <td><strong>Responsable Payeur :</strong> ${escapeHtml(payerName)}${enrollment.parentPhone ? ` (${escapeHtml(enrollment.parentPhone)})` : ''}</td>
+            <td><strong>Date du Versement :</strong> ${escapeHtml(payment.paymentDate)}</td>
           </tr>
           <tr>
-            <td><strong>Mode de Règlement :</strong> ${modeLabel}</td>
-            <td><strong>Référence :</strong> ${payment.referenceNumber || 'N/A'}</td>
+            <td><strong>Mode de Règlement :</strong> ${escapeHtml(modeLabel)}</td>
+            <td><strong>Référence :</strong> ${escapeHtml(payment.referenceNumber || 'Non renseignée')}</td>
           </tr>
         </table>
 
@@ -168,18 +180,18 @@ export const tuitionPaymentService = {
             <div class="stamp-box">Cachet Officiel</div>
           </div>
           <div style="width: 32%;">
-            <div style="font-weight: 600; color: #1e293b;">La Caisse — ${schoolName}</div>
+            <div style="font-weight: 600; color: #1e293b;">La Caisse — ${escapeHtml(schoolName)}</div>
             <div style="height: 38px;"></div>
-            <div style="color: #64748b; font-size: 11px; font-weight: 600;">${payment.recordedBy || 'Le Gestionnaire'}</div>
+            <div style="color: #64748b; font-size: 11px; font-weight: 600;">${escapeHtml(cashierName)}</div>
           </div>
         </div>
 
         <div class="footer">
           <div>
-            <span style="font-size: 11px; color: #64748b; display: block;">Enregistré par : ${payment.recordedBy}</span>
-            <span style="font-size: 10px; color: #94a3b8;">Empreinte numérique : ${checksum}</span>
+            <span style="font-size: 11px; color: #64748b; display: block;">Enregistré par : ${escapeHtml(cashierName)}</span>
+            <span style="font-size: 10px; color: #94a3b8;">Empreinte numérique : ${escapeHtml(checksum)}</span>
           </div>
-          <img src="${qrCodeUrl}" width="70" height="70" alt="QR Code d'Authenticité" />
+          <img src="${printableImageUrl(qrCodeUrl)}" width="70" height="70" alt="QR Code d'Authenticité" />
         </div>
       </body>
       </html>
@@ -195,8 +207,8 @@ export const tuitionPaymentService = {
       matricule: enrollment.matricule,
       className: enrollment.className,
       academicYear,
-      parentSponsor: enrollment.parentSponsor || 'Parent d’Élève',
-      parentSponsorName: enrollment.parentSponsor || 'Parent d’Élève',
+      parentSponsor: payerName,
+      parentSponsorName: payerName,
       parentSponsorPhone: enrollment.parentPhone || '',
       paymentDate: payment.paymentDate,
       amountPaid: payment.amount,
