@@ -1,9 +1,44 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+const timetableRows = vi.hoisted(() => ({ rows: [] as any[] }));
+vi.mock('../../src/services/common/supabaseClient', () => ({
+  supabase: {
+    from: (table: string) => {
+      if (table !== 'timetable_slots') throw new Error(`Unexpected table ${table}`);
+      return {
+        select: () => ({ eq: (key: string, value: string) => ({
+          range: (start: number, end: number) => Promise.resolve({ data: timetableRows.rows.filter((r) => r[key] === value).slice(start, end + 1), error: null }),
+          maybeSingle: () => Promise.resolve({ data: timetableRows.rows.find((r) => r[key] === value) || null, error: null }),
+        }) }),
+        insert: (row: any) => ({ select: () => ({ single: () => {
+          timetableRows.rows.push(row);
+          return Promise.resolve({ data: { id: row.id }, error: null });
+        } }) }),
+        update: (row: any) => ({ eq: (_key: string, id: string) => ({ select: () => ({ single: () => {
+          const index = timetableRows.rows.findIndex((r) => r.id === id);
+          if (index < 0) return Promise.resolve({ data: null, error: null });
+          timetableRows.rows[index] = { ...timetableRows.rows[index], ...row };
+          return Promise.resolve({ data: { id }, error: null });
+        } }) }) }),
+        delete: () => ({ eq: (_key: string, id: string) => ({ select: () => ({ single: () => {
+          const index = timetableRows.rows.findIndex((r) => r.id === id);
+          if (index < 0) return Promise.resolve({ data: null, error: null });
+          timetableRows.rows.splice(index, 1);
+          return Promise.resolve({ data: { id }, error: null });
+        } }) }) }),
+      };
+    },
+  },
+}));
+vi.mock('../../src/services/academic/classroomsService', () => ({ getClassroom: async () => ({ success: true, data: { name: '6A' } }) }));
+vi.mock('../../src/services/staff/staffService', () => ({ listStaff: async () => ({ data: { staffMembers: [] } }) }));
+vi.mock('../../src/services/academic/catalog/subjectsService', () => ({ getSubjects: async () => ({ data: [] }) }));
 import { timetableService, clearTimetableStore } from '../../src/services/timetable';
 
 describe('Timetable Service & Conflict Detection (P2-11)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    timetableRows.rows = [];
     clearTimetableStore();
   });
 

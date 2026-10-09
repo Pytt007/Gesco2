@@ -1,6 +1,6 @@
 /**
  * GESCO — Service Dépenses & Tableau de Bord Financier
- * 100% connecté à Supabase — Aucune donnée locale fictive
+ * Persistance des dépenses dans Neon uniquement.
  */
 
 import {
@@ -42,13 +42,13 @@ function mapCategoryFromDb(d: any): ExpenseCategoryItem {
   };
 }
 
-function mapExpenseFromDb(d: any): ExpenseRecord {
+function mapExpenseFromDb(d: any, category?: ExpenseCategoryItem): ExpenseRecord {
   return {
     id: d.id,
     date: d.date,
     categoryId: d.category_id,
-    categoryName: d.expense_categories?.name || d.category_name || '—',
-    categoryColor: d.expense_categories?.color || d.category_color || '#6b7280',
+    categoryName: category?.name || d.category_name || '—',
+    categoryColor: category?.color || d.category_color || '#6b7280',
     description: d.description,
     amount: d.amount || 0,
     paymentMode: d.payment_mode as ExpensePaymentMode,
@@ -64,19 +64,8 @@ function mapExpenseFromDb(d: any): ExpenseRecord {
   };
 }
 
-// ─── Stockage Local / Fallback ───────────────────────────────────────────────
-
-const localCategoriesStore: Map<string, ExpenseCategoryItem> = new Map([
-  ['cat-1', { id: 'cat-1', name: 'Fournitures scolaires', color: '#2563eb', isSystem: true, createdAt: '2026-01-01T00:00:00Z' }],
-  ['cat-2', { id: 'cat-2', name: 'Maintenance & Réparations', color: '#f59e0b', isSystem: true, createdAt: '2026-01-01T00:00:00Z' }],
-  ['cat-3', { id: 'cat-3', name: 'Événements & Sorties', color: '#10b981', isSystem: false, createdAt: '2026-01-01T00:00:00Z' }],
-]);
-const localExpensesStore: Map<string, ExpenseRecord> = new Map();
-const localBudgetsStore: Map<string, number> = new Map();
-
 export function clearExpensesStore(): void {
-  localExpensesStore.clear();
-  localBudgetsStore.clear();
+  // Conservé pour les anciens appelants ; aucun stockage local à vider.
 }
 
 // ─── Service ─────────────────────────────────────────────────────────────────
@@ -84,31 +73,17 @@ export function clearExpensesStore(): void {
 export const expenseService = {
 
   async getCategories(): Promise<ExpenseCategoryItem[]> {
-    try {
-      const { data, error } = await supabase
-        .from('expense_categories')
-        .select('*')
-        .order('name');
-      if (!error && data && data.length > 0) {
-        return data.map(mapCategoryFromDb);
-      }
-    } catch { /* Supabase injoignable */ }
-    return Array.from(localCategoriesStore.values());
+    const { data, error } = await supabase
+      .from('expense_categories')
+      .select('*')
+      .order('name');
+    if (error) throw error;
+    return (data || []).map(mapCategoryFromDb);
   },
 
   async addCategory(name: string, color: string = '#3b82f6'): Promise<ServiceResponse<ExpenseCategoryItem>> {
     const cleanName = name.trim();
     if (!cleanName) return { success: false, error: 'Le nom de la catégorie est obligatoire.' };
-
-    const newCatId = `cat-${Date.now()}`;
-    const newCat: ExpenseCategoryItem = {
-      id: newCatId,
-      name: cleanName,
-      color,
-      isSystem: false,
-      createdAt: new Date().toISOString(),
-    };
-    localCategoriesStore.set(newCatId, newCat);
 
     try {
       const { data, error } = await supabase
@@ -116,46 +91,45 @@ export const expenseService = {
         .insert([{ name: cleanName, color, is_system: false }])
         .select()
         .single();
-      if (!error && data) {
-        return { success: true, data: mapCategoryFromDb(data), message: 'Nouvelle catégorie ajoutée.' };
-      }
+      if (error) throw error;
+      if (!data) throw new Error('Neon n’a pas confirmé la création de la catégorie.');
+      return { success: true, data: mapCategoryFromDb(data), message: 'Nouvelle catégorie ajoutée.' };
     } catch (e: any) {
-      // Mode local
+      return { success: false, error: e?.message || 'Impossible d’enregistrer la catégorie dans Neon.' };
     }
-    return { success: true, data: newCat, message: 'Nouvelle catégorie ajoutée.' };
   },
 
   async getBudget(academicYearId: string): Promise<number> {
-    try {
-      const { data, error } = await supabase
-        .from('expense_budgets')
-        .select('amount')
-        .eq('academic_year_id', academicYearId)
-        .single();
-      if (!error && data) return data.amount || 0;
-    } catch { /* Supabase injoignable */ }
-    return localBudgetsStore.get(academicYearId) || 0;
+    const { data, error } = await supabase
+      .from('expense_budgets')
+      .select('amount')
+      .eq('academic_year_id', academicYearId)
+      .maybeSingle();
+    if (error) throw error;
+    return data?.amount || 0;
   },
 
   async setBudget(academicYearId: string, amount: number): Promise<ServiceResponse<number>> {
+    if (!academicYearId.trim()) return { success: false, error: 'Année scolaire active requise.' };
     if (amount < 0) return { success: false, error: 'Le budget ne peut pas être négatif.' };
-    localBudgetsStore.set(academicYearId, amount);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('expense_budgets')
-        .upsert([{ academic_year_id: academicYearId, amount }], { onConflict: 'academic_year_id' });
-      if (!error) return { success: true, data: amount, message: 'Budget mis à jour.' };
+        .upsert([{ academic_year_id: academicYearId, amount }], { onConflict: 'academic_year_id' })
+        .select('amount')
+        .single();
+      if (error) throw error;
+      if (!data) throw new Error('Neon n’a pas confirmé la mise à jour du budget.');
+      return { success: true, data: data.amount, message: 'Budget mis à jour.' };
     } catch (e: any) {
-      // Mode local
+      return { success: false, error: e?.message || 'Impossible d’enregistrer le budget dans Neon.' };
     }
-    return { success: true, data: amount, message: 'Budget mis à jour.' };
   },
 
   async getExpenses(filter: ExpenseFilter = {}): Promise<ExpenseRecord[]> {
-    try {
       let query = supabase
         .from('expenses')
-        .select('*, expense_categories(name, color)')
+        .select('*')
         .order('date', { ascending: false });
 
       if (filter.academicYearId) {
@@ -175,18 +149,11 @@ export const expenseService = {
       }
 
       const { data, error } = await query;
-      if (!error && data && data.length > 0) return data.map(mapExpenseFromDb);
-    } catch { /* Supabase injoignable */ }
-
-    // Fallback local
-    return Array.from(localExpensesStore.values()).filter((e) => {
-      if (filter.academicYearId && e.academicYearId !== filter.academicYearId) return false;
-      if (filter.categoryId && filter.categoryId !== 'ALL' && e.categoryId !== filter.categoryId) return false;
-      if (filter.status && filter.status !== 'ALL' && e.status !== filter.status) return false;
-      if (filter.month && !e.date.startsWith(filter.month)) return false;
-      if (filter.search && !e.description.toLowerCase().includes(filter.search.toLowerCase())) return false;
-      return true;
-    });
+      if (error) throw error;
+      if (!data?.length) return [];
+      const categories: ExpenseCategoryItem[] = await this.getCategories();
+      const byId = new Map<string, ExpenseCategoryItem>(categories.map(category => [category.id, category]));
+      return data.map(row => mapExpenseFromDb(row, byId.get(row.category_id)));
   },
 
   async createExpense(input: ExpenseInput): Promise<ServiceResponse<ExpenseRecord>> {
@@ -198,27 +165,6 @@ export const expenseService = {
     if (!input.categoryId?.trim()) return { success: false, error: 'La catégorie de dépense est obligatoire.' };
     if (!input.paymentMode) return { success: false, error: 'Le mode de règlement est obligatoire.' };
     if (!input.academicYearId?.trim()) return { success: false, error: "L'année scolaire est obligatoire." };
-
-    const id = `exp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    const category = localCategoriesStore.get(input.categoryId);
-    const localRecord: ExpenseRecord = {
-      id,
-      date: input.date,
-      categoryId: input.categoryId,
-      categoryName: category?.name || 'Général',
-      categoryColor: category?.color || '#6b7280',
-      description: input.description.trim(),
-      amount: input.amount,
-      paymentMode: input.paymentMode,
-      supplier: input.supplier?.trim() || undefined,
-      attachmentUrl: input.attachmentUrl || undefined,
-      status: 'VALIDATED',
-      academicYearId: input.academicYearId,
-      createdBy: input.createdBy || 'Gestionnaire',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    localExpensesStore.set(id, localRecord);
 
     try {
       const { data, error } = await supabase
@@ -235,16 +181,14 @@ export const expenseService = {
           academic_year_id: input.academicYearId,
           created_by: input.createdBy || 'Gestionnaire',
         }])
-        .select('*, expense_categories(name, color)')
+        .select('*')
         .single();
-      if (!error && data) {
-        return { success: true, data: mapExpenseFromDb(data), message: 'Dépense enregistrée avec succès.' };
-      }
+      if (error) throw error;
+      if (!data) throw new Error('Neon n’a pas confirmé la création de la dépense.');
+      return { success: true, data: mapExpenseFromDb(data), message: 'Dépense enregistrée avec succès.' };
     } catch (e: any) {
-      // Mode local
+      return { success: false, error: e?.message || 'Impossible d’enregistrer la dépense dans Neon.' };
     }
-
-    return { success: true, data: localRecord, message: 'Dépense enregistrée avec succès.' };
   },
 
   async updateExpense(id: string, input: ExpenseUpdateInput): Promise<ServiceResponse<ExpenseRecord>> {
@@ -253,26 +197,6 @@ export const expenseService = {
     }
     if (input.description !== undefined && !input.description.trim()) {
       return { success: false, error: 'La description est obligatoire.' };
-    }
-
-    const localExisting = localExpensesStore.get(id);
-    if (localExisting) {
-      if (input.description !== undefined) localExisting.description = input.description.trim();
-      if (input.amount !== undefined) localExisting.amount = input.amount;
-      if (input.date !== undefined) localExisting.date = input.date;
-      if (input.paymentMode !== undefined) localExisting.paymentMode = input.paymentMode;
-      if (input.supplier !== undefined) localExisting.supplier = input.supplier.trim() || undefined;
-      if (input.categoryId !== undefined) {
-        localExisting.categoryId = input.categoryId;
-        const cat = localCategoriesStore.get(input.categoryId);
-        if (cat) {
-          localExisting.categoryName = cat.name;
-          localExisting.categoryColor = cat.color;
-        }
-      }
-      if (input.status !== undefined) localExisting.status = input.status;
-      localExisting.updatedAt = new Date().toISOString();
-      localExpensesStore.set(id, localExisting);
     }
 
     try {
@@ -289,30 +213,17 @@ export const expenseService = {
         .from('expenses')
         .update(updates)
         .eq('id', id)
-        .select('*, expense_categories(name, color)')
+        .select('*')
         .single();
-      if (!error && data) return { success: true, data: mapExpenseFromDb(data), message: 'Dépense mise à jour.' };
+      if (error) throw error;
+      if (!data) throw new Error('Dépense introuvable ou mise à jour non confirmée.');
+      return { success: true, data: mapExpenseFromDb(data), message: 'Dépense mise à jour.' };
     } catch (e: any) {
-      // Mode local
+      return { success: false, error: e?.message || 'Impossible de modifier la dépense dans Neon.' };
     }
-
-    if (localExisting) {
-      return { success: true, data: localExisting, message: 'Dépense mise à jour.' };
-    }
-
-    return { success: false, error: 'Dépense introuvable.' };
   },
 
   async cancelExpense(id: string, reason?: string): Promise<ServiceResponse<ExpenseRecord>> {
-    const localExisting = localExpensesStore.get(id);
-    if (localExisting) {
-      localExisting.status = 'CANCELLED';
-      localExisting.cancelledAt = new Date().toISOString();
-      localExisting.cancelReason = reason || 'Annulation par le gestionnaire';
-      localExisting.updatedAt = new Date().toISOString();
-      localExpensesStore.set(id, localExisting);
-    }
-
     try {
       const { data, error } = await supabase
         .from('expenses')
@@ -323,39 +234,21 @@ export const expenseService = {
           updated_at: new Date().toISOString(),
         })
         .eq('id', id)
-        .select('*, expense_categories(name, color)')
+        .select('*')
         .single();
-      if (!error && data) return { success: true, data: mapExpenseFromDb(data), message: 'Dépense annulée.' };
+      if (error) throw error;
+      if (!data) throw new Error('Dépense introuvable ou annulation non confirmée.');
+      return { success: true, data: mapExpenseFromDb(data), message: 'Dépense annulée.' };
     } catch (e: any) {
-      // Mode local
+      return { success: false, error: e?.message || 'Impossible d’annuler la dépense dans Neon.' };
     }
-
-    if (localExisting) {
-      return { success: true, data: localExisting, message: 'Dépense annulée.' };
-    }
-
-    return { success: false, error: 'Dépense introuvable.' };
   },
 
   /**
    * Calcul des statistiques complètes du Tableau de Bord — 100% Supabase
    */
   async getDashboardStats(filter: ExpenseFilter = {}): Promise<ExpenseDashboardStats> {
-    const emptyStats: ExpenseDashboardStats = {
-      totalMonth: 0,
-      totalYear: 0,
-      annualBudget: 0,
-      remainingBudget: 0,
-      totalExpenseCount: 0,
-      averagePerMonth: 0,
-      budgetUsedPct: 0,
-      monthlyEvolution: [],
-      categoryDistribution: [],
-      topExpenses: [],
-      alerts: [],
-    };
-
-    try {
+      if (!filter.academicYearId) throw new Error('Année scolaire active non configurée.');
       const yearId = filter.academicYearId || '2024-2025';
       const allExpenses = await this.getExpenses({ academicYearId: yearId });
       const activeExpenses = allExpenses.filter((e) => e.status !== 'CANCELLED');
@@ -427,12 +320,9 @@ export const expenseService = {
         totalExpenseCount, averagePerMonth, budgetUsedPct,
         monthlyEvolution, categoryDistribution, topExpenses, alerts,
       };
-    } catch {
-      return emptyStats;
-    }
   },
 
-  async getKPIs(academicYearId: string = '2024-2025'): Promise<ExpenseKPIs> {
+  async getKPIs(academicYearId: string = ''): Promise<ExpenseKPIs> {
     const stats = await this.getDashboardStats({ academicYearId });
     const byCategory: Record<string, number> = {};
     stats.categoryDistribution.forEach((c) => { byCategory[c.name] = c.amount; });

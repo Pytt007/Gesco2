@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // GESCO — Service Paramètres
 // Service métier gérant les 5 volets de configuration du système
-// Persistance hybride robuste (localStorage + Supabase avec tolérance de panne schema)
+// Persistance Neon : les erreurs serveur sont retournées au formulaire.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { supabase } from '../common/supabaseClient';
@@ -33,49 +33,32 @@ const DEFAULT_GENERAL_CONFIG: GeneralConfig = {
   enableSmsAlerts: false,
 };
 
-// ─── 1. Informations Établissement ───────────────────────────────────────────
-export async function fetchSchoolInfo(): Promise<SchoolInfo> {
-  try {
-    const { data, error } = await supabase
-      .from('school_settings')
-      .select('data')
-      .eq('id', 'school_info')
-      .maybeSingle();
-
-    if (!error && data?.data) {
-      const merged = { ...DEFAULT_SCHOOL_INFO, ...data.data };
-      try { localStorage.setItem('gesco_school_info', JSON.stringify(merged)); } catch {}
-      return merged;
-    }
-  } catch {
-    // Supabase failure: use localStorage fallback below
-  }
-
-  try {
-    const cached = localStorage.getItem('gesco_school_info');
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      if (parsed && parsed.name !== "GESCO — Complexe Scolaire d'Excellence") {
-        return { ...DEFAULT_SCHOOL_INFO, ...parsed };
-      }
-    }
-  } catch {}
-
-  return DEFAULT_SCHOOL_INFO;
+// Revisions prevent a stale form from silently overwriting another user's edit.
+const revisions = new WeakMap<object, number>();
+const lastRevision = new Map<string, number>();
+export const settingsRevision = (value: object) => revisions.get(value);
+function remember<T extends object>(key:string,value:T,revision:number):T{revisions.set(value,revision);lastRevision.set(key,revision);return value;}
+async function saveSetting(key:string,value:object,expected?:number){
+ const revision=expected??lastRevision.get(key)??0;
+ const {data,error}=await supabase.rpc('save_setting',{p_id:key,p_data:value,p_revision:revision});
+ if(error)throw new Error(error.message);
+ if(typeof data!=='number')throw new Error('Enregistrement non confirmé par le serveur.');
+ remember(key,value,data);
 }
 
-export async function updateSchoolInfo(info: SchoolInfo): Promise<{ error?: string }> {
+// ─── 1. Informations Établissement ───────────────────────────────────────────
+export async function fetchSchoolInfo(): Promise<SchoolInfo> {
+  const { data, error } = await supabase.from('school_settings').select('data,revision').eq('id', 'school_info').maybeSingle();
+  if (error) throw new Error(error.message);
+  return remember('school_info',{ ...DEFAULT_SCHOOL_INFO, ...data?.data },data?.revision??0);
+}
+
+export async function updateSchoolInfo(info: SchoolInfo, expectedRevision?: number): Promise<{ error?: string }> {
   try {
+    
+    await saveSetting('school_info', info, expectedRevision);
     try { localStorage.setItem('gesco_school_info', JSON.stringify(info)); } catch {}
     window.dispatchEvent(new CustomEvent('gesco_school_info_updated', { detail: info }));
-    
-    const { error } = await supabase
-      .from('school_settings')
-      .upsert({ id: 'school_info', data: info, updated_at: new Date().toISOString() });
-    
-    if (error) {
-      console.warn('[settingsService] updateSchoolInfo error:', error.message);
-    }
     broadcastDataChange('school_settings', 'update', { key: 'school_info', data: info });
     return {};
   } catch (err: any) {
@@ -85,49 +68,17 @@ export async function updateSchoolInfo(info: SchoolInfo): Promise<{ error?: stri
 
 // ─── 2. Années Scolaires ──────────────────────────────────────────────────────
 export async function fetchSchoolYearsList(): Promise<SchoolYearItem[]> {
-  try {
-    const { data, error } = await supabase
-      .from('school_settings')
-      .select('data')
-      .eq('id', 'school_years_list')
-      .maybeSingle();
-
-    if (!error && Array.isArray(data?.data)) {
-      try { localStorage.setItem('gesco_school_years', JSON.stringify(data.data)); } catch {}
-      return data.data;
-    }
-  } catch {
-    // Supabase failure: use fallback
-  }
-
-  try {
-    const cached = localStorage.getItem('gesco_school_years');
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed)) {
-        const hasLegacyMock = parsed.some((y: any) => y.id === 'sy-2022' || y.id === 'sy-2023' || y.id === 'sy-2024');
-        if (!hasLegacyMock && parsed.length > 0) {
-          return parsed;
-        }
-      }
-    }
-  } catch {}
-
-  return DEFAULT_SCHOOL_YEARS;
+  const { data, error } = await supabase.from('school_settings').select('data,revision').eq('id', 'school_years_list').maybeSingle();
+  if (error) throw new Error(error.message);
+  return remember('school_years_list',data?.data ?? [...DEFAULT_SCHOOL_YEARS],data?.revision??0);
 }
 
-export async function saveSchoolYearsList(years: SchoolYearItem[]): Promise<{ error?: string }> {
+export async function saveSchoolYearsList(years: SchoolYearItem[], expectedRevision?: number): Promise<{ error?: string }> {
   try {
+
+    await saveSetting('school_years_list', years, expectedRevision);
     try { localStorage.setItem('gesco_school_years', JSON.stringify(years)); } catch {}
     window.dispatchEvent(new CustomEvent('gesco_school_years_updated', { detail: years }));
-
-    const { error } = await supabase
-      .from('school_settings')
-      .upsert({ id: 'school_years_list', data: years, updated_at: new Date().toISOString() });
-
-    if (error) {
-      console.warn('[settingsService] saveSchoolYearsList error:', error.message);
-    }
     broadcastDataChange('school_settings', 'update', { key: 'school_years_list', data: years });
     return {};
   } catch (err: any) {
@@ -137,72 +88,46 @@ export async function saveSchoolYearsList(years: SchoolYearItem[]): Promise<{ er
 
 export async function setActiveSchoolYear(yearId: string): Promise<{ error?: string }> {
   const years = await fetchSchoolYearsList();
+  const target=years.find(y=>y.id===yearId);
+  if(!target)return {error:'Année scolaire introuvable.'};
+  if(target.isClosed||target.isArchived)return {error:'Cette année est clôturée ou archivée.'};
   const updated = years.map((y) => ({
     ...y,
     isActive: y.id === yearId,
     status: y.id === yearId ? ('Active' as const) : y.isArchived ? ('Archivée' as const) : y.isClosed ? ('Clôturée' as const) : ('Préparation' as const),
   }));
-  return saveSchoolYearsList(updated);
+  return saveSchoolYearsList(updated, settingsRevision(years));
 }
 
 export async function closeSchoolYear(yearId: string): Promise<{ error?: string }> {
   const years = await fetchSchoolYearsList();
   const updated = years.map((y) => (y.id === yearId ? { ...y, isClosed: true, isActive: false, status: 'Clôturée' as const } : y));
-  return saveSchoolYearsList(updated);
+  return saveSchoolYearsList(updated, settingsRevision(years));
 }
 
 export async function archiveSchoolYear(yearId: string): Promise<{ error?: string }> {
   const years = await fetchSchoolYearsList();
   const updated = years.map((y) => (y.id === yearId ? { ...y, isArchived: true, isClosed: true, isActive: false, status: 'Archivée' as const } : y));
-  return saveSchoolYearsList(updated);
+  return saveSchoolYearsList(updated, settingsRevision(years));
 }
 
 export async function updateSchoolYear(yearId: string, data: Partial<SchoolYearItem>): Promise<{ error?: string }> {
   const years = await fetchSchoolYearsList();
   const updated = years.map((y) => (y.id === yearId ? { ...y, ...data } : y));
-  return saveSchoolYearsList(updated);
+  return saveSchoolYearsList(updated, settingsRevision(years));
 }
 
 // ─── 3. Trimestres / Semestres ────────────────────────────────────────────────
 export async function fetchAcademicTermsList(): Promise<AcademicTerm[]> {
-  try {
-    const { data, error } = await supabase
-      .from('school_settings')
-      .select('data')
-      .eq('id', 'academic_terms_list')
-      .maybeSingle();
-
-    if (!error && Array.isArray(data?.data)) {
-      try { localStorage.setItem('gesco_academic_terms', JSON.stringify(data.data)); } catch {}
-      return data.data;
-    }
-  } catch {
-    // Supabase failure
-  }
-
-  try {
-    const cached = localStorage.getItem('gesco_academic_terms');
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
-    }
-  } catch {}
-
-  return DEFAULT_TERMS;
+  const { data, error } = await supabase.from('school_settings').select('data,revision').eq('id', 'academic_terms_list').maybeSingle();
+  if (error) throw new Error(error.message);
+  return remember('academic_terms_list',data?.data ?? [...DEFAULT_TERMS],data?.revision??0);
 }
 
-export async function saveAcademicTermsList(terms: AcademicTerm[]): Promise<{ error?: string }> {
+export async function saveAcademicTermsList(terms: AcademicTerm[], expectedRevision?: number): Promise<{ error?: string }> {
   try {
+    await saveSetting('academic_terms_list', terms, expectedRevision);
     try { localStorage.setItem('gesco_academic_terms', JSON.stringify(terms)); } catch {}
-    const { error } = await supabase
-      .from('school_settings')
-      .upsert({ id: 'academic_terms_list', data: terms, updated_at: new Date().toISOString() });
-
-    if (error) {
-      console.warn('[settingsService] saveAcademicTermsList error:', error.message);
-    }
     broadcastDataChange('school_settings', 'update', { key: 'academic_terms_list', data: terms });
     return {};
   } catch (err: any) {
@@ -212,40 +137,15 @@ export async function saveAcademicTermsList(terms: AcademicTerm[]): Promise<{ er
 
 // ─── 4. Configuration Générale ────────────────────────────────────────────────
 export async function fetchGeneralConfig(): Promise<GeneralConfig> {
-  try {
-    const { data, error } = await supabase
-      .from('school_settings')
-      .select('data')
-      .eq('id', 'general_config')
-      .maybeSingle();
-
-    if (!error && data?.data) {
-      const merged = { ...DEFAULT_GENERAL_CONFIG, ...data.data };
-      try { localStorage.setItem('gesco_general_config', JSON.stringify(merged)); } catch {}
-      return merged;
-    }
-  } catch {
-    // Supabase failure
-  }
-
-  try {
-    const cached = localStorage.getItem('gesco_general_config');
-    if (cached) return { ...DEFAULT_GENERAL_CONFIG, ...JSON.parse(cached) };
-  } catch {}
-
-  return DEFAULT_GENERAL_CONFIG;
+  const { data, error } = await supabase.from('school_settings').select('data,revision').eq('id', 'general_config').maybeSingle();
+  if (error) throw new Error(error.message);
+  return remember('general_config',{ ...DEFAULT_GENERAL_CONFIG, ...data?.data },data?.revision??0);
 }
 
-export async function updateGeneralConfig(config: GeneralConfig): Promise<{ error?: string }> {
+export async function updateGeneralConfig(config: GeneralConfig, expectedRevision?: number): Promise<{ error?: string }> {
   try {
+    await saveSetting('general_config', config, expectedRevision);
     try { localStorage.setItem('gesco_general_config', JSON.stringify(config)); } catch {}
-    const { error } = await supabase
-      .from('school_settings')
-      .upsert({ id: 'general_config', data: config, updated_at: new Date().toISOString() });
-
-    if (error) {
-      console.warn('[settingsService] updateGeneralConfig error:', error.message);
-    }
     broadcastDataChange('school_settings', 'update', { key: 'general_config', data: config });
     return {};
   } catch (err: any) {

@@ -1,3 +1,4 @@
+import { settingsRevision } from '../services/settings/settingsService';
 // ─────────────────────────────────────────────────────────────────────────────
 // GESCO — Hook Paramètres
 // Hook encapsulant la logique d'état et d'appel aux services Paramètres
@@ -80,7 +81,7 @@ export function useSettings() {
     if (!info.email.trim()) return { error: 'L\'email est requis.' };
 
     setSaving(true);
-    const res = await updateSchoolInfo(info);
+    const res = await updateSchoolInfo(info, settingsRevision(schoolInfo));
     if (!res.error) {
       setSchoolInfo(info);
       window.dispatchEvent(new CustomEvent('gesco_school_info_updated', { detail: info }));
@@ -92,7 +93,8 @@ export function useSettings() {
   // Créer une nouvelle année scolaire
   const handleAddSchoolYear = async (newYear: { label: string; startDate: string; endDate: string }): Promise<{ error?: string }> => {
     if (!newYear.label.trim()) return { error: 'Le libellé est requis.' };
-    if (newYear.startDate >= newYear.endDate) return { error: 'La date de début doit être antérieure à la date de fin.' };
+    if (!newYear.startDate) return { error: 'La date de début est requise.' };
+    if (newYear.endDate && newYear.startDate >= newYear.endDate) return { error: 'La date de début doit être antérieure à la date de fin.' };
 
     setSaving(true);
     const newItem: SchoolYearItem = {
@@ -104,7 +106,7 @@ export function useSettings() {
       isClosed: false,
     };
     const updated = [...schoolYears, newItem];
-    const res = await saveSchoolYearsList(updated);
+    const res = await saveSchoolYearsList(updated, settingsRevision(schoolYears));
     if (!res.error) setSchoolYears(updated);
     setSaving(false);
     return res;
@@ -169,7 +171,7 @@ export function useSettings() {
 
     setSaving(true);
     const updated = schoolYears.filter((y) => y.id !== yearId);
-    const res = await saveSchoolYearsList(updated);
+    const res = await saveSchoolYearsList(updated, settingsRevision(schoolYears));
     if (!res.error) setSchoolYears(updated);
     setSaving(false);
     return res;
@@ -178,7 +180,7 @@ export function useSettings() {
   // Sauvegarder les trimestres
   const handleSaveTerms = async (terms: AcademicTerm[]): Promise<{ error?: string }> => {
     setSaving(true);
-    const res = await saveAcademicTermsList(terms);
+    const res = await saveAcademicTermsList(terms, settingsRevision(academicTerms));
     if (!res.error) setAcademicTerms(terms);
     setSaving(false);
     return res;
@@ -187,7 +189,7 @@ export function useSettings() {
   // Sauvegarder la configuration générale
   const handleSaveGeneralConfig = async (config: GeneralConfig): Promise<{ error?: string }> => {
     setSaving(true);
-    const res = await updateGeneralConfig(config);
+    const res = await updateGeneralConfig(config, settingsRevision(generalConfig));
     if (!res.error) setGeneralConfig(config);
     setSaving(false);
     return res;

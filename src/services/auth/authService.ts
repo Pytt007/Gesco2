@@ -1,42 +1,14 @@
 /**
  * GESCO — Service Authentification
- * Couche de communication avec Supabase Auth & Profils Utilisateurs,
- * avec support complet des comptes Démo et persistance de session locale.
+ * Neon Auth et profils autorisés en base.
  */
 
-import { supabase, createIsolatedClient, usernameToEmail, emailToUsername } from '../common/supabaseClient';
+import { supabase, createIsolatedClient, usernameToEmail } from '../common/supabaseClient';
 import { GescoUser, UserAccount, UserRole } from '../../types';
-import { auditLogService } from '../common/auditLogService';
 import { sessionTimeoutService } from './sessionTimeoutService';
 
-const STORAGE_SESSION_KEY = 'gesco_auth_session';
-const STORAGE_USERS_KEY = 'gesco_memory_users';
-
-// ── COMPTE ADMINISTRATEUR INITIAL ─────────────────────────────────────────────
-// ⚠️ SÉCURITÉ : Les mots de passe de secours sont privés au module et ne doivent JAMAIS être exportés.
-// Ce fallback n'est actif QUE si Supabase est injoignable (mode hors-ligne total).
-// Modifier ce mot de passe de secours dès le premier déploiement en production.
-const _ADMIN_OFFLINE_FALLBACK_PASS = import.meta.env.VITE_ADMIN_OFFLINE_PASS || 'Gesco2026!';
-
-const _ADMIN_USER: GescoUser = {
-  id: '00000000-0000-0000-0000-000000000001',
-  username: 'admin',
-  role: 'ADMIN_GENERALE',
-  fullName: 'Direction Générale (Admin)',
-  avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=admin',
-  status: 'ACTIF',
-  createdAt: '2026-01-01T00:00:00Z',
-  isOwner: true,
-};
-
-// Exporté uniquement pour les composants qui affichent la liste des utilisateurs (sans les mots de passe)
-export const DEMO_ADMIN_USER: GescoUser = _ADMIN_USER;
-
-
-
-
 export function normalizeUserRole(rawRole: any): UserRole {
-  if (!rawRole) return 'ADMIN_GENERALE';
+  if (!rawRole) throw new Error('Aucun rôle autorisé pour ce compte.');
   const str = String(rawRole).toUpperCase().trim();
   if (str === 'ADMIN' || str === 'ADMINISTRATEUR' || str === 'ADMIN_GENERAL' || str === 'ADMIN_GENERALE') {
     return 'ADMIN_GENERALE';
@@ -68,88 +40,38 @@ export function normalizeUserRole(rawRole: any): UserRole {
   if (str === 'RESP_TRANSPORT') {
     return 'RESP_TRANSPORT';
   }
-  return 'ADMIN_GENERALE';
+  throw new Error('Rôle utilisateur non reconnu.');
 }
 
-export async function resolveUserFromSupabase(user: any): Promise<GescoUser> {
-  const meta = user.user_metadata || {};
-  const username = meta.username || (user.email ? emailToUsername(user.email) : '') || 'inconnu';
-
-  let rawRole = meta.role || (username === 'admin' ? 'ADMIN_GENERALE' : 'ADMIN_GENERALE');
-  let fullName: string = meta.full_name || username;
-
-  try {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, full_name')
-      .eq('id', user.id)
-      .single();
-
-    if (profile?.role) rawRole = profile.role;
-    if (profile?.full_name) fullName = profile.full_name;
-  } catch {
-    // Fallback aux métadonnées si la récupération du profil échoue
-  }
-
-  const role: UserRole = normalizeUserRole(rawRole);
-
+function mapProfile(profile: any): UserAccount {
+  const role = normalizeUserRole(profile.role);
   return {
-    id: user.id,
-    username,
-    role,
-    fullName,
-    avatarUrl: meta.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${username}`,
-    status: 'ACTIF',
-    createdAt: user.created_at || new Date().toISOString(),
+    id: profile.id, username: profile.username, fullName: profile.full_name,
+    role, status: profile.status, avatarUrl: profile.avatar_url || '',
+    email: profile.email || '', createdAt: profile.created_at,
     isOwner: role === 'ADMIN_GENERALE' || role === 'DIRECTEUR',
   };
 }
 
+export async function resolveUserFromSupabase(user: any): Promise<GescoUser> {
+  const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+  if (error) throw new Error(error.message);
+  if (!data || data.status !== 'ACTIF') throw new Error('Ce compte ne dispose pas d’un accès actif à GESCO.');
+  return mapProfile(data);
+}
+
 export async function fetchCurrentSession() {
-  // Vérification de sécurité de timeout d'inactivité
+  // Old browser-only sessions never grant access.
+  try { localStorage.removeItem('gesco_auth_session'); } catch {}
   if (sessionTimeoutService.isSessionExpired()) {
-    try {
-      localStorage.removeItem(STORAGE_SESSION_KEY);
-      sessionTimeoutService.clearSessionActivity();
-    } catch {}
+    await supabase.auth.signOut();
+    sessionTimeoutService.clearSessionActivity();
     return { data: { session: null }, error: null };
   }
-
-  // 1. Tenter Supabase
-  try {
-    const res = await supabase.auth.getSession();
-    if (res?.data?.session?.user) {
-      sessionTimeoutService.recordUserActivity();
-      return res;
-    }
-  } catch {
-    // Ignorer erreur réseau
-  }
-
-  // 2. Tenter session locale persistée
-  try {
-    const saved = localStorage.getItem(STORAGE_SESSION_KEY);
-    if (saved) {
-      const user = JSON.parse(saved);
-      if (user?.id && user?.username) {
-        sessionTimeoutService.recordUserActivity();
-        return {
-          data: {
-            session: {
-              user: {
-                id: user.id,
-                email: usernameToEmail(user.username),
-                user_metadata: user,
-              }
-            }
-          },
-          error: null
-        };
-      }
-    }
-  } catch {}
-
-  return { data: { session: null }, error: null };
+  const result = await supabase.auth.getSession();
+  if (result.error) throw new Error(result.error.message);
+  if (result.data.session) sessionTimeoutService.recordUserActivity();
+  return result;
 }
 
 export function subscribeToAuthStateChange(callback: (event: string, session: any) => void) {
@@ -188,314 +110,101 @@ function clearAttempts(username: string): void {
 
 // ── Authentification Robuste ────────────────────────────────────────────────
 export async function loginWithPassword(username: string, password: string): Promise<GescoUser> {
-  const trimmedUser = username.toLowerCase().trim();
-  const trimmedPass = password.trim();
-
-  // Vérifier le rate-limit
-  checkRateLimit(trimmedUser);
-
-  // 1. Authentification via Supabase Auth (source de vérité principale)
+  const identifier = username.toLowerCase().trim();
+  checkRateLimit(identifier);
   try {
-    const email = usernameToEmail(trimmedUser);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password: trimmedPass });
-    if (!error && data?.user) {
-      clearAttempts(trimmedUser);
-      const user = await resolveUserFromSupabase(data.user);
-      try {
-        localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(user));
-      } catch {}
-      sessionTimeoutService.recordUserActivity();
-      return user;
-    }
-  } catch (err) {
-    console.warn('[authService:loginWithPassword] Supabase query exception:', err);
-  }
-
-  // 2. Fallback de secours local / mode hors-ligne pour l'administrateur
-  if (
-    trimmedUser === 'admin' &&
-    (trimmedPass === _ADMIN_OFFLINE_FALLBACK_PASS || trimmedPass === 'Gesco2026!' || trimmedPass === 'admin')
-  ) {
-    clearAttempts(trimmedUser);
-    try {
-      localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(_ADMIN_USER));
-    } catch {}
+    const { data, error } = await supabase.auth.signInWithPassword({ email: usernameToEmail(identifier), password });
+    if (error || !data.user) throw new Error(error?.message || 'Connexion refusée.');
+    const user = await resolveUserFromSupabase(data.user);
+    clearAttempts(identifier);
     sessionTimeoutService.recordUserActivity();
-    return _ADMIN_USER;
+    return user;
+  } catch (error) {
+    recordFailedAttempt(identifier);
+    throw error;
   }
-
-  // 3. Fallback pour les rôles démo courants en environnement local
-  const demoRoles: Record<string, { role: UserRole; name: string }> = {
-    directeur: { role: 'DIRECTEUR', name: 'M. Le Directeur' },
-    comptable: { role: 'FINANCE', name: 'Mme La Comptable' },
-    caissier: { role: 'CAISSIER', name: 'M. Le Caissier' },
-    enseignant: { role: 'ENSEIGNANT', name: 'M. L’Enseignant' },
-    secretaire: { role: 'SECRETAIRE', name: 'Mme La Secrétaire' },
-  };
-
-  if (demoRoles[trimmedUser] && (trimmedPass === 'Gesco2026!' || trimmedPass === 'admin' || trimmedPass === trimmedUser)) {
-    const demoUser: GescoUser = {
-      id: `demo-${trimmedUser}`,
-      username: trimmedUser,
-      role: demoRoles[trimmedUser].role,
-      fullName: demoRoles[trimmedUser].name,
-      avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${trimmedUser}`,
-      status: 'ACTIF',
-      createdAt: new Date().toISOString(),
-      isOwner: demoRoles[trimmedUser].role === 'DIRECTEUR',
-    };
-    clearAttempts(trimmedUser);
-    try {
-      localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(demoUser));
-    } catch {}
-    sessionTimeoutService.recordUserActivity();
-    return demoUser;
-  }
-
-  recordFailedAttempt(trimmedUser);
-  throw new Error('Identifiant ou mot de passe incorrect.');
 }
 
 export async function logoutUser(): Promise<void> {
-  try {
-    localStorage.removeItem(STORAGE_SESSION_KEY);
-    sessionTimeoutService.clearSessionActivity();
-  } catch {}
-  try {
-    await supabase.auth.signOut();
-  } catch {}
-}
-
-// ─── GESTION DE LA LISTE DES COMPTES ─────────────────────────────────────────
-const deletedUserIds = new Set<string>();
-
-// Aucun compte local fictif — source unique : Supabase `profiles`
-function getLocalUserAccounts(): UserAccount[] {
-  try {
-    const saved = localStorage.getItem(STORAGE_USERS_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {}
-  return [];
-}
-
-
-function saveLocalUserAccounts(accounts: UserAccount[]): void {
-  try {
-    localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(accounts));
-  } catch {}
-}
-
-// Synchronisation robuste des comptes utilisateurs via Supabase
-async function syncAccountsFromSupabase(): Promise<UserAccount[]> {
-  try {
-    const { data: profiles, error } = await supabase
-      .from('profiles')
-      .select('id, username, full_name, role, avatar_url')
-      .order('created_at', { ascending: true });
-
-    if (!error && profiles && profiles.length > 0) {
-      const mapped = profiles
-        .filter((p) => !deletedUserIds.has(p.id))
-        .map((p) => ({
-          id: p.id,
-          username: p.username,
-          fullName: p.full_name || p.username,
-          role: p.role as UserRole,
-          avatarUrl: p.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${p.username}`,
-          status: 'ACTIF' as const,
-          createdAt: new Date().toISOString(),
-          isOwner: p.role === 'ADMIN_GENERALE' || p.role === 'DIRECTEUR',
-        }));
-      saveLocalUserAccounts(mapped);
-      return mapped;
-    }
-
-    const { data: settingsRow } = await supabase
-      .from('school_settings')
-      .select('data')
-      .eq('id', 'custom_user_accounts')
-      .maybeSingle();
-
-    if (settingsRow?.data && Array.isArray(settingsRow.data)) {
-      saveLocalUserAccounts(settingsRow.data);
-      return settingsRow.data;
-    }
-  } catch (err) {
-    console.warn('[authService] Account sync warning:', err);
-  }
-
-  return getLocalUserAccounts().filter((u) => !deletedUserIds.has(u.id));
-}
-
-async function persistAccountsToSupabase(accounts: UserAccount[]) {
-  try {
-    await supabase
-      .from('school_settings')
-      .upsert({
-        id: 'custom_user_accounts',
-        data: accounts,
-        updated_at: new Date().toISOString(),
-      });
-  } catch (e) {
-    console.warn('[authService] persistAccountsToSupabase warning:', e);
-  }
+  const { error } = await supabase.auth.signOut();
+  if (error) throw new Error(error.message);
+  clearUserAccountsStore();
+  sessionTimeoutService.clearSessionActivity();
 }
 
 export function clearUserAccountsStore(): void {
-  deletedUserIds.clear();
   try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem(STORAGE_USERS_KEY);
-    }
+    localStorage.removeItem('gesco_memory_users');
+    localStorage.removeItem('gesco_auth_session');
   } catch {}
-}
-
-export async function isLastActiveAdmin(userId: string): Promise<boolean> {
-  const accounts = await syncAccountsFromSupabase();
-  const target = accounts.find((u) => u.id === userId);
-  if (!target || target.role !== 'ADMIN_GENERALE' || target.status !== 'ACTIF') {
-    return false;
-  }
-  const activeAdmins = accounts.filter(
-    (u) => u.role === 'ADMIN_GENERALE' && u.status === 'ACTIF' && !deletedUserIds.has(u.id)
-  );
-  return activeAdmins.length <= 1;
 }
 
 export async function fetchUserAccounts(): Promise<UserAccount[]> {
-  return syncAccountsFromSupabase();
+  const { data, error } = await supabase.from('profiles').select('*').order('created_at');
+  if (error) throw new Error(error.message);
+  return (data || []).map(mapProfile);
 }
 
-export async function createAccount(
-  username: string,
-  password: string,
-  role: UserRole,
-  fullName: string
-): Promise<{ error?: string }> {
-  const newId = `usr-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-  const newUser: UserAccount = {
-    id: newId,
-    username,
-    fullName,
-    role,
-    avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${username}`,
-    status: 'ACTIF',
-    createdAt: new Date().toISOString(),
-    isOwner: role === 'ADMIN_GENERALE' || role === 'DIRECTEUR',
-  };
+export async function isLastActiveAdmin(userId: string): Promise<boolean> {
+  const accounts = await fetchUserAccounts();
+  const admins = accounts.filter(user => user.role === 'ADMIN_GENERALE' && user.status === 'ACTIF');
+  return admins.length === 1 && admins[0].id === userId;
+}
 
-  const currentList = await syncAccountsFromSupabase();
-  const updated = [...currentList, newUser];
-  saveLocalUserAccounts(updated);
-  await persistAccountsToSupabase(updated);
+function errorResult(error: unknown): { error: string } {
+  return { error: error instanceof Error ? error.message : 'Enregistrement refusé par le serveur.' };
+}
 
+export async function createAccount(username: string, password: string, role: UserRole, fullName: string): Promise<{ error?: string }> {
   try {
+    normalizeUserRole(role);
+    if (!/^[a-zA-Z0-9._-]{3,64}$/.test(username)) throw new Error('Identifiant : 3 à 64 lettres, chiffres, points, tirets ou underscores.');
+    if (password.length < 12) throw new Error('Le mot de passe doit contenir au moins 12 caractères.');
+    // Check the current administrator before creating an auth identity.
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) throw new Error('Connexion requise.');
+    const actor = await resolveUserFromSupabase(session.session.user);
+    if (actor.role !== 'ADMIN_GENERALE') throw new Error('Seul un administrateur peut créer un compte.');
     const email = usernameToEmail(username);
-    await supabase.auth.signUp({ email, password, options: { data: { username, role, full_name: fullName } } });
-    await supabase.from('profiles').upsert([{ id: newId, username, full_name: fullName, role }]);
-  } catch {
-    // Mode local
-  }
+    // credentials: omit prevents signup from replacing the administrator's cookie.
+    const { data, error } = await createIsolatedClient().auth.signUp({
+      email, password, options: { data: { displayName: fullName } },
+    });
+    if (error || !data.user) throw new Error(error?.message || 'Création de l’identité refusée.');
+    const { error: profileError } = await supabase.from('profiles').insert({
+      id: data.user.id, username: username.toLowerCase(), email, full_name: fullName,
+      role, status: 'ACTIF',
+    });
+    if (profileError) throw new Error('Identité créée sans accès GESCO : ' + profileError.message);
+    return {};
+  } catch (error) { return errorResult(error); }
+}
 
-  // Traçabilité d'audit
-  auditLogService.log({
-    action: 'CREATION_COMPTE_UTILISATEUR',
-    module: 'SYSTEM',
-    details: `Création du compte utilisateur "${username}" (${fullName}) avec le rôle ${role}`,
-    severity: 'WARNING',
-  });
+export async function updateUserPassword(newPassword: string, currentPassword?: string): Promise<{ error?: string }> {
+  if (newPassword.length < 12) return { error: 'Le mot de passe doit contenir au moins 12 caractères.' };
+  if (!currentPassword) return { error: 'Le mot de passe actuel est requis.' };
+  const { error } = await supabase.auth.getBetterAuthInstance().changePassword({ currentPassword, newPassword, revokeOtherSessions: true });
+  return error ? { error: error.message } : {};
+}
 
-  return {};
+async function updateProfile(id: string, updates: Record<string, string>): Promise<{ error?: string }> {
+  try {
+    if (await isLastActiveAdmin(id)) throw new Error('Le dernier administrateur actif doit être conservé.');
+    const { data, error } = await supabase.from('profiles').update(updates).eq('id', id).select('id').single();
+    if (error || !data) throw new Error(error?.message || 'Compte introuvable ou modification non autorisée.');
+    return {};
+  } catch (error) { return errorResult(error); }
 }
 
 export async function deleteAccount(userId: string): Promise<{ error?: string }> {
-  if (await isLastActiveAdmin(userId)) {
-    return { error: 'Impossible de supprimer le dernier compte administrateur actif du système.' };
-  }
-
-  deletedUserIds.add(userId);
-  const currentList = await syncAccountsFromSupabase();
-  const deletedUser = currentList.find((u) => u.id === userId);
-  const updated = currentList.filter((u) => u.id !== userId);
-  saveLocalUserAccounts(updated);
-  await persistAccountsToSupabase(updated);
-
-  try {
-    await supabase.from('profiles').delete().eq('id', userId);
-  } catch {}
-
-  // Traçabilité d'audit
-  auditLogService.log({
-    action: 'SUPPRESSION_COMPTE_UTILISATEUR',
-    module: 'SYSTEM',
-    details: `Suppression définitive du compte utilisateur "${deletedUser?.username || userId}"`,
-    severity: 'DANGER',
-  });
-
-  return {};
+  return updateProfile(userId, { status: 'DESACTIVE' });
 }
-
-export async function updateUserPassword(newPassword: string): Promise<{ error?: string }> {
-  try {
-    await supabase.auth.updateUser({ password: newPassword });
-  } catch {}
-  return {};
-}
-
 export async function updateAccountRole(userId: string, role: UserRole): Promise<{ error?: string }> {
-  if (role !== 'ADMIN_GENERALE' && (await isLastActiveAdmin(userId))) {
-    return { error: 'Impossible de rétrograder le dernier administrateur actif du système.' };
-  }
-
-  const currentList = await syncAccountsFromSupabase();
-  const updated = currentList.map((u) => (u.id === userId ? { ...u, role } : u));
-  saveLocalUserAccounts(updated);
-  await persistAccountsToSupabase(updated);
-
-  try {
-    await supabase.from('profiles').update({ role }).eq('id', userId);
-  } catch {}
-
-  // Traçabilité d'audit
-  auditLogService.log({
-    action: 'MODIFICATION_ROLE_UTILISATEUR',
-    module: 'SYSTEM',
-    details: `Attribution du rôle ${role} à l'utilisateur ID: ${userId}`,
-    severity: 'WARNING',
-  });
-
-  return {};
+  try { normalizeUserRole(role); } catch (error) { return errorResult(error); }
+  return updateProfile(userId, { role });
 }
-
-export async function setUserAccountStatus(
-  userId: string,
-  status: any
-): Promise<{ error?: string }> {
-  if (status !== 'ACTIF' && (await isLastActiveAdmin(userId))) {
-    return { error: 'Impossible de désactiver ou archiver le dernier administrateur actif du système.' };
-  }
-
-  const currentList = await syncAccountsFromSupabase();
-  const updated = currentList.map((u) => (u.id === userId ? { ...u, status } : u));
-  saveLocalUserAccounts(updated);
-  await persistAccountsToSupabase(updated);
-
-  try {
-    await supabase.from('profiles').update({ status }).eq('id', userId);
-  } catch {}
-
-  // Traçabilité d'audit
-  auditLogService.log({
-    action: 'MODIFICATION_STATUT_UTILISATEUR',
-    module: 'SYSTEM',
-    details: `Modification du statut à "${status}" pour l'utilisateur ID: ${userId}`,
-    severity: 'WARNING',
-  });
-
-  return {};
+export async function setUserAccountStatus(userId: string, status: string): Promise<{ error?: string }> {
+  if (!['ACTIF', 'SUSPENDU', 'VERROUILLE', 'INVITATION_ENVOYEE', 'DESACTIVE'].includes(status)) return { error: 'Statut non reconnu.' };
+  return updateProfile(userId, { status });
 }
-
 export const updateAccountStatus = setUserAccountStatus;

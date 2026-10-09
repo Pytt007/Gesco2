@@ -26,7 +26,7 @@ export default function StaffAttendancePage() {
   const confirm = useConfirm();
   const { addNotification } = useToast();
   const { academicYears } = useAcademicYears();
-  const [selectedYearId, setSelectedYearId] = useState<string>(schoolYear || 'ay-2026');
+  const selectedYearId = academicYears.find((year) => year.name === schoolYear)?.id || '';
   const [activeTab, setActiveTab] = useState<'APPEL' | 'HISTORIQUE'>('APPEL');
 
   const rolesList = staffAttendanceService.getRoles();

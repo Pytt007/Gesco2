@@ -4,14 +4,13 @@ import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmContext';
 import { useSettings } from '../hooks/useSettings';
 import { useUsers, useRoles, usePermissions } from '../hooks/users';
-import { UserRole, UserAccount, SchoolYearItem } from '../types';
+import { UserRole, UserAccount } from '../types';
 import { ROLE_MODULES } from '../constants/permissions';
 import {
   Building, Calendar, Clock, Sliders, Users, Shield, Plus, Save,
   Trash2, Lock, Eye, EyeOff, X, Search, Settings2, Check, RotateCcw, ShieldCheck,
-  Upload, Image, Copy,
+  Upload, Image,
 } from 'lucide-react';
-import DuplicateSchoolYearWizardModal from '../components/settings/DuplicateSchoolYearWizardModal';
 import PermissionsManager from '../components/settings/PermissionsManager/index';
 import UsersManager from '../components/settings/UsersManager/index';
 import UsersAndRolesManager from '../components/settings/UsersManager/UsersAndRolesManager';
@@ -55,8 +54,6 @@ export default function SettingsPage() {
       totalRecordsCount: number;
     };
   } | null>(null);
-
-  const [duplicateYearTarget, setDuplicateYearTarget] = useState<SchoolYearItem | null>(null);
 
   const {
     users: userAccountsList, allUsers, loading: usersLoading, saving: usersSaving,
@@ -111,6 +108,7 @@ export default function SettingsPage() {
   // Formulaire Nouvelle Année
   const [showAddYearModal, setShowAddYearModal] = useState(false);
   const [newYearForm, setNewYearForm] = useState({ label: '', startDate: '', endDate: '' });
+  const [editingYearEnd, setEditingYearEnd] = useState<{ id: string; label: string; startDate: string; endDate: string } | null>(null);
 
   // Formulaire Configuration Générale
   const [configForm, setConfigForm] = useState({
@@ -206,6 +204,21 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveYearEnd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingYearEnd) return;
+    if (editingYearEnd.endDate && editingYearEnd.endDate <= editingYearEnd.startDate) {
+      addNotification('error', 'La date de fin doit être postérieure à la rentrée.');
+      return;
+    }
+    const res = await updateSchoolYear(editingYearEnd.id, { endDate: editingYearEnd.endDate });
+    if (res.error) addNotification('error', res.error);
+    else {
+      addNotification('success', `Date de fin de ${editingYearEnd.label} enregistrée.`);
+      setEditingYearEnd(null);
+    }
+  };
+
   // Actions Configuration Générale
   const handleSaveConfig = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -226,7 +239,7 @@ export default function SettingsPage() {
     e.preventDefault();
     if (!newUserForm.fullName.trim()) { addNotification('error', 'Nom complet requis.'); return; }
     if (!newUserForm.username.trim()) { addNotification('error', 'Identifiant requis.'); return; }
-    if (newUserForm.password.length < 6) { addNotification('error', 'Mot de passe minimum 6 caractères.'); return; }
+    if (newUserForm.password.length < 12) { addNotification('error', 'Mot de passe minimum 12 caractères.'); return; }
 
     const ok = await createAccountViaHook(
       newUserForm.username.trim().toLowerCase(),
@@ -574,7 +587,7 @@ export default function SettingsPage() {
                     <tr key={year.id}>
                       <td style={{ fontWeight: 700 }}>{year.label}</td>
                       <td>{year.startDate}</td>
-                      <td>{year.endDate}</td>
+                      <td>{year.endDate || 'À définir'}</td>
                       <td>
                         {year.isActive ? (
                           <span className="badge badge-success" style={{ fontWeight: 800 }}>🟢 Active</span>
@@ -588,15 +601,6 @@ export default function SettingsPage() {
                       </td>
                       <td>
                         <div className="flex gap-2" style={{ alignItems: 'center' }}>
-                          {isAdmin && (
-                            <button
-                              className="btn btn-outline btn-sm fw-bold"
-                              style={{ borderColor: '#6366f1', color: '#4f46e5', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 4 }}
-                              onClick={() => setDuplicateYearTarget(year)}
-                            >
-                              <Copy size={13} /> Dupliquer
-                            </button>
-                          )}
                           {isAdmin && !year.isActive && (
                             <button
                               className="btn btn-outline btn-sm fw-bold"
@@ -607,6 +611,14 @@ export default function SettingsPage() {
                               }}
                             >
                               Activer
+                            </button>
+                          )}
+                          {isAdmin && !year.isClosed && (
+                            <button
+                              className="btn btn-outline btn-sm"
+                              onClick={() => setEditingYearEnd({ id: year.id, label: year.label, startDate: year.startDate, endDate: year.endDate })}
+                            >
+                              Modifier la fin
                             </button>
                           )}
                           {isAdmin && !year.isClosed && (
@@ -747,23 +759,6 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
-      )}
-
-      {/* ── MODAL ASSISTANT DUPLICATION D'ANNÉE SCOLAIRE ──────────────────────── */}
-      {duplicateYearTarget && (
-        <DuplicateSchoolYearWizardModal
-          sourceYear={duplicateYearTarget}
-          existingYears={schoolYears}
-          onClose={() => setDuplicateYearTarget(null)}
-          onSuccess={(newYearLabel) => {
-            addNotification('success', `Année scolaire ${newYearLabel} préparée et dupliquée avec succès !`);
-            addSchoolYear({
-              label: newYearLabel,
-              startDate: '2026-09-15',
-              endDate: '2027-06-30',
-            });
-          }}
-        />
       )}
 
       {/* 3. TRIMESTRES / SEMESTRES */}
@@ -990,19 +985,47 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Date de Fin *</label>
+                  <label className="form-label">Date de Fin (facultative si non encore fixée)</label>
                   <input
                     type="date"
                     className="form-input"
                     value={newYearForm.endDate}
                     onChange={(e) => setNewYearForm({ ...newYearForm, endDate: e.target.value })}
-                    required
                   />
                 </div>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-outline" onClick={() => setShowAddYearModal(false)}>Annuler</button>
                 <button type="submit" className="btn btn-primary" disabled={settingsSaving}>Créer L'Année</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {editingYearEnd && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setEditingYearEnd(null)}>
+          <div className="modal" style={{ maxWidth: 420 }}>
+            <div className="modal-header">
+              <h3>Date de fin — {editingYearEnd.label}</h3>
+              <button className="btn btn-ghost btn-sm" onClick={() => setEditingYearEnd(null)}>✕</button>
+            </div>
+            <form onSubmit={handleSaveYearEnd}>
+              <div className="modal-body">
+                <label className="form-label" htmlFor="school-year-end-date">Date de fin</label>
+                <input
+                  id="school-year-end-date"
+                  type="date"
+                  className="form-input"
+                  min={editingYearEnd.startDate}
+                  value={editingYearEnd.endDate}
+                  onChange={(e) => setEditingYearEnd({ ...editingYearEnd, endDate: e.target.value })}
+                />
+                <p style={{ marginTop: 8, color: 'var(--text-muted)' }}>Laissez vide si la date officielle n’est pas encore connue.</p>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-outline" onClick={() => setEditingYearEnd(null)}>Annuler</button>
+                <button type="submit" className="btn btn-primary" disabled={settingsSaving}>Enregistrer</button>
               </div>
             </form>
           </div>

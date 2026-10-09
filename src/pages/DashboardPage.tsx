@@ -73,7 +73,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
   const { currentUser, canAccess } = useAuth();
   const { schoolInfo } = useSettings();
   
-  const currentAcademicYearId = schoolYear || 'ay-2026';
+  const currentAcademicYearId = schoolYear;
   
   const {
     kpis,
@@ -682,7 +682,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
             <div style={{ marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.375rem' }}>
                 <span className="badge badge-info" style={{ fontSize: '0.8125rem', padding: '0.4rem 0.875rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
-                  142 Élèves Total
+                  {kpis?.totalStudents ?? 0} élèves au total
                 </span>
               </div>
               <h3 style={{ margin: 0, fontSize: '1.0625rem', fontWeight: 800, color: '#1e293b', lineHeight: 1.25 }}>

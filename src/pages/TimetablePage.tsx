@@ -23,7 +23,7 @@ export default function TimetablePage() {
   const { schoolYear } = useSchoolYear();
   const confirm = useConfirm();
   const { academicYears } = useAcademicYears();
-  const [selectedYearId, setSelectedYearId] = useState<string>(schoolYear || 'ay-2026');
+  const selectedYearId = academicYears.find((year) => year.name === schoolYear)?.id || '';
 
   const {
     displayMode,
@@ -249,6 +249,7 @@ export default function TimetablePage() {
             <>
               <button
                 className="btn btn-outline-primary text-sm fw-semibold"
+                disabled={!selectedYearId || classes.length < 2}
                 onClick={() => {
                   setSourceClassId(classes.find((c) => c.id !== selectedClassId)?.id || '');
                   setShowCopyModal(true);
@@ -259,6 +260,7 @@ export default function TimetablePage() {
               </button>
               <button
                 className="btn btn-primary text-sm fw-semibold"
+                disabled={!selectedYearId || !selectedClassId || teachers.length === 0 || subjects.length === 0}
                 onClick={() => handleCellClick('LUNDI', '07:30', '08:30')}
                 style={{ display: 'flex', alignItems: 'center', gap: 6, borderRadius: 8 }}
               >
@@ -268,6 +270,8 @@ export default function TimetablePage() {
           )}
         </div>
       </div>
+
+      {!selectedYearId && <div className="alert alert-warning">Activez une année scolaire avant de créer un emploi du temps.</div>}
 
       {/* BARRE DE SÉLECTION & MODE D'AFFICHAGE */}
       <div className="card" style={{ borderRadius: 14, border: '1px solid #e2e8f0' }}>

@@ -275,8 +275,8 @@ export async function executeStudentRegistrationTransaction(
       const schoolName = schoolInfo.name || 'Groupe Scolaire Les SCHTROUMPFS';
       const schoolAddress = [schoolInfo.address, schoolInfo.city, schoolInfo.country].filter(Boolean).join(' - ') || 'BP - Bassam, Côte d\'Ivoire';
       const schoolPhone = schoolInfo.phone || '0709570047';
-      const parentName = input.parents.fatherName || input.parents.motherName || input.parents.guardianName || 'Parent d’Élève';
-      const parentPhone = input.parents.fatherPhone || input.parents.motherPhone || input.parents.guardianPhone || '—';
+      const parentName = primaryParentName || 'Parent d’Élève';
+      const parentPhone = primaryParentPhone || '—';
 
       try {
         const docGenResult = await documentEngine.generateDocument({

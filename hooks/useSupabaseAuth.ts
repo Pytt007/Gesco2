@@ -99,20 +99,7 @@ function useSupabaseAuth() {
   // ─── Login ────────────────────────────────────────────────────────────────
   const login = useCallback(async (username: string, password: string) => {
     const trimmedUser = username.toLowerCase().trim();
-    const trimmedPass = password.trim();
-
-    // Fallback Démo local immédiat
-    if (trimmedUser === 'admin' && (trimmedPass === 'admin123' || trimmedPass === 'admin' || trimmedPass === 'gesco2026')) {
-      const demoAdmin: GescoUser = {
-        id: 'usr-demo-01',
-        username: 'admin',
-        role: 'ADMIN_GENERALE',
-        fullName: 'Direction Générale (Admin)',
-        avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=admin',
-      };
-      setCurrentUser(demoAdmin);
-      return demoAdmin;
-    }
+    const trimmedPass = password;
 
     try {
       const email = usernameToEmail(trimmedUser);
@@ -140,17 +127,6 @@ function useSupabaseAuth() {
 
       return gescoUser;
     } catch (err: any) {
-      if (trimmedUser === 'admin' && (trimmedPass === 'admin123' || trimmedPass === 'admin')) {
-        const demoAdmin: GescoUser = {
-          id: 'usr-demo-01',
-          username: 'admin',
-          role: 'ADMIN_GENERALE',
-          fullName: 'Direction Générale (Admin)',
-          avatarUrl: 'https://api.dicebear.com/7.x/adventurer/svg?seed=admin',
-        };
-        setCurrentUser(demoAdmin);
-        return demoAdmin;
-      }
       throw new Error(err?.message || 'Identifiant ou mot de passe incorrect.');
     }
   }, []);

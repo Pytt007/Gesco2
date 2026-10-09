@@ -127,6 +127,8 @@ export interface TuitionPaymentRecord {
 }
 
 export interface RecordPaymentInput {
+  /** Stable key retained by the form across retries. */
+  requestId?: string;
   enrollmentId: string;
   amount: number;
   paymentDate: string;

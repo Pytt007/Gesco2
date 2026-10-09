@@ -4,18 +4,16 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import React from 'react';
-import { Shield, Users, Edit3, Lock } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { UserAccount } from '../../../types';
-import { DEFAULT_PROFILES, ProfileOption } from './UserModal';
+import { DEFAULT_PROFILES } from './UserModal';
 
 interface AccessProfilesTabProps {
   users: UserAccount[];
-  onEditProfile: (profile: ProfileOption) => void;
 }
 
 export const AccessProfilesTab: React.FC<AccessProfilesTabProps> = ({
   users,
-  onEditProfile,
 }) => {
   // Calculer le nombre d'utilisateurs par profil
   const getUserCountByRole = (roleValue: string) => {
@@ -32,7 +30,7 @@ export const AccessProfilesTab: React.FC<AccessProfilesTabProps> = ({
             Profils d'Accès Standards
           </h3>
           <p style={{ margin: '2px 0 0', fontSize: '0.8125rem', color: '#64748b' }}>
-            Chaque profil détermine la liste des modules accessibles pour les membres attribués.
+            Les droits des profils sont appliqués par les règles de la base Neon.
           </p>
         </div>
       </div>
@@ -101,14 +99,7 @@ export const AccessProfilesTab: React.FC<AccessProfilesTabProps> = ({
                   <span>{userCount} membre{userCount > 1 ? 's' : ''}</span>
                 </div>
 
-                <button
-                  type="button"
-                  className="btn btn-outline-primary btn-sm fw-bold"
-                  onClick={() => onEditProfile(profile)}
-                  style={{ borderRadius: 8, padding: '7px 18px', display: 'flex', alignItems: 'center', gap: 6 }}
-                >
-                  <Edit3 size={14} /> Modifier les accès
-                </button>
+                <span className="badge badge-neutral">Droits définis en base</span>
               </div>
             </div>
           );

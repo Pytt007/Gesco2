@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ExpenseDashboardStats, ExpenseFilter } from '../../services/expenses/types';
 import { expenseService } from '../../services/expenses/expenseService';
 
-export function useExpenseDashboard(academicYearId: string = 'ay-2026') {
+export function useExpenseDashboard(academicYearId: string = '') {
   const [stats, setStats] = useState<ExpenseDashboardStats>({
     totalMonth: 0,
     totalYear: 0,
@@ -32,14 +32,23 @@ export function useExpenseDashboard(academicYearId: string = 'ay-2026') {
     setLoading(true);
     setError(null);
     try {
+      if (!academicYearId.trim()) {
+        setStats({
+          totalMonth: 0, totalYear: 0, annualBudget: 0, remainingBudget: 0,
+          totalExpenseCount: 0, averagePerMonth: 0, budgetUsedPct: 0,
+          monthlyEvolution: [], categoryDistribution: [], topExpenses: [], alerts: [],
+        });
+        return;
+      }
       const data = await expenseService.getDashboardStats({
         academicYearId,
         categoryId: selectedCategory,
         month: selectedMonth || undefined,
       });
       setStats(data);
-    } catch {
-      setError('Erreur lors du calcul des statistiques des dépenses.');
+    } catch (cause) {
+      console.error('Statistiques des dépenses indisponibles', cause instanceof Error ? cause.message : JSON.stringify(cause));
+      setError('Impossible de charger les statistiques des dépenses depuis Neon.');
     } finally {
       setLoading(false);
     }

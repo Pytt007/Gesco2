@@ -50,7 +50,7 @@ export interface AssessmentSessionFilters {
   searchQuery?: string;
   page?: number;
   pageSize?: number;
-  sortBy?: 'title' | 'startDate' | 'createdAt' | 'status';
+  sortBy?: 'title' | 'endDate' | 'startDate' | 'createdAt' | 'status';
   sortOrder?: 'asc' | 'desc';
 }
 

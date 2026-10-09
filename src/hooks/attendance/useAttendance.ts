@@ -46,8 +46,10 @@ export function useAttendance(academicYearId: string = '') {
     try {
       const hist = await attendanceService.getAttendanceHistory({ academicYearId, classId: selectedClassId });
       setHistory(hist);
-    } catch { /* Fallback */ }
-  }, [academicYearId, selectedClassId]);
+    } catch {
+      showToast('Impossible de charger l’historique des présences depuis Neon.', 'error');
+    }
+  }, [academicYearId, selectedClassId, showToast]);
 
   useEffect(() => {
     loadSheet();

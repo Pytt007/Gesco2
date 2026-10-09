@@ -41,7 +41,7 @@ export interface StaffMember {
   firstName: string;
   lastName: string;
   middleName?: string;
-  gender: 'Masculin' | 'Féminin';
+  gender?: 'Masculin' | 'Féminin';
   role: StaffRole;
   departmentId?: string;
   departmentName?: string;
@@ -61,7 +61,7 @@ export interface StaffMember {
   nationality?: string;
   avatarUrl?: string;
   baseSalary?: number;
-  hireDate: string;
+  hireDate?: string;
   status: StaffStatus;
   contractType?: 'CDI' | 'CDD' | 'Vacataire' | 'Stage' | 'Prestation';
   createdAt?: string;
@@ -103,139 +103,74 @@ function createError<T>(error: any, fallbackMessage: string): ServiceResponse<T>
   return { success: false, error: errMsg };
 }
 
-// Données initiales vierges
-const INITIAL_STAFF: StaffMember[] = [];
-const localStaffCache: Map<string, StaffMember> = new Map(INITIAL_STAFF.map(s => [s.id, s]));
+const localStaffCache: Map<string, StaffMember> = new Map();
 
 /**
- * Charge le personnel depuis Supabase
+ * Charge le personnel depuis Neon. Le cache n'est jamais une source de secours.
  */
-async function syncStaffFromSupabase(): Promise<StaffMember[]> {
-  try {
-    // 1. Tenter la lecture dans school_settings (données riches complètes)
-    const { data: settingsRow } = await supabase
-      .from('school_settings')
-      .select('data')
-      .eq('id', 'staff_members_data')
-      .maybeSingle();
-
-    let fullList: StaffMember[] = [];
-    if (settingsRow?.data && Array.isArray(settingsRow.data)) {
-      fullList = settingsRow.data;
-    }
-
-    // Chargement paginé sans limite arbitraire (toutes les pages de 500 lignes)
-    const PAGE_SIZE_STAFF = 500;
-    let staffOffset = 0;
-    let allStaffRows: any[] = [];
-    let staffFetching = true;
-    while (staffFetching) {
-      const { data: dbRows, error: dbErr } = await supabase
-        .from('staff_members')
-        .select('*')
-        .range(staffOffset, staffOffset + PAGE_SIZE_STAFF - 1);
-      if (dbErr || !Array.isArray(dbRows) || dbRows.length === 0) {
-        staffFetching = false;
-      } else {
-        allStaffRows = allStaffRows.concat(dbRows);
-        staffOffset += PAGE_SIZE_STAFF;
-        if (dbRows.length < PAGE_SIZE_STAFF) staffFetching = false;
-      }
-    }
-
-    if (!allStaffRows.length) {
-      staffFetching = false; // already false, for clarity
-    }
-
-    if (Array.isArray(allStaffRows) && allStaffRows.length > 0) {
-      for (const row of allStaffRows) {
-        const existingIdx = fullList.findIndex((m) => m.id === row.id);
-        const mappedRole: StaffRole =
-          row.role === 'TEACHER' ? 'Enseignant' :
-          row.role === 'DIRECTOR' ? 'Directeur' :
-          (row.role as StaffRole) || 'Enseignant';
-
-        const mapped: StaffMember = {
-          id: row.id,
-          employeeNumber: `EMP-${row.id.slice(0, 6)}`,
-          firstName: row.first_name || '',
-          lastName: row.last_name || '',
-          gender: 'Masculin',
-          role: mappedRole,
-          phonePrimary: row.phone || '',
-          email: row.email || '',
-          baseSalary: row.base_salary || 200000,
-          hireDate: row.hire_date || new Date().toISOString().split('T')[0],
-          status: row.status === 'ACTIVE' ? 'Actif' : 'Inactif',
-          createdAt: row.created_at || new Date().toISOString(),
-          updatedAt: row.updated_at || new Date().toISOString(),
-        };
-
-        if (existingIdx >= 0) {
-          fullList[existingIdx] = { ...mapped, ...fullList[existingIdx] };
-        } else {
-          fullList.push(mapped);
-        }
-      }
-    }
-
-    // Mettre à jour le cache local
-    if (fullList.length > 0) {
-      localStaffCache.clear();
-      for (const item of fullList) {
-        localStaffCache.set(item.id, item);
-      }
-      return fullList;
-    }
-    return Array.from(localStaffCache.values());
-  } catch (err) {
-    console.warn('[staffService] syncStaffFromSupabase warning:', err);
-    return Array.from(localStaffCache.values());
+async function syncStaffFromNeon(): Promise<StaffMember[]> {
+  const allStaffRows: any[] = [];
+  const pageSize = 500;
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase.from('staff_members').select('*').range(offset, offset + pageSize - 1);
+    if (error) throw new Error(error.message);
+    if (!Array.isArray(data)) throw new Error('Réponse Neon invalide pour le personnel.');
+    allStaffRows.push(...data);
+    if (data.length < pageSize) break;
   }
+
+  const staff = allStaffRows.map((row): StaffMember => {
+    const details = row.data && typeof row.data === 'object' && !Array.isArray(row.data) ? row.data : {};
+    const mappedRole: StaffRole = row.role === 'TEACHER' ? 'Enseignant'
+      : row.role === 'DIRECTOR' ? 'Directeur' : (row.role as StaffRole) || 'Enseignant';
+    return {
+      ...details,
+      id: row.id,
+      employeeNumber: details.employeeNumber || `EMP-${row.id.slice(0, 6)}`,
+      firstName: row.first_name || '',
+      lastName: row.last_name || '',
+      gender: details.gender,
+      role: details.role || mappedRole,
+      phonePrimary: details.phonePrimary || row.phone || '',
+      email: row.email || '',
+      baseSalary: row.base_salary ?? 0,
+      hireDate: row.hire_date || details.hireDate || '',
+      status: details.status || (row.status === 'ACTIVE' ? 'Actif' : 'Inactif'),
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  });
+  localStaffCache.clear();
+  for (const member of staff) localStaffCache.set(member.id, member);
+  return staff;
 }
 
-async function persistStaffToSupabase(member: StaffMember, allMembers?: StaffMember[]) {
-  const currentList = allMembers || Array.from(localStaffCache.values());
+async function persistStaffToNeon(member: StaffMember): Promise<void> {
+  const rawRole = String(member.role || '').toUpperCase();
+  const sqlRole =
+    rawRole.includes('TEACHER') || rawRole.includes('ENSEIGN') ? 'TEACHER' :
+    rawRole.includes('DIRECTOR') || rawRole.includes('DIRECT') ? 'DIRECTOR' :
+    rawRole.includes('DRIVER') || rawRole.includes('CHAUFF') ? 'DRIVER' :
+    rawRole.includes('COOK') || rawRole.includes('CUISIN') ? 'COOK' : 'STAFF';
 
-  // 1. Sauvegarder dans school_settings (garantit tous les champs personnalisés)
-  try {
-    await supabase
-      .from('school_settings')
-      .upsert({
-        id: 'staff_members_data',
-        data: currentList,
-        updated_at: new Date().toISOString()
-      });
-  } catch (e) {
-    console.warn('[staffService] school_settings persist warning:', e);
-  }
+  const { data, error } = await supabase.from('staff_members').upsert({
+    id: member.id,
+    first_name: member.firstName,
+    last_name: member.lastName,
+    email: member.email || null,
+    phone: member.phonePrimary || member.phone || null,
+    role: sqlRole,
+    specialty: member.jobTitle || member.positionTitle || null,
+    hire_date: member.hireDate || null,
+    base_salary: member.baseSalary ?? 0,
+    status: member.status === 'Actif' ? 'ACTIVE' : 'INACTIVE',
+    data: member,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'id' }).select('id').single();
+  if (error) throw new Error(error.message);
+  if (data?.id !== member.id) throw new Error('Enregistrement du personnel non confirmé par Neon.');
 
-  try {
-    const rawRole = String(member.role || '').toUpperCase();
-    const sqlRole =
-      rawRole.includes('TEACHER') || rawRole.includes('ENSEIGN') ? 'TEACHER' :
-      rawRole.includes('DIRECTOR') || rawRole.includes('DIRECT') ? 'DIRECTOR' :
-      rawRole.includes('DRIVER') || rawRole.includes('CHAUFF') ? 'DRIVER' :
-      rawRole.includes('COOK') || rawRole.includes('CUISIN') ? 'COOK' : 'STAFF';
-
-    await supabase.from('staff_members').upsert({
-      id: member.id,
-      first_name: member.firstName,
-      last_name: member.lastName,
-      email: member.email || null,
-      phone: member.phonePrimary || member.phone || null,
-      role: sqlRole,
-      specialty: member.jobTitle || member.positionTitle || null,
-      hire_date: member.hireDate || new Date().toISOString().split('T')[0],
-      base_salary: member.baseSalary ?? 0,
-      status: member.status === 'Actif' || member.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'id' });
-  } catch (e) {
-    console.warn('[staffService] staff_members SQL persist warning:', e);
-  }
-
-  // Diffuser en temps réel aux autres utilisateurs
+  localStaffCache.set(member.id, member);
   broadcastDataChange('staff_members', 'update', member);
 }
 
@@ -249,7 +184,7 @@ export async function createStaff(staffData: Partial<StaffMember>): Promise<Serv
     }
 
     // Synchroniser d'abord pour avoir la liste à jour
-    await syncStaffFromSupabase();
+    await syncStaffFromNeon();
 
     const phone = (staffData.phonePrimary || staffData.phone || '').trim();
     const email = staffData.email?.trim().toLowerCase();
@@ -277,7 +212,7 @@ export async function createStaff(staffData: Partial<StaffMember>): Promise<Serv
     }
 
     const newId = staffData.id || crypto.randomUUID();
-    const cleanFirstName = (staffData.firstName?.trim() || staffData.lastName?.trim() || 'Employé');
+    const cleanFirstName = staffData.firstName?.trim() || '';
     const cleanLastName = (staffData.lastName?.trim() || '');
     const cleanTitle = (staffData.jobTitle || staffData.positionTitle || '').trim();
 
@@ -287,7 +222,7 @@ export async function createStaff(staffData: Partial<StaffMember>): Promise<Serv
       firstName: cleanFirstName,
       lastName: cleanLastName,
       middleName: staffData.middleName?.trim() || '',
-      gender: staffData.gender || 'Masculin',
+      gender: staffData.gender,
       role: staffData.role || 'Enseignant',
       departmentId: staffData.departmentId || '',
       departmentName: staffData.departmentName || '',
@@ -299,18 +234,17 @@ export async function createStaff(staffData: Partial<StaffMember>): Promise<Serv
       phoneSecondary: staffData.phoneSecondary?.trim() || '',
       email: email || '',
       address: staffData.address?.trim() || '',
-      cityDistrict: staffData.cityDistrict?.trim() || 'Abidjan',
+      cityDistrict: staffData.cityDistrict?.trim() || '',
       avatarUrl: staffData.avatarUrl?.trim() || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(newId)}`,
-      baseSalary: staffData.baseSalary !== undefined ? Number(staffData.baseSalary) : 200000,
-      hireDate: staffData.hireDate || new Date().toISOString().split('T')[0],
+      baseSalary: staffData.baseSalary !== undefined ? Number(staffData.baseSalary) : 0,
+      hireDate: staffData.hireDate,
       status: staffData.status || 'Actif',
-      contractType: staffData.contractType || 'CDI',
+      contractType: staffData.contractType,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    localStaffCache.set(newId, created);
-    await persistStaffToSupabase(created);
+    await persistStaffToNeon(created);
 
     return createSuccess(created, 'Membre du personnel créé avec succès.');
   } catch (err) {
@@ -323,7 +257,7 @@ export async function createStaff(staffData: Partial<StaffMember>): Promise<Serv
  */
 export async function updateStaff(id: string, updates: Partial<StaffMember>): Promise<ServiceResponse<StaffMember>> {
   try {
-    await syncStaffFromSupabase();
+    await syncStaffFromNeon();
     const cached = localStaffCache.get(id);
     if (!cached) return createError(null, 'Employé introuvable.');
 
@@ -332,8 +266,7 @@ export async function updateStaff(id: string, updates: Partial<StaffMember>): Pr
     }
 
     const updated = { ...cached, ...updates, updatedAt: new Date().toISOString() };
-    localStaffCache.set(id, updated);
-    await persistStaffToSupabase(updated);
+    await persistStaffToNeon(updated);
 
     return createSuccess(updated, 'Mise à jour réussie.');
   } catch (err) {
@@ -343,42 +276,37 @@ export async function updateStaff(id: string, updates: Partial<StaffMember>): Pr
 
 export async function archiveStaff(id: string): Promise<ServiceResponse<boolean>> {
   if (!id?.trim()) return createError(null, 'Identifiant manquant.');
-  await syncStaffFromSupabase();
-  const cached = localStaffCache.get(id);
-  if (cached) {
+  try {
+    await syncStaffFromNeon();
+    const cached = localStaffCache.get(id);
+    if (!cached) return createError(null, 'Introuvable.');
     const updated = { ...cached, status: 'Archivé' as StaffStatus, archivedAt: new Date().toISOString() };
-    localStaffCache.set(id, updated);
-    await persistStaffToSupabase(updated);
+    await persistStaffToNeon(updated);
     return createSuccess(true, 'Archivé.');
-  }
-  return createError(null, 'Introuvable.');
+  } catch (err) { return createError(err, 'Archivage impossible.'); }
 }
 
 export async function restoreStaff(id: string): Promise<ServiceResponse<boolean>> {
   if (!id?.trim()) return createError(null, 'Identifiant manquant.');
-  await syncStaffFromSupabase();
-  const cached = localStaffCache.get(id);
-  if (cached) {
+  try {
+    await syncStaffFromNeon();
+    const cached = localStaffCache.get(id);
+    if (!cached) return createError(null, 'Introuvable.');
     const updated = { ...cached, status: 'Actif' as StaffStatus };
-    localStaffCache.set(id, updated);
-    await persistStaffToSupabase(updated);
+    await persistStaffToNeon(updated);
     return createSuccess(true, 'Restauré.');
-  }
-  return createError(null, 'Introuvable.');
+  } catch (err) { return createError(err, 'Restauration impossible.'); }
 }
 
 export async function deleteStaff(id: string): Promise<ServiceResponse<boolean>> {
   if (!id?.trim()) return createError(null, 'Identifiant manquant.');
   try {
-    await syncStaffFromSupabase();
+    await syncStaffFromNeon();
+    if (!localStaffCache.has(id)) return createError(null, 'Employé introuvable.');
+    const { data, error } = await supabase.from('staff_members').delete().eq('id', id).select('id').single();
+    if (error) throw new Error(error.message);
+    if (data?.id !== id) throw new Error('Suppression du personnel non confirmée par Neon.');
     localStaffCache.delete(id);
-    try {
-      await supabase.from('staff_members').delete().eq('id', id);
-    } catch (err) {
-      console.warn('[staffService:deleteStaff] Supabase delete fallback:', err);
-    }
-    const currentList = Array.from(localStaffCache.values());
-    await persistStaffToSupabase({ id } as any, currentList);
     broadcastDataChange('staff', 'delete', { id });
     return createSuccess(true, 'Membre du personnel supprimé.');
   } catch (err) {
@@ -388,18 +316,20 @@ export async function deleteStaff(id: string): Promise<ServiceResponse<boolean>>
 
 export async function getStaffById(id: string): Promise<ServiceResponse<StaffMember>> {
   if (!id?.trim()) return createError(null, 'Identifiant manquant.');
-  await syncStaffFromSupabase();
-  const cached = localStaffCache.get(id);
-  if (cached) return createSuccess(cached);
-  return createError(null, 'Introuvable.');
+  try {
+    await syncStaffFromNeon();
+    const cached = localStaffCache.get(id);
+    if (cached) return createSuccess(cached);
+    return createError(null, 'Introuvable.');
+  } catch (err) { return createError(err, 'Chargement impossible.'); }
 }
 
 export async function listStaff(filters: StaffFilters = {}): Promise<ServiceResponse<StaffListResult>> {
   try {
     const { page = 1, pageSize = 50, searchQuery, role = 'all', status = 'all', sortBy = 'lastName', sortOrder = 'asc' } = filters;
     
-    // Toujours synchroniser avec Supabase
-    const list = await syncStaffFromSupabase();
+    // Toujours synchroniser avec Neon.
+    const list = await syncStaffFromNeon();
     let rawList = [...list];
 
     if (role && role !== 'all') {

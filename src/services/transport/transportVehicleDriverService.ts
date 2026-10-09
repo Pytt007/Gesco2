@@ -1,164 +1,80 @@
-/**
- * GESCO — Service Véhicules & Chauffeurs Transport
- */
-
-import {
-  TransportVehicle,
-  TransportVehicleInput,
-  TransportDriver,
-  TransportDriverInput,
-} from './types';
+import { TransportVehicle, TransportVehicleInput, TransportDriver, TransportDriverInput } from './types';
 import { ServiceResponse } from '../academic/academicYearsService';
-import { supabase } from '../common/supabaseClient';
+import { readRows, insertRow, updateRow, deleteRow, ok, failure } from '../common/remoteRows';
 
-// ─── Stockage local ───────────────────────────────────────────────────────────
-
-const vehicleStore: Map<string, TransportVehicle> = new Map();
-const driverStore: Map<string, TransportDriver> = new Map();
-
-export function clearTransportVehiclesStore() { vehicleStore.clear(); }
-export function clearTransportDriversStore()  { driverStore.clear(); }
-
-
-
-// ─── Service Véhicules ────────────────────────────────────────────────────────
-
+// Compatibility for callers that used to clear an in-memory cache.
+export function clearTransportVehiclesStore() {}
+export function clearTransportDriversStore() {}
+const vehicleFromRow = (r: any): TransportVehicle => ({
+  id: r.id, name: r.name, brand: r.brand || '', model: r.model || '',
+  licensePlate: r.license_plate, capacity: Number(r.capacity),
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+const driverFromRow = (r: any): TransportDriver => ({
+  id: r.id, name: r.name, phone: r.phone, createdAt: r.created_at, updatedAt: r.updated_at,
+});
+function vehicleFields(input: Partial<TransportVehicleInput>): Record<string, unknown> {
+  const row: Record<string, unknown> = {};
+  if (input.name !== undefined) {
+    if (!input.name.trim()) throw new Error('Le nom du véhicule est obligatoire.');
+    row.name = input.name.trim();
+  }
+  if (input.licensePlate !== undefined) {
+    if (!input.licensePlate.trim()) throw new Error("L'immatriculation est obligatoire.");
+    row.license_plate = input.licensePlate.trim().toUpperCase();
+  }
+  if (input.capacity !== undefined) {
+    if (!Number.isInteger(input.capacity) || input.capacity <= 0) throw new Error('La capacité doit être un entier supérieur à 0.');
+    row.capacity = input.capacity;
+  }
+  if (input.brand !== undefined) row.brand = input.brand.trim();
+  if (input.model !== undefined) row.model = input.model.trim();
+  return row;
+}
+function driverFields(input: Partial<TransportDriverInput>): Record<string, unknown> {
+  const row: Record<string, unknown> = {};
+  if (input.name !== undefined) {
+    if (!input.name.trim()) throw new Error('Le nom du chauffeur est obligatoire.');
+    row.name = input.name.trim();
+  }
+  if (input.phone !== undefined) {
+    if (!input.phone.trim()) throw new Error('Le numéro de téléphone est obligatoire.');
+    row.phone = input.phone.trim();
+  }
+  if (input.licenseNumber !== undefined) row.license_number = input.licenseNumber.trim();
+  return row;
+}
 export const transportVehicleService = {
-
   async getAll(): Promise<TransportVehicle[]> {
-
-    try {
-      if (supabase) {
-        const { data, error } = await supabase.from('transport_vehicles').select('*');
-        if (!error && data && data.length > 0) {
-          return data.map((d: any) => ({
-            id: d.id, name: d.name, brand: d.brand, model: d.model,
-            licensePlate: d.license_plate, capacity: Number(d.capacity),
-            createdAt: d.created_at, updatedAt: d.updated_at,
-          }));
-        }
-      }
-    } catch { /* Fallback local */ }
-
-    return Array.from(vehicleStore.values());
+    return (await readRows('transport_vehicles')).map(vehicleFromRow);
   },
-
   async create(input: TransportVehicleInput): Promise<ServiceResponse<TransportVehicle>> {
-
-    if (!input.name.trim()) return { success: false, error: 'Le nom du véhicule est obligatoire.' };
-    if (!input.licensePlate.trim()) return { success: false, error: "L'immatriculation est obligatoire." };
-    if (input.capacity <= 0) return { success: false, error: 'La capacité doit être supérieure à 0.' };
-
-    // Immatriculation unique
-    const existing = Array.from(vehicleStore.values());
-    if (existing.some((v) => v.licensePlate.toLowerCase() === input.licensePlate.trim().toLowerCase())) {
-      return { success: false, error: `L'immatriculation ${input.licensePlate} est déjà enregistrée.` };
-    }
-
-    const id = `veh-${Date.now()}`;
-    const vehicle: TransportVehicle = {
-      id,
-      name: input.name.trim(),
-      brand: input.brand?.trim() || '',
-      model: input.model?.trim() || '',
-      licensePlate: input.licensePlate.trim().toUpperCase(),
-      capacity: Number(input.capacity),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    vehicleStore.set(id, vehicle);
-    return { success: true, data: vehicle, message: 'Véhicule enregistré avec succès.' };
+    try { return ok(vehicleFromRow(await insertRow('transport_vehicles', vehicleFields(input))), 'Véhicule enregistré.'); }
+    catch (error) { return failure(error); }
   },
-
   async update(id: string, input: Partial<TransportVehicleInput>): Promise<ServiceResponse<TransportVehicle>> {
-    const existing = vehicleStore.get(id);
-    if (!existing) return { success: false, error: 'Véhicule introuvable.' };
-
-    if (input.capacity !== undefined && input.capacity <= 0) {
-      return { success: false, error: 'La capacité doit être supérieure à 0.' };
-    }
-
-    // Immatriculation unique (hors lui-même)
-    if (input.licensePlate) {
-      const all = Array.from(vehicleStore.values());
-      if (all.some((v) => v.id !== id && v.licensePlate.toLowerCase() === input.licensePlate!.trim().toLowerCase())) {
-        return { success: false, error: `L'immatriculation ${input.licensePlate} est déjà utilisée.` };
-      }
-    }
-
-    const updated: TransportVehicle = {
-      ...existing,
-      ...input,
-      licensePlate: (input.licensePlate || existing.licensePlate).toUpperCase(),
-      updatedAt: new Date().toISOString(),
-    };
-    vehicleStore.set(id, updated);
-    return { success: true, data: updated, message: 'Véhicule mis à jour.' };
+    try { return ok(vehicleFromRow(await updateRow('transport_vehicles', id, { ...vehicleFields(input), updated_at: new Date().toISOString() })), 'Véhicule mis à jour.'); }
+    catch (error) { return failure(error); }
   },
-
   async delete(id: string): Promise<ServiceResponse<boolean>> {
-    if (!vehicleStore.has(id)) return { success: false, error: 'Véhicule introuvable.' };
-    vehicleStore.delete(id);
-    return { success: true, data: true, message: 'Véhicule supprimé.' };
+    try { await deleteRow('transport_vehicles', id); return ok(true, 'Véhicule supprimé.'); }
+    catch (error) { return failure(error); }
   },
 };
-
-// ─── Service Chauffeurs ───────────────────────────────────────────────────────
-
 export const transportDriverService = {
-
   async getAll(): Promise<TransportDriver[]> {
-
-    try {
-      if (supabase) {
-        const { data, error } = await supabase.from('transport_drivers').select('*');
-        if (!error && data && data.length > 0) {
-          return data.map((d: any) => ({
-            id: d.id, name: d.name, phone: d.phone,
-            createdAt: d.created_at, updatedAt: d.updated_at,
-          }));
-        }
-      }
-    } catch { /* Fallback local */ }
-
-    return Array.from(driverStore.values());
+    return (await readRows('transport_drivers')).map(driverFromRow);
   },
-
   async create(input: TransportDriverInput): Promise<ServiceResponse<TransportDriver>> {
-
-    if (!input.name.trim()) return { success: false, error: 'Le nom du chauffeur est obligatoire.' };
-    if (!input.phone.trim()) return { success: false, error: 'Le numéro de téléphone est obligatoire.' };
-
-    const id = `drv-${Date.now()}`;
-    const driver: TransportDriver = {
-      id,
-      name: input.name.trim(),
-      phone: input.phone.trim(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    driverStore.set(id, driver);
-    return { success: true, data: driver, message: 'Chauffeur enregistré avec succès.' };
+    try { return ok(driverFromRow(await insertRow('transport_drivers', driverFields(input))), 'Chauffeur enregistré.'); }
+    catch (error) { return failure(error); }
   },
-
   async update(id: string, input: Partial<TransportDriverInput>): Promise<ServiceResponse<TransportDriver>> {
-    const existing = driverStore.get(id);
-    if (!existing) return { success: false, error: 'Chauffeur introuvable.' };
-
-    const updated: TransportDriver = {
-      ...existing,
-      ...input,
-      updatedAt: new Date().toISOString(),
-    };
-    driverStore.set(id, updated);
-    return { success: true, data: updated, message: 'Chauffeur mis à jour.' };
+    try { return ok(driverFromRow(await updateRow('transport_drivers', id, { ...driverFields(input), updated_at: new Date().toISOString() })), 'Chauffeur mis à jour.'); }
+    catch (error) { return failure(error); }
   },
-
   async delete(id: string): Promise<ServiceResponse<boolean>> {
-    if (!driverStore.has(id)) return { success: false, error: 'Chauffeur introuvable.' };
-    driverStore.delete(id);
-    return { success: true, data: true, message: 'Chauffeur supprimé.' };
+    try { await deleteRow('transport_drivers', id); return ok(true, 'Chauffeur supprimé.'); }
+    catch (error) { return failure(error); }
   },
 };

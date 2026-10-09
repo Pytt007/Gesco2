@@ -5,7 +5,7 @@ import { TuitionPaymentView } from '../components/finance/TuitionPaymentView';
 import { FinancialTrackingView } from '../components/finance/FinancialTrackingView';
 import { StudentRegistrationWizard } from '../components/students/StudentRegistrationWizard';
 import { GraduationCap, CreditCard, BarChart3, Settings, Plus } from 'lucide-react';
-import { useRealtimeSync } from '../hooks/useRealtimeSync';
+
 
 type ScolarityTab = 'PAYMENT_RECORD' | 'CONFIG' | 'PAYMENTS';
 
@@ -19,16 +19,10 @@ export default function ScolarityPage({ defaultTab }: { defaultTab?: ScolarityTa
   const { schoolYear } = useSchoolYear();
   const [activeTab, setActiveTab] = useState<ScolarityTab>(defaultTab || 'PAYMENT_RECORD');
   const [showRegistrationWizard, setShowRegistrationWizard] = useState<boolean>(false);
-  const [syncKey, setSyncKey] = useState(0);
-
-  // Synchronisation temps réel automatique
-  useRealtimeSync({
-    tables: ['school_settings', 'tuition_payments', 'students'],
-    onDataChange: () => setSyncKey((prev) => prev + 1),
-  });
+  // Keep mounted forms intact; each view refreshes its data after saving.
 
   return (
-    <div key={syncKey} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
       {/* ── BANNIÈRE HERO SAAS ─────────────────────────────────────────────── */}
       <div
@@ -133,3 +127,4 @@ export default function ScolarityPage({ defaultTab }: { defaultTab?: ScolarityTa
     </div>
   );
 }
+
