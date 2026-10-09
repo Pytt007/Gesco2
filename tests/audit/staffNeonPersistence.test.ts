@@ -70,4 +70,23 @@ describe('personnel conservé dans Neon', () => {
     database.failRead = true;
     expect((await listStaff()).success).toBe(false);
   });
+
+  it('ne fabrique pas de prénom, salaire, ville, genre ou contrat absents', async () => {
+    const saved = await createStaff({ lastName: 'Koné' });
+    expect(saved.success).toBe(true);
+    expect(database.rows[0]).toMatchObject({
+      first_name: '',
+      last_name: 'Koné',
+      base_salary: 0,
+      hire_date: null,
+    });
+    expect(database.rows[0].data).toMatchObject({
+      firstName: '',
+      lastName: 'Koné',
+      baseSalary: 0,
+      cityDistrict: '',
+    });
+    expect(database.rows[0].data.gender).toBeUndefined();
+    expect(database.rows[0].data.contractType).toBeUndefined();
+  });
 });

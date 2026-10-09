@@ -41,7 +41,7 @@ export interface StaffMember {
   firstName: string;
   lastName: string;
   middleName?: string;
-  gender: 'Masculin' | 'Féminin';
+  gender?: 'Masculin' | 'Féminin';
   role: StaffRole;
   departmentId?: string;
   departmentName?: string;
@@ -61,7 +61,7 @@ export interface StaffMember {
   nationality?: string;
   avatarUrl?: string;
   baseSalary?: number;
-  hireDate: string;
+  hireDate?: string;
   status: StaffStatus;
   contractType?: 'CDI' | 'CDD' | 'Vacataire' | 'Stage' | 'Prestation';
   createdAt?: string;
@@ -129,7 +129,7 @@ async function syncStaffFromNeon(): Promise<StaffMember[]> {
       employeeNumber: details.employeeNumber || `EMP-${row.id.slice(0, 6)}`,
       firstName: row.first_name || '',
       lastName: row.last_name || '',
-      gender: details.gender || 'Masculin',
+      gender: details.gender,
       role: details.role || mappedRole,
       phonePrimary: details.phonePrimary || row.phone || '',
       email: row.email || '',
@@ -161,7 +161,7 @@ async function persistStaffToNeon(member: StaffMember): Promise<void> {
     phone: member.phonePrimary || member.phone || null,
     role: sqlRole,
     specialty: member.jobTitle || member.positionTitle || null,
-    hire_date: member.hireDate || new Date().toISOString().split('T')[0],
+    hire_date: member.hireDate || null,
     base_salary: member.baseSalary ?? 0,
     status: member.status === 'Actif' ? 'ACTIVE' : 'INACTIVE',
     data: member,
@@ -212,7 +212,7 @@ export async function createStaff(staffData: Partial<StaffMember>): Promise<Serv
     }
 
     const newId = staffData.id || crypto.randomUUID();
-    const cleanFirstName = (staffData.firstName?.trim() || staffData.lastName?.trim() || 'Employé');
+    const cleanFirstName = staffData.firstName?.trim() || '';
     const cleanLastName = (staffData.lastName?.trim() || '');
     const cleanTitle = (staffData.jobTitle || staffData.positionTitle || '').trim();
 
@@ -222,7 +222,7 @@ export async function createStaff(staffData: Partial<StaffMember>): Promise<Serv
       firstName: cleanFirstName,
       lastName: cleanLastName,
       middleName: staffData.middleName?.trim() || '',
-      gender: staffData.gender || 'Masculin',
+      gender: staffData.gender,
       role: staffData.role || 'Enseignant',
       departmentId: staffData.departmentId || '',
       departmentName: staffData.departmentName || '',
@@ -234,12 +234,12 @@ export async function createStaff(staffData: Partial<StaffMember>): Promise<Serv
       phoneSecondary: staffData.phoneSecondary?.trim() || '',
       email: email || '',
       address: staffData.address?.trim() || '',
-      cityDistrict: staffData.cityDistrict?.trim() || 'Abidjan',
+      cityDistrict: staffData.cityDistrict?.trim() || '',
       avatarUrl: staffData.avatarUrl?.trim() || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(newId)}`,
-      baseSalary: staffData.baseSalary !== undefined ? Number(staffData.baseSalary) : 200000,
-      hireDate: staffData.hireDate || new Date().toISOString().split('T')[0],
+      baseSalary: staffData.baseSalary !== undefined ? Number(staffData.baseSalary) : 0,
+      hireDate: staffData.hireDate,
       status: staffData.status || 'Actif',
-      contractType: staffData.contractType || 'CDI',
+      contractType: staffData.contractType,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

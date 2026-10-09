@@ -78,10 +78,10 @@ export default function StaffPage() {
     firstName: '',
     lastName: '',
     role: 'Enseignant',
-    jobTitle: 'Enseignant Titulaire',
+    jobTitle: '',
     phone: '',
     email: '',
-    baseSalary: 250000,
+    baseSalary: 0,
     status: 'Actif',
   });
 
@@ -109,7 +109,7 @@ export default function StaffPage() {
     }
 
     const cleanLastName = (form.lastName || '').trim();
-    const cleanFirstName = (form.firstName || cleanLastName || 'Employé').trim();
+    const cleanFirstName = (form.firstName || '').trim();
     const phoneVal = (form.phone || form.phonePrimary || '').trim();
     const cleanTitle = (form.jobTitle || form.positionTitle || '').trim();
 
@@ -121,7 +121,7 @@ export default function StaffPage() {
       phonePrimary: phoneVal,
       jobTitle: cleanTitle,
       positionTitle: cleanTitle,
-      baseSalary: form.baseSalary !== undefined ? Number(form.baseSalary) : 250000,
+      baseSalary: form.baseSalary !== undefined ? Number(form.baseSalary) : 0,
       role: form.role || 'Enseignant',
     };
 
@@ -464,7 +464,7 @@ export default function StaffPage() {
                   </div>
                   <div style={{ gridColumn: 'span 2' }}>
                     <label className="form-label">Salaire de Base Mensuel (FCFA)</label>
-                    <input type="number" className="form-input" value={form.baseSalary ?? 250000} onChange={(e) => setForm({ ...form, baseSalary: Number(e.target.value) })} />
+                    <input type="number" min="0" className="form-input" value={form.baseSalary ?? 0} onChange={(e) => setForm({ ...form, baseSalary: Number(e.target.value) })} />
                   </div>
                 </div>
               )}
