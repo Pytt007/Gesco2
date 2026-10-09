@@ -1,25 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Users, Shield } from 'lucide-react';
 import { useUsers } from '../../../hooks/users';
-import { useRoles } from '../../../hooks/users';
 import { UserAccount, UserRole } from '../../../types';
 import { useToast } from '../../../context/ToastContext';
 import { useConfirm } from '../../../context/ConfirmContext';
 import { UsersListTab } from './UsersListTab';
 import { AccessProfilesTab } from './AccessProfilesTab';
-import { UserModal, ProfileOption, DEFAULT_PROFILES } from './UserModal';
-import { EditProfileModal } from './EditProfileModal';
-import { supabase } from '../../../services/common/supabaseClient';
+import { UserModal, DEFAULT_PROFILES } from './UserModal';
 
 type ActiveTab = 'USERS' | 'PROFILES';
-
-const DEFAULT_PROFILE_MODULES_MAP: Record<string, string[]> = {
-  ADMIN_GENERALE: ['STUDENTS', 'CLASSES', 'TEACHERS', 'GRADES', 'REPORTS', 'DISCIPLINE', 'LIBRARY', 'FINANCE', 'CANTEEN', 'TRANSPORT', 'SETTINGS', 'USERS'],
-  SCOLAIRE_ADMIN: ['STUDENTS', 'CLASSES', 'TEACHERS', 'GRADES', 'REPORTS', 'DISCIPLINE'],
-  FINANCE: ['FINANCE', 'CANTEEN', 'TRANSPORT'],
-  CANTINE_TRANSPORT: ['CANTEEN', 'TRANSPORT'],
-  SCOLAIRE_ENSEIGNANT: ['GRADES', 'STUDENTS'],
-};
 
 export const UsersAccessLayout: React.FC = () => {
   const { addNotification } = useToast();
@@ -35,46 +24,9 @@ export const UsersAccessLayout: React.FC = () => {
     archiveUser,
   } = useUsers({ pageSize: 100 });
 
-  const { roles } = useRoles();
-
   const [activeTab, setActiveTab] = useState<ActiveTab>('USERS');
   const [showUserModal, setShowUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState<UserAccount | null>(null);
-
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const [editingProfile, setEditingProfile] = useState<ProfileOption | null>(null);
-
-  const [profileModulesMap, setProfileModulesMap] = useState<Record<string, string[]>>(() => {
-    try {
-      const saved = localStorage.getItem('gesco_profile_modules');
-      return saved ? { ...DEFAULT_PROFILE_MODULES_MAP, ...JSON.parse(saved) } : DEFAULT_PROFILE_MODULES_MAP;
-    } catch {
-      return DEFAULT_PROFILE_MODULES_MAP;
-    }
-  });
-
-  // Charger la configuration des profils depuis Supabase
-  useEffect(() => {
-    async function loadProfileModules() {
-      try {
-        const { data, error } = await supabase
-          .from('school_settings')
-          .select('data')
-          .eq('id', 'profile_modules_map')
-          .maybeSingle();
-
-        if (!error && data?.data) {
-          const merged = { ...DEFAULT_PROFILE_MODULES_MAP, ...data.data };
-          setProfileModulesMap(merged);
-          localStorage.setItem('gesco_profile_modules', JSON.stringify(merged));
-        }
-      } catch (err) {
-        console.warn('[GESCO] Utilisation du cache local pour les profils:', err);
-      }
-    }
-
-    loadProfileModules();
-  }, []);
 
   // Handlers Utilisateur
   const handleAddUser = () => {
@@ -136,19 +88,6 @@ export const UsersAccessLayout: React.FC = () => {
     else { addNotification('success', `Statut de l'utilisateur mis à jour (${actionName}).`); refresh(); }
   };
 
-  const handleResetPassword = async (user: UserAccount) => {
-    const ok = await confirm({
-      title: 'Réinitialiser le mot de passe',
-      message: `Réinitialiser le mot de passe provisoire pour ${user.fullName} ?`,
-      confirmText: 'Réinitialiser',
-      cancelText: 'Annuler',
-      variant: 'warning',
-    });
-    if (!ok) return;
-
-    addNotification('info', `Instructions de réinitialisation envoyées à ${user.email || user.fullName}.`);
-  };
-
   const handleDeleteUser = async (userId: string) => {
     const ok = await confirm({
       title: 'Supprimer le membre',
@@ -164,29 +103,6 @@ export const UsersAccessLayout: React.FC = () => {
       addNotification('success', 'Membre supprimé de l\'établissement.');
       refresh();
     }
-  };
-
-  // Handlers Profils
-  const handleEditProfile = (profile: ProfileOption) => {
-    setEditingProfile(profile);
-    setShowProfileModal(true);
-  };
-
-  const handleSaveProfile = async (profileValue: string, moduleIds: string[]) => {
-    const updated = { ...profileModulesMap, [profileValue]: moduleIds };
-    setProfileModulesMap(updated);
-    try {
-      localStorage.setItem('gesco_profile_modules', JSON.stringify(updated));
-      await supabase.from('school_settings').upsert({
-        id: 'profile_modules_map',
-        data: updated,
-        updated_at: new Date().toISOString(),
-      });
-    } catch (err) {
-      console.warn('[GESCO] Erreur lors de la sauvegarde Supabase des profils:', err);
-    }
-    addNotification('success', `Modules d'accès enregistrés et synchronisés avec Supabase !`);
-    return true;
   };
 
   return (
@@ -270,17 +186,13 @@ export const UsersAccessLayout: React.FC = () => {
           onAddUser={handleAddUser}
           onEditUser={handleEditUser}
           onToggleStatus={handleToggleStatus}
-          onResetPassword={handleResetPassword}
           onDeleteUser={handleDeleteUser}
         />
       )}
 
       {/* ── ESPACE 2 : PROFILS D'ACCÈS ──────────────────────────────────── */}
       {activeTab === 'PROFILES' && (
-        <AccessProfilesTab
-          users={allUsers}
-          onEditProfile={handleEditProfile}
-        />
+        <AccessProfilesTab users={allUsers} />
       )}
 
       {/* Modale d'ajout/édition de membre */}
@@ -289,15 +201,6 @@ export const UsersAccessLayout: React.FC = () => {
         user={editingUser}
         onClose={() => setShowUserModal(false)}
         onSubmit={handleSaveUser}
-      />
-
-      {/* Modale d'édition de profil d'accès */}
-      <EditProfileModal
-        isOpen={showProfileModal}
-        profile={editingProfile}
-        assignedModuleIds={editingProfile ? (profileModulesMap[editingProfile.value] || []) : []}
-        onClose={() => setShowProfileModal(false)}
-        onSave={handleSaveProfile}
       />
 
     </div>
