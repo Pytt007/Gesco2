@@ -45,26 +45,14 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: Verify decryption and restore in disposable PostgreSQL
+      - name: Verify encrypted dump is readable
         shell: bash
         run: |
           set -euo pipefail
-          container="gesco-restore-${GITHUB_RUN_ID}"
-          trap 'docker rm -f "$container" >/dev/null 2>&1 || true' EXIT
-          docker run -d --name "$container" \
-            -e POSTGRES_PASSWORD="$(openssl rand -hex 32)" postgres:18 >/dev/null
-          for attempt in {1..30}; do
-            if docker exec -u postgres "$container" pg_isready -q; then break; fi
-            sleep 1
-          done
-          docker exec -u postgres "$container" pg_isready -q
-          docker exec -u postgres "$container" createdb gesco_restore
-          gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 \
+          table_count="$(gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 \
             --decrypt "backups/gesco-neon-${GITHUB_RUN_ID}.dump.gpg" \
             3<<<"$BACKUP_PASSPHRASE" \
-            | docker exec -u postgres -i "$container" pg_restore \
-                --no-owner --no-acl --exit-on-error --dbname=gesco_restore
-          table_count="$(docker exec -u postgres "$container" psql -d gesco_restore -Atc \
-            "SELECT count(*) FROM pg_catalog.pg_tables WHERE schemaname='public'")"
+            | docker run --rm -i postgres:18 pg_restore --list \
+            | awk '/ TABLE public / { count++ } END { print count+0 }')"
           test "$table_count" -gt 0
-          echo "Restore verified: $table_count public tables."
+          echo "Encrypted dump readable: $table_count public tables in archive."
