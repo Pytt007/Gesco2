@@ -9,6 +9,7 @@ import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import CommandPalette from './components/layout/CommandPalette';
 import LoginPage from './pages/LoginPage';
+import PasswordRecoveryPage from './pages/PasswordRecoveryPage';
 import { Toaster } from './components/ui/toaster';
 import './index.css';
 
@@ -171,6 +172,8 @@ function AppContent() {
       if (firstAllowed) setCurrentView(firstAllowed);
     }
   }, [currentUser, currentView, canAccess]);
+
+  if (window.location.pathname === '/reset-password') return <PasswordRecoveryPage />;
 
   if (loading) {
     return (

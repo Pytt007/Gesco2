@@ -41,7 +41,9 @@ export default defineConfig(({ mode }) => {
             navigateFallback: null,
             runtimeCaching: [
               {
-                urlPattern: ({ request }) => request.mode === 'navigate',
+                urlPattern: ({ request, url }) => request.mode === 'navigate'
+                  && url.pathname !== '/reset-password'
+                  && !url.pathname.startsWith('/api/auth/'),
                 handler: 'NetworkFirst',
                 options: { cacheName: 'gesco-pages', networkTimeoutSeconds: 5, expiration: { maxEntries: 10 } },
               },

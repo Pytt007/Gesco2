@@ -20,6 +20,9 @@ export async function proxyAuth(request: Request, env: AuthEnvironment): Promise
     let body: Record<string, unknown>;
     try { body = JSON.parse(text); } catch { return jsonError(400, 'Requête invalide.'); }
     if (!body || Array.isArray(body) || typeof body !== 'object') return jsonError(400, 'Requête invalide.');
+    if (path === 'reset-password' && (typeof body.newPassword !== 'string' || body.newPassword.length < 12 || body.newPassword.length > 128)) {
+      return jsonError(400, 'Le mot de passe doit contenir entre 12 et 128 caractères.');
+    }
     if (['sign-in/email', 'request-password-reset'].includes(path) && typeof body.email === 'string' && body.email.toLowerCase() === 'admin@gesco-v1.local') {
       body.email = env.GESCO_ADMIN_EMAIL || body.email;
     }

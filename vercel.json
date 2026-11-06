@@ -66,6 +66,13 @@
           "value": "default-src 'self'; script-src 'self' 'unsafe-inline' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://api.dicebear.com https://ep-cool-rice-b1iuxai5.neonauth.c-5.eu-central-1.aws.neon.tech https://ep-cool-rice-b1iuxai5.apirest.c-5.eu-central-1.aws.neon.tech; connect-src 'self' https://ep-cool-rice-b1iuxai5.neonauth.c-5.eu-central-1.aws.neon.tech https://ep-cool-rice-b1iuxai5.apirest.c-5.eu-central-1.aws.neon.tech; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
         }
       ]
+    },
+    {
+      "source": "/reset-password",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" },
+        { "key": "Referrer-Policy", "value": "no-referrer" }
+      ]
     }
   ]
 }
