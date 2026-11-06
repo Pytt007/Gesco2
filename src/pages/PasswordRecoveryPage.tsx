@@ -59,7 +59,7 @@ export default function PasswordRecoveryPage() {
       <section aria-labelledby="recovery-title" style={{ width: '100%', maxWidth: 440, padding: 32,
         border: '1px solid rgba(255,255,255,0.12)', borderRadius: 24, background: 'rgba(255,255,255,0.04)' }}>
         <img src="/gesco_logo.png" alt="GESCO" style={{ width: 64, height: 64, objectFit: 'contain', marginBottom: 20, background: '#fff', borderRadius: 16 }} />
-        <h1 id="recovery-title" style={{ fontSize: 24, marginBottom: 12 }}>
+        <h1 id="recovery-title" style={{ color: '#fff', fontSize: 24, marginBottom: 12 }}>
           {complete ? 'Mot de passe modifié' : token ? 'Choisir un nouveau mot de passe' : 'Mot de passe oublié'}
         </h1>
         {!complete && <p style={{ color: '#cbd5e1', marginBottom: 24, lineHeight: 1.5 }}>
