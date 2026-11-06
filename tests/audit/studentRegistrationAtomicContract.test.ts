@@ -12,7 +12,7 @@ const input: CompleteStudentRegistrationInput = {
   requestId: '12345678-1234-4234-8234-123456789abc',
   student: { firstName: 'Awa', lastName: 'Traoré', gender: 'Féminin' },
   parents: { financialPayer: 'MOTHER', mother: { firstName: 'Fatou', lastName: 'Traoré', phone: '+2250102030405' } },
-  payment: { registrationFee: 10000, tuitionFee: 50000, discountAmount: 0,
+  payment: { registrationFee: 10000, tuitionFee: 50000,
     discountType: 'FIXED', discountValue: 0, paidAmount: 10000, paymentMode: 'CASH' },
   assignment: { schoolYear: '2026-2027', levelId: 'lvl-cp1', classId: '', className: 'Non affecté' },
 };
