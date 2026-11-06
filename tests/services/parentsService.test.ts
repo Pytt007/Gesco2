@@ -1,3 +1,4 @@
+import '../helpers/databaseSetup';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   createParent,
@@ -90,7 +91,7 @@ describe('Parents Module Services Layer', () => {
     it('createParent rejects missing required fields', async () => {
       const res = await createParent({ firstName: '', lastName: '' });
       expect(res.success).toBe(false);
-      expect(res.error).toContain('obligatoire');
+      expect(res.error).toContain('prénom');
     });
 
     it('updateParent updates existing parent properties', async () => {

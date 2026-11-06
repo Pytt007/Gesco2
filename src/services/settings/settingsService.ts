@@ -101,6 +101,7 @@ export async function setActiveSchoolYear(yearId: string): Promise<{ error?: str
 
 export async function closeSchoolYear(yearId: string): Promise<{ error?: string }> {
   const years = await fetchSchoolYearsList();
+  if (!yearId || !years.some(y => y.id === yearId)) return { error: 'Année scolaire introuvable.' };
   const updated = years.map((y) => (y.id === yearId ? { ...y, isClosed: true, isActive: false, status: 'Clôturée' as const } : y));
   return saveSchoolYearsList(updated, settingsRevision(years));
 }

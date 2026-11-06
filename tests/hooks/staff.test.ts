@@ -1,3 +1,4 @@
+import '../helpers/databaseSetup';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useStaff } from '../../src/hooks/staff/useStaff';
@@ -30,7 +31,7 @@ describe('Staff Module Hooks Layer', () => {
         });
       });
 
-      expect(createOk).toBe(true);
+      expect(createOk).toMatchObject({ success: true });
       expect(result.current.staffMembers.length).toBeGreaterThan(0);
 
       const targetId = result.current.staffMembers[0].id;
@@ -39,7 +40,7 @@ describe('Staff Module Hooks Layer', () => {
       await act(async () => {
         updateOk = await result.current.update(targetId, { phoneSecondary: '+225 999999' });
       });
-      expect(updateOk).toBe(true);
+      expect(updateOk).toMatchObject({ success: true });
 
       let archiveOk = false;
       await act(async () => {

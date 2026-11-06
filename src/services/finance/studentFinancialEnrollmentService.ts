@@ -61,7 +61,7 @@ export function generateDefaultInstallments(
         number: 1,
         label: registrationFee > 0 ? 'Frais d’inscription' : 'Paiement Unique (Comptant)',
         dueDate: `${startYear}-10-05`,
-        amountDue: netTotalDue > 0 ? netTotalDue : registrationFee,
+        amountDue: netTotalDue,
         amountPaid: 0,
         status: 'PENDING' as const,
       },
@@ -222,18 +222,19 @@ export const studentFinancialEnrollmentService = {
       updatedAt: new Date().toISOString(),
     };
 
-    try { await this.saveEnrollment(record); }
+    let saved: StudentFinancialEnrollment;
+    try { saved = await this.saveEnrollment(record); }
     catch (error) { return { success: false, error: error instanceof Error ? error.message : 'Enregistrement refusé.' }; }
 
     return {
       success: true,
-      data: record,
+      data: saved,
       message: `Dossier financier créé et ${installments.length} échéance(s) configurée(s) avec succès.`,
     };
   },
 
   /**
-   * Sauvegarde directe d'un dossier financier (synchronisation mémoire + localStorage)
+   * Sauvegarde serveur et retour du dossier recalculé par PostgreSQL.
    */
   async saveEnrollment(enrollment: StudentFinancialEnrollment): Promise<StudentFinancialEnrollment> {
     const { data, error } = await supabase.rpc('save_financial_enrollment', { p_data: enrollment });
@@ -292,9 +293,10 @@ export const studentFinancialEnrollmentService = {
       updatedAt: new Date().toISOString(),
     };
 
-    try { await this.saveEnrollment(updated); }
+    let saved: StudentFinancialEnrollment;
+    try { saved = await this.saveEnrollment(updated); }
     catch (error) { return { success: false, error: error instanceof Error ? error.message : 'Modification refusée.' }; }
-    return { success: true, data: updated, message: 'Dossier financier mis à jour.' };
+    return { success: true, data: saved, message: 'Dossier financier mis à jour.' };
   },
 
   /**

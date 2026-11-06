@@ -1,3 +1,4 @@
+import '../helpers/databaseSetup';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   getMedicalRecord,

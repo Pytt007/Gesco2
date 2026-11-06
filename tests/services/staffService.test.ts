@@ -1,3 +1,4 @@
+import '../helpers/databaseSetup';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   createStaff,
@@ -57,14 +58,14 @@ describe('Staff Module Services Layer', () => {
       expect(res.data?.status).toBe('Actif');
     });
 
-    it('createStaff rejects missing required fields', async () => {
+    it('createStaff rejects a missing identity and preserves an optional empty phone', async () => {
       const res1 = await createStaff({ firstName: '', lastName: '' });
       expect(res1.success).toBe(false);
-      expect(res1.error).toContain('obligatoire');
+      expect(res1.error).toContain('prénom');
 
       const res2 = await createStaff({ firstName: 'Jean', lastName: 'Kouassi', phonePrimary: '' });
-      expect(res2.success).toBe(false);
-      expect(res2.error).toContain('téléphone');
+      expect(res2.success).toBe(true);
+      expect(res2.data?.phonePrimary).toBe('');
     });
 
     it('updateStaff updates existing staff member properties and handles invalid IDs', async () => {

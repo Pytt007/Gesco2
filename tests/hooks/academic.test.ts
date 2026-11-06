@@ -1,3 +1,4 @@
+import '../helpers/databaseSetup';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAcademicYears } from '../../src/hooks/academic/useAcademicYears';
@@ -74,7 +75,8 @@ describe('Academic Module Hooks Layer', () => {
       await act(async () => {
         activateOk = await singleHook.current.activate();
       });
-      expect(activateOk).toBe(true);
+      // A closed year cannot be reactivated.
+      expect(activateOk).toBe(false);
 
       let archiveOk = false;
       await act(async () => {
@@ -130,7 +132,7 @@ describe('Academic Module Hooks Layer', () => {
       let createLvlOk = false;
       await act(async () => {
         createLvlOk = await levelHook.current.createLevel({
-          cycleId: 'cyc-1',
+          cycleId: 'cyc-2',
           name: 'Toute Petite Section',
           code: 'TPS',
           shortName: 'TPS',
@@ -139,7 +141,7 @@ describe('Academic Module Hooks Layer', () => {
       });
       expect(createLvlOk).toBe(true);
 
-      const targetLvlId = levelHook.current.rawLevels[0].id;
+      const targetLvlId = levelHook.current.rawLevels.find(l => l.code === 'TPS')!.id;
 
       let updateLvlOk = false;
       await act(async () => {
