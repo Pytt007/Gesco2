@@ -224,6 +224,9 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+          <a href="/reset-password" style={{ display: 'block', textAlign: 'center', color: '#c7d2fe', marginTop: '1rem', fontSize: '0.875rem' }}>
+            Mot de passe oublié ?
+          </a>
 
         </div>
       </div>
