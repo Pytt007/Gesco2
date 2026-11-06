@@ -22,5 +22,5 @@ export async function createLevel(input:Partial<SchoolLevel>):Promise<ServiceRes
 export async function updateLevel(id:string,input:Partial<SchoolLevel>):Promise<ServiceResponse<SchoolLevel>>{try{return ok(mapRow(await updateRow('school_levels',id,{...toRow(input),updated_at:new Date().toISOString()})));}catch(e){return failure(e);}}
 export async function archiveLevel(id:string):Promise<ServiceResponse<boolean>>{const result=await updateLevel(id,{isActive:false});return result.success?ok(true):failure(result.error);}
 export function clearLevelsCache():void{}
-export async function getLevelsByCycle(cycleId:string):Promise<ServiceResponse<SchoolLevel[]>>{const result=await getLevels();return result.success?ok(result.data!.filter(l=>l.cycleId===cycleId)):failure(result.error);}
+export async function getLevelsByCycle(cycleId:string):Promise<ServiceResponse<SchoolLevel[]>>{if(!cycleId?.trim())return failure('Cycle requis.');const result=await getLevels();return result.success?ok(result.data!.filter(l=>l.cycleId===cycleId)):failure(result.error);}
 export async function deleteLevel(id:string):Promise<ServiceResponse<boolean>>{try{await deleteRow('school_levels',id);return ok(true);}catch(e){return failure(e);}}

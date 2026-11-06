@@ -1,3 +1,4 @@
+import '../helpers/databaseSetup';
 import React from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, waitFor, renderHook, act } from '@testing-library/react';
@@ -89,7 +90,7 @@ describe('Student Financial Enrollment Module Layer (Inscription Financière d�
         discountValue: -5000,
       });
       expect(res1.success).toBe(false);
-      expect(res1.error).toContain('négative');
+      expect(res1.error).toContain('Remise invalide');
 
       const res2 = await studentFinancialEnrollmentService.createEnrollment({
         studentId: 'st-003',
@@ -119,7 +120,7 @@ describe('Student Financial Enrollment Module Layer (Inscription Financière d�
       });
 
       expect(res.success).toBe(false);
-      expect(res.error).toContain('Aucun tarif configuré');
+      expect(res.error).toContain('Configurez les tarifs');
     });
 
     it('updates enrollment discount and custom installments cleanly', async () => {

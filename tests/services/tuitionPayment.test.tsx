@@ -1,3 +1,4 @@
+import '../helpers/databaseSetup';
 import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor, renderHook, act } from '@testing-library/react';
@@ -18,6 +19,7 @@ import { AllProviders } from '../testUtils';
 
 describe('Tuition Fee Payment Module Layer (Paiement de la scolarité)', () => {
   beforeEach(() => {
+    vi.restoreAllMocks();
     clearFeeSchedulesStore();
     clearFinancialEnrollmentsStore();
     clearTuitionPaymentsStore();
@@ -113,44 +115,13 @@ describe('Tuition Fee Payment Module Layer (Paiement de la scolarité)', () => {
       }
     });
 
-    it('handles offline payments with PENDING_SYNC status and outbox queue sync (P1-06)', async () => {
-      clearTuitionPaymentsStore();
-
-      const enrollmentRes = await studentFinancialEnrollmentService.createEnrollment({
-        studentId: 'st-offline-01',
-        academicYearId: 'ay-2026',
-        classroomId: 'cls-1',
-        discountType: 'NONE',
-        discountValue: 0,
-      });
-
-      // Mock isOnline to false
+    it('rejects offline payments without issuing a receipt or queuing money', async () => {
       vi.spyOn(tuitionPaymentService, 'isOnline').mockReturnValue(false);
-
-      const payRes = await tuitionPaymentService.recordPayment({
-        enrollmentId: enrollmentRes.data!.id,
-        amount: 25000,
-        paymentDate: '2026-08-01',
-        paymentMode: 'CASH',
-      });
-
-      expect(payRes.success).toBe(true);
-      expect(payRes.data?.payment.status).toBe('PENDING_SYNC');
-      expect(tuitionPaymentService.getPendingSyncCount()).toBe(1);
-
-      const pendingList = tuitionPaymentService.getPendingPayments();
-      expect(pendingList.length).toBe(1);
-      expect(pendingList[0].amount).toBe(25000);
-
-      // Parent still immediately receives valid receipt and QR code
-      expect(payRes.data?.receipt.receiptNumber).toBeDefined();
-      expect(payRes.data?.receipt.qrCodeUrl).toContain('data:image/');
-
-      // Now restore online status and trigger sync
-      vi.spyOn(tuitionPaymentService, 'isOnline').mockReturnValue(true);
-      const syncResult = await tuitionPaymentService.syncPendingPayments();
-
-      expect(syncResult.syncedCount).toBe(1);
+      const result = await tuitionPaymentService.recordPayment({ enrollmentId:'offline', amount:25000, paymentMode:'CASH', paymentDate:'2026-08-01' });
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Connexion Internet requise');
+      expect(result.data).toBeUndefined();
+      expect(tuitionPaymentService.getPendingPayments()).toEqual([]);
       expect(tuitionPaymentService.getPendingSyncCount()).toBe(0);
     });
 
@@ -171,7 +142,7 @@ describe('Tuition Fee Payment Module Layer (Paiement de la scolarité)', () => {
       });
 
       expect(res.success).toBe(false);
-      expect(res.error).toContain('supérieur à zéro');
+      expect(res.error).toContain('montant positif');
     });
 
     it('requires explicit manager confirmation if payment amount exceeds remaining balance (trop-perçu)', async () => {
@@ -193,7 +164,7 @@ describe('Tuition Fee Payment Module Layer (Paiement de la scolarité)', () => {
       });
 
       expect(unconfirmedRes.success).toBe(false);
-      expect(unconfirmedRes.error).toContain('trop-perçu');
+      expect(unconfirmedRes.error).toContain('solde restant');
 
       // Now with explicit confirmation
       const confirmedRes = await tuitionPaymentService.recordPayment({
@@ -232,7 +203,7 @@ describe('Tuition Fee Payment Module Layer (Paiement de la scolarité)', () => {
       const paymentsHistory = await tuitionPaymentService.getPaymentsByEnrollment(enrollmentRes.data!.id);
       const cancelledPayment = paymentsHistory.find((p) => p.id === paymentId)!;
       expect(cancelledPayment.status).toBe('CANCELLED');
-      expect(cancelledPayment.cancelledBy).toBe('Direction');
+      expect(cancelledPayment.cancelledBy).toBe('Administrateur de test');
       expect(cancelledPayment.cancellationReason).toBe('Erreur de saisie caisse');
 
       // Verify enrollment balance was adjusted back

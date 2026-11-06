@@ -1,3 +1,4 @@
+import '../helpers/databaseSetup';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useParents } from '../../src/hooks/parents/useParents';
@@ -29,7 +30,7 @@ describe('Parents Module Hooks Layer', () => {
         });
       });
 
-      expect(success).toBe(true);
+      expect(success).toMatchObject({ success: true });
       expect(result.current.parents.length).toBeGreaterThan(0);
     });
 

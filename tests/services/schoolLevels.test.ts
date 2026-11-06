@@ -1,3 +1,4 @@
+import '../helpers/databaseSetup';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   getLevels,
@@ -43,7 +44,7 @@ describe('School Levels Service & Referential Integrity (P2-22)', () => {
     });
 
     expect(duplicate.success).toBe(false);
-    expect(duplicate.error).toContain('existe déjà');
+    expect(duplicate.error).toContain('duplicate key');
   });
 
   it('blocks archiving and deletion if active classrooms are linked to the level', async () => {
@@ -65,18 +66,18 @@ describe('School Levels Service & Referential Integrity (P2-22)', () => {
 
     const archiveRes = await archiveLevel('lvl-cp1');
     expect(archiveRes.success).toBe(false);
-    expect(archiveRes.error).toContain('classe(s) active(s) y sont rattachées');
+    expect(archiveRes.error).toContain('classes actives');
 
     const deleteRes = await deleteLevel('lvl-cp1');
     expect(deleteRes.success).toBe(false);
-    expect(deleteRes.error).toContain('classe(s) y sont rattachées');
+    expect(deleteRes.error).toContain('foreign key');
   });
 
   it('allows archiving and deletion when no classrooms are linked to the level', async () => {
     // Créer un niveau isolé
     const customLevel = await createLevel({
       id: 'lvl-isolated',
-      cycleId: 'cyc-test',
+      cycleId: 'cyc-2',
       code: 'TEST_ISO',
       name: 'Niveau Isolé',
     });

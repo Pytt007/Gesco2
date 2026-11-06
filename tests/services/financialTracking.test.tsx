@@ -1,3 +1,4 @@
+import '../helpers/databaseSetup';
 import React from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, waitFor, renderHook, act } from '@testing-library/react';
