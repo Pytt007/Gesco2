@@ -35,6 +35,8 @@ export const StudentRegistrationWizard: React.FC<Props> = ({ isOpen, onClose, on
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [receiptHtml, setReceiptHtml] = useState<string | null>(null);
+  // Keep one key for retries after a lost network response.
+  const [registrationRequestId, setRegistrationRequestId] = useState(() => crypto.randomUUID());
 
   // État Step 1: Élève
   const [studentData, setStudentData] = useState<StudentInfoData>({
@@ -191,6 +193,7 @@ export const StudentRegistrationWizard: React.FC<Props> = ({ isOpen, onClose, on
     setIsSubmitting(true);
     try {
       const res = await executeStudentRegistrationTransaction({
+        requestId: registrationRequestId,
         student: studentData,
         parents: parentsData,
         payment: paymentData,
@@ -201,6 +204,7 @@ export const StudentRegistrationWizard: React.FC<Props> = ({ isOpen, onClose, on
       if (!res.success) {
         addNotification('error', res.error || 'Erreur lors de la validation transactionnelle.');
       } else {
+        setRegistrationRequestId(crypto.randomUUID());
         addNotification('success', `Élève inscrit avec succès ! Matricule attribué : ${res.matricule}`);
         clearDraft();
         if (res.receiptHtml) {

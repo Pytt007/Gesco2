@@ -71,6 +71,9 @@ export interface StudentFinancialEnrollment {
   levelCode: TuitionLevelCode;
   registrationFee: number;
   tuitionFee: number;
+  canteenFee?: number;
+  transportFee?: number;
+  otherFees?: number;
   totalAnnualFee: number; // Frais inscription + scolarité bruts
   discountType: DiscountType;
   discountValue: number;
