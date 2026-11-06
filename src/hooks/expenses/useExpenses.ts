@@ -15,7 +15,7 @@ import {
 import { expenseService } from '../../services/expenses/expenseService';
 import { useToast } from '../../context/ToastContext';
 
-export function useExpenses(academicYearId: string = 'ay-2026') {
+export function useExpenses(academicYearId: string = '') {
   const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
   const [categories, setCategories] = useState<ExpenseCategoryItem[]>([]);
   const [kpis, setKpis] = useState<ExpenseKPIs>({
@@ -45,6 +45,16 @@ export function useExpenses(academicYearId: string = 'ay-2026') {
     setLoading(true);
     setError(null);
     try {
+      if (!academicYearId.trim()) {
+        setCategories(await expenseService.getCategories());
+        setExpenses([]);
+        setKpis({
+          totalMonth: 0, totalYear: 0, annualBudget: 0, remainingBudget: 0,
+          budgetUsedPct: 0, byCategory: {}, countPending: 0,
+          countValidated: 0, countCancelled: 0,
+        });
+        return;
+      }
       const [catList, expList, kpiData] = await Promise.all([
         expenseService.getCategories(),
         expenseService.getExpenses({
@@ -60,8 +70,9 @@ export function useExpenses(academicYearId: string = 'ay-2026') {
       setCategories(catList);
       setExpenses(expList);
       setKpis(kpiData);
-    } catch {
-      setError('Erreur lors du chargement des dépenses.');
+    } catch (cause) {
+      console.error('Chargement des dépenses refusé par Neon', cause instanceof Error ? cause.message : JSON.stringify(cause));
+      setError('Impossible de charger les dépenses depuis Neon. Réessayez ou contactez l’administrateur.');
     } finally {
       setLoading(false);
     }

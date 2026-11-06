@@ -12,7 +12,7 @@ import {
   dashboardService,
 } from '../../services/dashboard/dashboardService';
 
-export function useDashboard(academicYearId: string = 'ay-2026') {
+export function useDashboard(academicYearId: string = '') {
   const [kpis, setKpis] = useState<DashboardKPIsMaster | null>(null);
   const [alerts, setAlerts] = useState<AlertMasterItem[]>([]);
   const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([]);
@@ -61,12 +61,12 @@ export function useDashboard(academicYearId: string = 'ay-2026') {
     }
     setIsSearching(true);
     try {
-      const res = await dashboardService.globalSearch(query);
+      const res = await dashboardService.globalSearch(query, academicYearId);
       setSearchResults(res);
     } finally {
       setIsSearching(false);
     }
-  }, []);
+  }, [academicYearId]);
 
   return {
     kpis,

@@ -582,7 +582,7 @@ export default function StudentsPage() {
                   <div style={{ padding: '14px', background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0' }}>
                     <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>ADRESSE & ÉTAT CIVIL</div>
                     <div style={{ fontSize: '0.875rem', color: '#0f172a', marginTop: 4 }}>Genre : {detailStudent.gender}</div>
-                    <div style={{ fontSize: '0.875rem', color: '#0f172a', marginTop: 2 }}>Adresse : {detailStudent.address || 'Abidjan'}</div>
+                    <div style={{ fontSize: '0.875rem', color: '#0f172a', marginTop: 2 }}>Adresse : {detailStudent.address || 'Non renseignée'}</div>
                   </div>
                 </div>
               )}
@@ -617,8 +617,8 @@ export default function StudentsPage() {
                   {studentTransportData ? (
                     <div style={{ padding: 16, background: '#fff7ed', borderRadius: 12, border: '1px solid #ffedd5' }}>
                       <div style={{ fontWeight: 700, color: '#9a3412' }}>Abonnement Transport</div>
-                      <div style={{ fontSize: '0.875rem', marginTop: 4 }}>Ligne : {studentTransportData.lineName || 'Circuit N°1'}</div>
-                      <div style={{ fontSize: '0.875rem' }}>Arrêt : {studentTransportData.stopName || 'Point principal'}</div>
+                      <div style={{ fontSize: '0.875rem', marginTop: 4 }}>Ligne : {studentTransportData.lineName || 'Non renseignée'}</div>
+                      <div style={{ fontSize: '0.875rem' }}>Arrêt : {studentTransportData.stopName || 'Non renseigné'}</div>
                     </div>
                   ) : <p style={{ color: '#94a3b8' }}>Élève non inscrit au transport.</p>}
                 </div>

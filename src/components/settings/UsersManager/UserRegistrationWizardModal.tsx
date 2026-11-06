@@ -97,7 +97,7 @@ export default function UserRegistrationWizardModal({
       email: form.email.trim(),
       phone: form.phone.trim(),
       role: form.role,
-      password: form.password || 'Gesco2026!',
+      password: form.password,
       avatarUrl,
     });
 
@@ -245,7 +245,7 @@ export default function UserRegistrationWizardModal({
                     className="form-input"
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    placeholder="Par défaut : Gesco2026!"
+                    placeholder="12 caractères minimum"
                   />
                   <button
                     type="button"

@@ -14,7 +14,7 @@ import {
 import { timetableService } from '../../services/timetable/timetableService';
 import { useToast } from '../../context/ToastContext';
 
-export function useTimetable(academicYearId: string = 'ay-2026') {
+export function useTimetable(academicYearId: string) {
   const [displayMode, setDisplayMode] = useState<TimetableDisplayMode>('BY_CLASS');
   
   const [classes, setClasses] = useState<ClassItem[]>([]);

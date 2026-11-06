@@ -61,6 +61,10 @@ export interface GeneralConfig {
 }
 
 export interface Student {
+  classId?: string;
+  birthDate?: string;
+  birthPlace?: string;
+  nationality?: string;
   id: string;
   matricule: string;
   firstName: string;

@@ -208,8 +208,8 @@ export default function StatisticsPage() {
           {
             metric: 'Taux Recouvrement',
             annee2025: '0%',
-            annee2026: `${totalDue > 0 ? Math.round((totalPaid / totalDue) * 100) : 0}%`,
-            diff: totalDue > 0 ? `+${Math.round((totalPaid / totalDue) * 100)}%` : '0%',
+            annee2026: `${Math.round(finKPIs.recoveryRate)}%`,
+            diff: `${Math.round(finKPIs.recoveryRate)}%`,
           },
         ]);
 

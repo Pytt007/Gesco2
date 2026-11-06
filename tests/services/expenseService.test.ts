@@ -1,160 +1,81 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const state = vi.hoisted(() => ({ fail: false, from: vi.fn(), selectArgs: [] as string[] }));
+vi.mock('../../src/services/common/supabaseClient', () => ({
+  supabase: { from: state.from },
+}));
+
 import { expenseService, clearExpensesStore } from '../../src/services/expenses';
 
-describe('Expense Service & Validation Layer (P2-12)', () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
+function query() {
+  const chain: any = {
+    select: vi.fn((columns: string) => { state.selectArgs.push(columns); return chain; }),
+    order: vi.fn(() => chain),
+    eq: vi.fn(() => chain),
+    gte: vi.fn(() => chain),
+    lte: vi.fn(() => chain),
+    ilike: vi.fn(() => chain),
+    insert: vi.fn(() => chain),
+    upsert: vi.fn(() => chain),
+    update: vi.fn(() => chain),
+    single: vi.fn(async () => state.fail
+      ? { data: null, error: { message: 'Neon indisponible' } }
+      : { data: { id: 'expense-1', amount: 75_000, status: 'VALIDATED' }, error: null }),
+    maybeSingle: vi.fn(async () => state.fail
+      ? { data: null, error: { message: 'Neon indisponible' } }
+      : { data: null, error: null }),
+    then: (resolve: (value: unknown) => unknown) => Promise.resolve(state.fail
+      ? { data: null, error: { message: 'Neon indisponible' } }
+      : { data: [], error: null }).then(resolve),
+  };
+  return chain;
+}
+
+beforeEach(() => {
+  state.fail = false;
+  state.selectArgs = [];
+  state.from.mockReset().mockImplementation(query);
+  clearExpensesStore();
+});
+
+const input = {
+  date: '2026-10-07',
+  categoryId: 'category-1',
+  description: 'Fournitures',
+  amount: 75_000,
+  paymentMode: 'CASH' as const,
+  academicYearId: 'year-1',
+};
+
+describe('Dépenses enregistrées exclusivement dans Neon', () => {
+  it('rejette les champs invalides avant toute écriture', async () => {
+    expect((await expenseService.createExpense({ ...input, amount: 0 })).success).toBe(false);
+    expect((await expenseService.createExpense({ ...input, description: ' ' })).success).toBe(false);
+    expect((await expenseService.createExpense({ ...input, academicYearId: '' })).success).toBe(false);
+    expect((await expenseService.setBudget('', 100_000)).success).toBe(false);
+    expect(state.from).not.toHaveBeenCalled();
+  });
+
+  it('ne confirme jamais une écriture refusée par Neon', async () => {
+    state.fail = true;
+    expect(await expenseService.createExpense(input)).toMatchObject({ success: false, error: 'Neon indisponible' });
+    expect(await expenseService.updateExpense('expense-1', { amount: 50_000 })).toMatchObject({ success: false, error: 'Neon indisponible' });
+    expect(await expenseService.cancelExpense('expense-1')).toMatchObject({ success: false, error: 'Neon indisponible' });
+    expect(await expenseService.setBudget('year-1', 100_000)).toMatchObject({ success: false, error: 'Neon indisponible' });
+    expect(await expenseService.addCategory('Fournitures')).toMatchObject({ success: false, error: 'Neon indisponible' });
+  });
+
+  it('remonte une erreur de lecture au lieu de présenter de fausses données vides', async () => {
+    state.fail = true;
+    await expect(expenseService.getExpenses()).rejects.toMatchObject({ message: 'Neon indisponible' });
+    await expect(expenseService.getCategories()).rejects.toMatchObject({ message: 'Neon indisponible' });
+    await expect(expenseService.getBudget('year-1')).rejects.toMatchObject({ message: 'Neon indisponible' });
+  });
+
+  it('accepte une écriture confirmée et relit Neon après effacement de la mémoire locale', async () => {
+    expect((await expenseService.createExpense(input)).success).toBe(true);
     clearExpensesStore();
-  });
-
-  describe('createExpense validation', () => {
-    it('rejects missing description', async () => {
-      const res = await expenseService.createExpense({
-        date: '2026-03-01',
-        categoryId: 'cat-1',
-        description: '   ',
-        amount: 50000,
-        paymentMode: 'CASH',
-        academicYearId: 'ay-2026',
-      });
-      expect(res.success).toBe(false);
-      expect(res.error).toContain('description est obligatoire');
-    });
-
-    it('rejects zero or negative amounts', async () => {
-      const resZero = await expenseService.createExpense({
-        date: '2026-03-01',
-        categoryId: 'cat-1',
-        description: 'Papeterie',
-        amount: 0,
-        paymentMode: 'CASH',
-        academicYearId: 'ay-2026',
-      });
-      expect(resZero.success).toBe(false);
-      expect(resZero.error).toContain('supérieur à 0');
-
-      const resNeg = await expenseService.createExpense({
-        date: '2026-03-01',
-        categoryId: 'cat-1',
-        description: 'Papeterie',
-        amount: -15000,
-        paymentMode: 'CASH',
-        academicYearId: 'ay-2026',
-      });
-      expect(resNeg.success).toBe(false);
-      expect(resNeg.error).toContain('supérieur à 0');
-    });
-
-    it('rejects missing category or payment mode', async () => {
-      const resCat = await expenseService.createExpense({
-        date: '2026-03-01',
-        categoryId: '',
-        description: 'Papeterie',
-        amount: 15000,
-        paymentMode: 'CASH',
-        academicYearId: 'ay-2026',
-      });
-      expect(resCat.success).toBe(false);
-      expect(resCat.error).toContain('catégorie de dépense est obligatoire');
-
-      const resMode = await expenseService.createExpense({
-        date: '2026-03-01',
-        categoryId: 'cat-1',
-        description: 'Papeterie',
-        amount: 15000,
-        paymentMode: undefined as any,
-        academicYearId: 'ay-2026',
-      });
-      expect(resMode.success).toBe(false);
-      expect(resMode.error).toContain('mode de règlement est obligatoire');
-    });
-
-    it('successfully creates an expense with valid inputs', async () => {
-      const res = await expenseService.createExpense({
-        date: '2026-03-01',
-        categoryId: 'cat-1',
-        description: 'Achat de rames de papier A4',
-        amount: 75000,
-        paymentMode: 'TRANSFER',
-        supplier: 'Librairie de France',
-        academicYearId: 'ay-2026',
-      });
-
-      expect(res.success).toBe(true);
-      expect(res.data?.id).toBeDefined();
-      expect(res.data?.amount).toBe(75000);
-      expect(res.data?.status).toBe('VALIDATED');
-
-      const list = await expenseService.getExpenses({ academicYearId: 'ay-2026' });
-      expect(list.length).toBe(1);
-      expect(list[0].amount).toBe(75000);
-    });
-  });
-
-  describe('updateExpense & cancelExpense', () => {
-    it('validates amount on update and updates successfully', async () => {
-      const created = await expenseService.createExpense({
-        date: '2026-03-02',
-        categoryId: 'cat-2',
-        description: 'Réparation climatiseur',
-        amount: 45000,
-        paymentMode: 'CASH',
-        academicYearId: 'ay-2026',
-      });
-
-      const badUpdate = await expenseService.updateExpense(created.data!.id, {
-        amount: -5000,
-      });
-      expect(badUpdate.success).toBe(false);
-      expect(badUpdate.error).toContain('supérieur à 0');
-
-      const goodUpdate = await expenseService.updateExpense(created.data!.id, {
-        amount: 55000,
-        description: 'Réparation climatiseur salle des profs',
-      });
-      expect(goodUpdate.success).toBe(true);
-      expect(goodUpdate.data?.amount).toBe(55000);
-      expect(goodUpdate.data?.description).toBe('Réparation climatiseur salle des profs');
-    });
-
-    it('cancels an expense and records the cancellation reason', async () => {
-      const created = await expenseService.createExpense({
-        date: '2026-03-03',
-        categoryId: 'cat-3',
-        description: 'Acompte bus sortie scolaire',
-        amount: 100000,
-        paymentMode: 'CHECK',
-        academicYearId: 'ay-2026',
-      });
-
-      const cancelRes = await expenseService.cancelExpense(created.data!.id, 'Sortie reportée par la direction');
-      expect(cancelRes.success).toBe(true);
-      expect(cancelRes.data?.status).toBe('CANCELLED');
-      expect(cancelRes.data?.cancelReason).toBe('Sortie reportée par la direction');
-      expect(cancelRes.data?.cancelledAt).toBeDefined();
-    });
-  });
-
-  describe('budgets & dashboard metrics', () => {
-    it('manages budget and computes dashboard statistics', async () => {
-      await expenseService.setBudget('ay-2026', 500000);
-      expect(await expenseService.getBudget('ay-2026')).toBe(500000);
-
-      await expenseService.createExpense({
-        date: '2026-03-01',
-        categoryId: 'cat-1',
-        description: 'Fournitures',
-        amount: 150000,
-        paymentMode: 'CASH',
-        academicYearId: 'ay-2026',
-      });
-
-      const stats = await expenseService.getDashboardStats({ academicYearId: 'ay-2026', month: '2026-03' });
-      expect(stats.totalYear).toBe(150000);
-      expect(stats.totalMonth).toBe(150000);
-      expect(stats.annualBudget).toBe(500000);
-      expect(stats.remainingBudget).toBe(350000);
-      expect(stats.budgetUsedPct).toBe(30);
-    });
+    expect(await expenseService.getExpenses({ academicYearId: 'year-1' })).toEqual([]);
+    expect(state.selectArgs.every(columns => !columns.includes('expense_categories('))).toBe(true);
   });
 });

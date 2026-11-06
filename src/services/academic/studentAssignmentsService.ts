@@ -1,13 +1,6 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// GESCO — Service Affectations Élèves / Classes (src/services/academic/studentAssignmentsService.ts)
-// Couche de gestion des affectations d'élèves dans les classes et des transferts
-// Applique la règle : UN SEUL AFFECTATION ACTIVE PAR ÉLÈVE ET PAR ANNÉE SCOLAIRE
-// ─────────────────────────────────────────────────────────────────────────────
-
 import { supabase } from '../common/supabaseClient';
-import { ServiceResponse } from './academicYearsService';
-import { getClassroom } from './classroomsService';
-
+import type { ServiceResponse } from './academicYearsService';
+import { readRows,readRow,ok,failure } from '../common/remoteRows';
 export type AssignmentStatus = 'Actif' | 'Transféré' | 'Archivé';
 
 export interface StudentAssignment {
@@ -26,193 +19,17 @@ export interface StudentAssignment {
   updatedAt?: string;
 }
 
-function createSuccess<T>(data: T, message?: string): ServiceResponse<T> {
-  return { success: true, data, message };
+const mapRow=(r:any):StudentAssignment=>({id:r.id,studentId:r.student_id,classroomId:r.classroom_id,academicYearId:r.academic_year_id,assignmentDate:r.assignment_date,exitDate:r.exit_date,status:r.status,createdAt:r.created_at,updatedAt:r.updated_at});
+export async function getAssignments():Promise<ServiceResponse<StudentAssignment[]>>{try{return ok((await readRows('student_class_assignments')).map(mapRow));}catch(e){return failure(e);}}
+async function filtered(predicate:(a:StudentAssignment)=>boolean):Promise<ServiceResponse<StudentAssignment[]>>{const r=await getAssignments();return r.success?ok(r.data!.filter(predicate)):failure(r.error);}
+export const getAssignmentsByClass=(id:string)=>filtered(a=>a.classroomId===id);
+export const getClassroomAssignments=getAssignmentsByClass;
+export const getAssignmentsByYear=(id:string)=>filtered(a=>a.academicYearId===id);
+export const getStudentAssignments=(id:string)=>filtered(a=>a.studentId===id);
+export async function getStudentAssignment(studentId:string,academicYearId:string):Promise<ServiceResponse<StudentAssignment|null>>{const r=await filtered(a=>a.studentId===studentId&&a.academicYearId===academicYearId&&a.status==='Actif');return r.success?ok(r.data![0]||null):failure(r.error);}
+export async function assignStudent(studentId:string,classroomId:string,academicYearId:string,assignmentDate?:string,ignoreCapacity=false):Promise<ServiceResponse<StudentAssignment>>{
+ try{const {data,error}=await supabase.rpc('assign_student',{p_id:crypto.randomUUID(),p_student_id:studentId,p_classroom_id:classroomId,p_year_id:academicYearId,p_date:assignmentDate||new Date().toISOString().slice(0,10),p_ignore_capacity:ignoreCapacity});if(error||!data)throw new Error(error?.message||'Affectation non confirmée.');return ok(mapRow(data));}catch(e){return failure(e);}
 }
-
-function createError<T>(error: any, fallbackMessage: string): ServiceResponse<T> {
-  const errMsg = error?.message || error?.details || (typeof error === 'string' ? error : fallbackMessage);
-  console.warn('[studentAssignmentsService Warning]:', errMsg);
-  return { success: false, error: errMsg };
-}
-
-// Données initiales vierges
-const INITIAL_ASSIGNMENTS: StudentAssignment[] = [];
-
-const localAssignmentsCache: Map<string, StudentAssignment> = new Map(INITIAL_ASSIGNMENTS.map(a => [a.id, a]));
-
-
-export async function getAssignments(): Promise<ServiceResponse<StudentAssignment[]>> {
-  return createSuccess(Array.from(localAssignmentsCache.values()));
-}
-
-export async function getAssignmentsByClass(classroomId: string): Promise<ServiceResponse<StudentAssignment[]>> {
-  if (!classroomId?.trim()) return createError(null, 'Identifiant classe manquant.');
-  const list = Array.from(localAssignmentsCache.values()).filter((a) => a.classroomId === classroomId);
-  return createSuccess(list);
-}
-
-export async function getAssignmentsByYear(academicYearId: string): Promise<ServiceResponse<StudentAssignment[]>> {
-  if (!academicYearId?.trim()) return createError(null, 'Identifiant année manquant.');
-  const list = Array.from(localAssignmentsCache.values()).filter((a) => a.academicYearId === academicYearId);
-  return createSuccess(list);
-}
-
-export async function getClassroomAssignments(classroomId: string): Promise<ServiceResponse<StudentAssignment[]>> {
-  return getAssignmentsByClass(classroomId);
-}
-
-export async function getStudentAssignment(studentId: string, academicYearId: string): Promise<ServiceResponse<StudentAssignment | null>> {
-  try {
-    if (!studentId || !academicYearId) {
-      return createError(null, 'Identifiant élève et année scolaire requis.');
-    }
-
-    for (const a of localAssignmentsCache.values()) {
-      if (a.studentId === studentId && a.academicYearId === academicYearId && a.status === 'Actif') {
-        return createSuccess(a);
-      }
-    }
-
-    return createSuccess(null);
-  } catch (err) {
-    return createError(err, 'Erreur lors de la recherche de l\'affectation de l\'élève.');
-  }
-}
-
-export async function assignStudent(
-  studentId: string,
-  classroomId: string,
-  academicYearId: string,
-  assignmentDate?: string,
-  ignoreCapacity: boolean = false
-): Promise<ServiceResponse<StudentAssignment>> {
-  try {
-    if (!studentId || !classroomId || !academicYearId) {
-      return createError(null, 'Élève, classe et année scolaire sont obligatoires.');
-    }
-
-    const classRes = await getClassroom(classroomId);
-    if (classRes.success && classRes.data && !ignoreCapacity) {
-      const cls = classRes.data;
-      const currentActive = Array.from(localAssignmentsCache.values()).filter(
-        (a) => a.classroomId === classroomId && a.status === 'Actif'
-      ).length;
-
-      if (currentActive >= cls.capacity) {
-        return createError(
-          null,
-          `La classe ${cls.name} a atteint sa capacité maximale (${cls.capacity} élèves). Affectation impossible.`
-        );
-      }
-    }
-
-    const existingRes = await getStudentAssignment(studentId, academicYearId);
-    if (existingRes.success && existingRes.data) {
-      await archiveAssignment(existingRes.data.id);
-    }
-
-    const newId = crypto.randomUUID();
-    const now = new Date().toISOString();
-    const date = assignmentDate || new Date().toISOString().split('T')[0];
-
-    const createdAssignment: StudentAssignment = {
-      id: newId,
-      studentId,
-      classroomId,
-      academicYearId,
-      assignmentDate: date,
-      status: 'Actif',
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    localAssignmentsCache.set(createdAssignment.id, createdAssignment);
-    return createSuccess(createdAssignment, 'Élève affecté à la classe avec succès.');
-  } catch (err) {
-    return createError(err, 'Erreur lors de l\'affectation de l\'élève.');
-  }
-}
-
-export async function transferStudent(
-  studentId: string,
-  newClassroomId: string,
-  academicYearId: string,
-  transferDate?: string
-): Promise<ServiceResponse<StudentAssignment>> {
-  try {
-    if (!studentId || !newClassroomId || !academicYearId) {
-      return createError(null, 'Élève, nouvelle classe et année scolaire sont obligatoires.');
-    }
-
-    // 1. Vérifier la capacité de la classe de destination avant d'altérer l'affectation existante
-    const classRes = await getClassroom(newClassroomId);
-    if (classRes.success && classRes.data) {
-      const cls = classRes.data;
-      const currentActive = Array.from(localAssignmentsCache.values()).filter(
-        (a) => a.classroomId === newClassroomId && a.status === 'Actif'
-      ).length;
-
-      if (currentActive >= cls.capacity) {
-        return createError(
-          null,
-          `La classe ${cls.name} a atteint sa capacité maximale (${cls.capacity} élèves). Transfert impossible.`
-        );
-      }
-    }
-
-    // 2. Marquer l'affectation précédente comme transférée
-    const existingRes = await getStudentAssignment(studentId, academicYearId);
-    if (existingRes.success && existingRes.data) {
-      const date = transferDate || new Date().toISOString().split('T')[0];
-      const cached = localAssignmentsCache.get(existingRes.data.id);
-      if (cached) {
-        localAssignmentsCache.set(existingRes.data.id, {
-          ...cached,
-          status: 'Transféré',
-          exitDate: date,
-          updatedAt: new Date().toISOString(),
-        });
-      }
-    }
-
-    return assignStudent(studentId, newClassroomId, academicYearId, transferDate, true);
-  } catch (err) {
-    return createError(err, 'Erreur lors du transfert de l\'élève.');
-  }
-}
-
-export async function archiveAssignment(id: string): Promise<ServiceResponse<boolean>> {
-  try {
-    if (!id) return createError(null, 'Identifiant affectation manquant.');
-    const cached = localAssignmentsCache.get(id);
-    if (cached) {
-      localAssignmentsCache.set(id, { ...cached, status: 'Archivé', updatedAt: new Date().toISOString() });
-    }
-    return createSuccess(true, 'Affectation archivée.');
-  } catch (err) {
-    return createError(err, 'Erreur d\'archivage.');
-  }
-}
-
-export async function restoreAssignment(id: string): Promise<ServiceResponse<boolean>> {
-  try {
-    if (!id) return createError(null, 'Identifiant affectation manquant.');
-    const cached = localAssignmentsCache.get(id);
-    if (cached) {
-      localAssignmentsCache.set(id, { ...cached, status: 'Actif', updatedAt: new Date().toISOString() });
-    }
-    return createSuccess(true, 'Affectation restaurée.');
-  } catch (err) {
-    return createError(err, 'Erreur de restauration.');
-  }
-}
-
-export async function getStudentAssignments(studentId: string): Promise<ServiceResponse<StudentAssignment[]>> {
-  try {
-    const assignments = Array.from(localAssignmentsCache.values()).filter((a) => a.studentId === studentId);
-    return createSuccess(assignments);
-  } catch (err) {
-    return createError(err, 'Erreur lors de la récupération de l\'historique d\'affectations.');
-  }
-}
+export const transferStudent=(studentId:string,classroomId:string,academicYearId:string,date?:string)=>assignStudent(studentId,classroomId,academicYearId,date,false);
+export async function archiveAssignment(id:string):Promise<ServiceResponse<boolean>>{try{const{error}=await supabase.rpc('archive_assignment',{p_id:id});if(error)throw new Error(error.message);return ok(true);}catch(e){return failure(e);}}
+export async function restoreAssignment(id:string):Promise<ServiceResponse<boolean>>{try{const row=await readRow('student_class_assignments',id);const r=await assignStudent(row.student_id,row.classroom_id,row.academic_year_id);return r.success?ok(true):failure(r.error);}catch(e){return failure(e);}}

@@ -24,7 +24,7 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await login(username.trim(), password.trim());
+      await login(username.trim(), password);
     } catch (err: any) {
       setError(err.message || 'Identifiant ou mot de passe incorrect.');
     } finally {

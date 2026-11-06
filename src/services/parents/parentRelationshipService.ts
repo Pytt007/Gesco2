@@ -67,14 +67,54 @@ export interface RelationshipHistoryLog {
   author: string;
 }
 
-// ─── Cache & Hist de Secours Local ──────────────────────────────────────────
+// Neon is authoritative; this cache is only retained for legacy clear calls.
 
 const localRelationshipsCache: Map<string, StudentParentRelationship> = new Map();
-const localHistoryLogs: RelationshipHistoryLog[] = [];
 
 export function clearRelationshipsStore(): void {
   localRelationshipsCache.clear();
-  localHistoryLogs.length = 0;
+}
+
+function relationRow(relation: StudentParentRelationship) {
+  return {
+    id: relation.id,
+    student_id: relation.studentId,
+    parent_id: relation.parentId,
+    data: relation,
+    updated_at: relation.updatedAt || new Date().toISOString(),
+  };
+}
+
+async function loadRelationships(filters: { studentId?: string; parentId?: string } = {}): Promise<StudentParentRelationship[]> {
+  const rows: StudentParentRelationship[] = [];
+  for (let offset = 0; ; offset += 500) {
+    let query = supabase.from('student_parent_links').select('id,student_id,parent_id,data');
+    if (filters.studentId) query = query.eq('student_id', filters.studentId);
+    if (filters.parentId) query = query.eq('parent_id', filters.parentId);
+    const { data, error } = await query.range(offset, offset + 499);
+    if (error) throw new Error(error.message);
+    if (!Array.isArray(data)) throw new Error('Réponse Neon invalide pour les liens de parenté.');
+    for (const row of data) {
+      if (!row.data || typeof row.data !== 'object' || Array.isArray(row.data)) throw new Error('Lien de parenté Neon invalide.');
+      rows.push({ ...row.data, id: row.id, studentId: row.student_id, parentId: row.parent_id } as StudentParentRelationship);
+    }
+    if (data.length < 500) break;
+  }
+  localRelationshipsCache.clear();
+  for (const relation of rows) localRelationshipsCache.set(relation.id, relation);
+  return rows;
+}
+
+async function writeRelationships(relations: StudentParentRelationship[]): Promise<void> {
+  if (relations.length === 0) return;
+  const { data, error } = await supabase.from('student_parent_links')
+    .upsert(relations.map(relationRow), { onConflict: 'id' }).select('id');
+  if (error) throw new Error(error.message);
+  if (!Array.isArray(data) || data.length !== relations.length ||
+      relations.some((relation) => !data.some((row) => row.id === relation.id))) {
+    throw new Error('Enregistrement des liens de parenté non confirmé par Neon.');
+  }
+  for (const relation of relations) localRelationshipsCache.set(relation.id, relation);
 }
 
 
@@ -106,9 +146,7 @@ export async function linkStudent(
       return createError(null, 'Identifiants élève et responsable obligatoires.');
     }
 
-    const studentRels = Array.from(localRelationshipsCache.values()).filter(
-      (rel) => rel.studentId === studentId
-    );
+    const studentRels = await loadRelationships({ studentId });
 
     const existingRel = studentRels.find((rel) => rel.parentId === parentId);
     if (existingRel) {
@@ -120,14 +158,6 @@ export async function linkStudent(
     const finalPrimary = isFirstParent ? true : isPrimary;
     const finalPayer = isFirstParent ? true : isPayer;
     const finalEmergency = isEmergencyContact ?? true;
-
-    if (finalPayer) {
-      await setPayerParent(studentId, parentId);
-    }
-
-    if (finalPrimary) {
-      await setPrimaryParent(studentId, parentId);
-    }
 
     const relationshipId = crypto.randomUUID();
     const now = new Date().toISOString();
@@ -146,18 +176,14 @@ export async function linkStudent(
       updatedAt: now,
     };
 
-    localRelationshipsCache.set(relationship.id, relationship);
-
-    localHistoryLogs.unshift({
-      id: `log-${Date.now()}`,
-      studentId,
-      studentName: `Élève (${studentId.slice(0, 8)})`,
-      parentId,
-      parentName: `Responsable (${parentId.slice(0, 8)})`,
-      action: `Ajout lien (${relationshipType})${finalPayer ? ' — Responsable Payeur' : ''}${finalEmergency ? ' — Contact Urgence' : ''}`,
-      date: new Date().toLocaleString('fr-FR'),
-      author: 'Utilisateur Connecté',
-    });
+    const changed = studentRels.filter((rel) => (finalPrimary && rel.isPrimary) || (finalPayer && rel.isPayer))
+      .map((rel) => ({ ...rel,
+        isPrimary: finalPrimary ? false : rel.isPrimary,
+        isPayer: finalPayer ? false : rel.isPayer,
+        isFinancialEmergencyContact: finalPayer ? false : rel.isFinancialEmergencyContact,
+        updatedAt: now,
+      }));
+    await writeRelationships([...changed, relationship]);
 
     return createSuccess(relationship, 'Élève associé avec succès au responsable légal.');
   } catch (err) {
@@ -167,12 +193,13 @@ export async function linkStudent(
 
 export async function setPayerParent(studentId: string, parentId: string): Promise<ServiceResponse<boolean>> {
   try {
-    for (const rel of localRelationshipsCache.values()) {
-      if (rel.studentId === studentId) {
-        rel.isPayer = rel.parentId === parentId;
-        rel.isFinancialEmergencyContact = rel.isPayer;
-      }
-    }
+    const relations = await loadRelationships({ studentId });
+    if (!relations.some((rel) => rel.parentId === parentId)) return createError(null, 'Responsable introuvable pour cet élève.');
+    await writeRelationships(relations.map((rel) => ({
+      ...rel, isPayer: rel.parentId === parentId,
+      isFinancialEmergencyContact: rel.parentId === parentId,
+      updatedAt: new Date().toISOString(),
+    })));
     return createSuccess(true, 'Responsable payeur unique mis à jour.');
   } catch (err) {
     return createError(err, 'Erreur lors de la définition du responsable payeur.');
@@ -181,11 +208,11 @@ export async function setPayerParent(studentId: string, parentId: string): Promi
 
 export async function setPrimaryParent(studentId: string, parentId: string): Promise<ServiceResponse<boolean>> {
   try {
-    for (const rel of localRelationshipsCache.values()) {
-      if (rel.studentId === studentId) {
-        rel.isPrimary = rel.parentId === parentId;
-      }
-    }
+    const relations = await loadRelationships({ studentId });
+    if (!relations.some((rel) => rel.parentId === parentId)) return createError(null, 'Responsable introuvable pour cet élève.');
+    await writeRelationships(relations.map((rel) => ({
+      ...rel, isPrimary: rel.parentId === parentId, updatedAt: new Date().toISOString(),
+    })));
     return createSuccess(true, 'Responsable principal mis à jour.');
   } catch (err) {
     return createError(err, 'Erreur lors de la définition du responsable principal.');
@@ -194,42 +221,13 @@ export async function setPrimaryParent(studentId: string, parentId: string): Pro
 
 export async function unlinkStudent(studentId: string, parentId: string): Promise<ServiceResponse<boolean>> {
   try {
-    let wasPrimary = false;
-    let wasPayer = false;
-
-    for (const [key, rel] of localRelationshipsCache.entries()) {
-      if (rel.studentId === studentId && rel.parentId === parentId) {
-        wasPrimary = rel.isPrimary;
-        wasPayer = rel.isPayer;
-        localRelationshipsCache.delete(key);
-      }
-    }
-
-    // Réassigner isPrimary et/ou isPayer au premier parent restant si nécessaire
-    const remainingRels = Array.from(localRelationshipsCache.values()).filter(
-      (rel) => rel.studentId === studentId
-    );
-
-    if (remainingRels.length > 0) {
-      if (wasPrimary && !remainingRels.some((r) => r.isPrimary)) {
-        remainingRels[0].isPrimary = true;
-      }
-      if (wasPayer && !remainingRels.some((r) => r.isPayer)) {
-        remainingRels[0].isPayer = true;
-        remainingRels[0].isFinancialEmergencyContact = true;
-      }
-    }
-
-    localHistoryLogs.unshift({
-      id: `log-${Date.now()}`,
-      studentId,
-      studentName: `Élève (${studentId.slice(0, 8)})`,
-      parentId,
-      parentName: `Responsable (${parentId.slice(0, 8)})`,
-      action: 'Retrait du lien de parenté',
-      date: new Date().toLocaleString('fr-FR'),
-      author: 'Utilisateur Connecté',
-    });
+    const relations = await loadRelationships({ studentId });
+    const target = relations.find((rel) => rel.parentId === parentId);
+    if (!target) return createError(null, 'Lien de parenté introuvable.');
+    const { data, error } = await supabase.from('student_parent_links').delete()
+      .eq('id', target.id).select('id').single();
+    if (error || data?.id !== target.id) throw new Error(error?.message || 'Suppression du lien non confirmée par Neon.');
+    localRelationshipsCache.delete(target.id);
 
     return createSuccess(true, 'Lien de parenté supprimé avec succès.');
   } catch (err) {
@@ -255,9 +253,7 @@ export async function validateStudentFamilyUnit(studentId: string): Promise<Serv
   try {
     if (!studentId) return createError(null, 'Identifiant élève requis.');
 
-    const rels = Array.from(localRelationshipsCache.values()).filter(
-      (r) => r.studentId === studentId
-    );
+    const rels = await loadRelationships({ studentId });
 
     const hasParents = rels.length > 0;
     const hasPrimary = rels.some((r) => r.isPrimary);
@@ -290,23 +286,19 @@ export async function validateStudentFamilyUnit(studentId: string): Promise<Serv
 export async function getChildren(parentId: string): Promise<ServiceResponse<LinkedStudentInfo[]>> {
   try {
     const localChildren: LinkedStudentInfo[] = [];
-
-    for (const rel of localRelationshipsCache.values()) {
-      if (rel.parentId === parentId) {
+    const relations = await loadRelationships({ parentId });
+    for (const rel of relations) {
         let firstName = 'Élève';
         let lastName = '';
         let matricule = `MAT-${rel.studentId.slice(0, 6)}`;
         let grade = 'Classe';
 
-        try {
-          const stRes = await getStudentById(rel.studentId);
-          if (stRes.success && stRes.data) {
-            firstName = stRes.data.firstName;
-            lastName = stRes.data.lastName;
-            matricule = stRes.data.matricule || matricule;
-            grade = stRes.data.className || (stRes.data as any).level || stRes.data.grade || grade;
-          }
-        } catch { /* Fallback */ }
+        const stRes = await getStudentById(rel.studentId);
+        if (!stRes.success || !stRes.data) throw new Error(stRes.error || 'Lecture de l’élève impossible.');
+        firstName = stRes.data.firstName;
+        lastName = stRes.data.lastName;
+        matricule = stRes.data.matricule || matricule;
+        grade = stRes.data.className || (stRes.data as any).level || stRes.data.grade || grade;
 
         localChildren.push({
           studentId: rel.studentId,
@@ -314,13 +306,11 @@ export async function getChildren(parentId: string): Promise<ServiceResponse<Lin
           lastName,
           matricule,
           grade,
-          academicYear: '2026-2027',
           relationshipType: rel.relationshipType,
           isPrimary: rel.isPrimary,
           isPayer: rel.isPayer ?? true,
           isEmergencyContact: rel.isEmergencyContact ?? true,
         });
-      }
     }
 
     return createSuccess(localChildren);
@@ -337,11 +327,11 @@ export async function getParentsOfStudent(studentId: string): Promise<ServiceRes
     if (!studentId) return createError(null, 'Identifiant élève requis.');
 
     const result: ParentOfStudentInfo[] = [];
-    for (const rel of localRelationshipsCache.values()) {
-      if (rel.studentId === studentId) {
+    const relations = await loadRelationships({ studentId });
+    for (const rel of relations) {
         const parentRes = await getParentById(rel.parentId);
-        if (parentRes.success && parentRes.data) {
-          result.push({
+        if (!parentRes.success || !parentRes.data) throw new Error(parentRes.error || 'Lecture du responsable impossible.');
+        result.push({
             relationshipId: rel.id,
             parentId: rel.parentId,
             parent: parentRes.data,
@@ -352,8 +342,6 @@ export async function getParentsOfStudent(studentId: string): Promise<ServiceRes
             isFinancialEmergencyContact: rel.isFinancialEmergencyContact,
             canPickUpStudent: rel.canPickUpStudent,
           });
-        }
-      }
     }
 
     result.sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0));
@@ -371,11 +359,29 @@ export async function updateRelationship(
   updates: Partial<StudentParentRelationship>
 ): Promise<ServiceResponse<StudentParentRelationship>> {
   try {
-    const rel = localRelationshipsCache.get(relationshipId);
+    const { data: row, error: readError } = await supabase.from('student_parent_links')
+      .select('id,student_id,parent_id,data').eq('id', relationshipId).maybeSingle();
+    if (readError) throw new Error(readError.message);
+    const rel = row ? { ...row.data, id: row.id, studentId: row.student_id, parentId: row.parent_id } as StudentParentRelationship : null;
     if (!rel) {
       return createError(null, 'Relation introuvable.');
     }
-    const updated = { ...rel, ...updates, updatedAt: new Date().toISOString() };
+    const updated = {
+      ...rel, ...updates, id: rel.id, studentId: rel.studentId, parentId: rel.parentId,
+      isFinancialEmergencyContact: updates.isPayer === undefined ? (updates.isFinancialEmergencyContact ?? rel.isFinancialEmergencyContact) : updates.isPayer,
+      createdAt: rel.createdAt, updatedAt: new Date().toISOString(),
+    };
+    const peers = (updated.isPrimary && !rel.isPrimary) || (updated.isPayer && !rel.isPayer)
+      ? (await loadRelationships({ studentId: rel.studentId })).filter((item) => item.id !== rel.id)
+        .map((item) => ({
+          ...item,
+          isPrimary: updated.isPrimary && !rel.isPrimary ? false : item.isPrimary,
+          isPayer: updated.isPayer && !rel.isPayer ? false : item.isPayer,
+          isFinancialEmergencyContact: updated.isPayer && !rel.isPayer ? false : item.isFinancialEmergencyContact,
+          updatedAt: new Date().toISOString(),
+        }))
+      : [];
+    await writeRelationships([...peers, updated]);
     localRelationshipsCache.set(relationshipId, updated);
     return createSuccess(updated, 'Relation mise à jour.');
   } catch (err) {
@@ -387,5 +393,27 @@ export async function updateRelationship(
  * Récupère l'historique des changements de responsables
  */
 export async function getRelationshipHistory(): Promise<ServiceResponse<RelationshipHistoryLog[]>> {
-  return createSuccess(localHistoryLogs);
+  try {
+    const rows: RelationshipHistoryLog[] = [];
+    for (let offset = 0; ; offset += 500) {
+      const { data, error } = await supabase.from('parent_link_events').select('id,student_id,parent_id,action,created_at')
+        .order('created_at', { ascending: false }).range(offset, offset + 499);
+      if (error) throw new Error(error.message);
+      if (!Array.isArray(data)) throw new Error('Historique Neon invalide.');
+      for (const row of data) rows.push({
+        id: row.id,
+        studentId: row.student_id,
+        studentName: `Élève (${row.student_id.slice(0, 8)})`,
+        parentId: row.parent_id,
+        parentName: `Responsable (${row.parent_id.slice(0, 8)})`,
+        action: row.action,
+        date: new Date(row.created_at).toLocaleString('fr-FR'),
+        author: 'Utilisateur connecté',
+      });
+      if (data.length < 500) break;
+    }
+    return createSuccess(rows);
+  } catch (error) {
+    return createError(error, 'Erreur lors de la lecture de l’historique des liens.');
+  }
 }

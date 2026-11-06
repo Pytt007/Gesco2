@@ -1,5 +1,5 @@
 /**
- * GESCO — Contexte d'Authentification avec Fallback Démo
+ * GESCO — Contexte d'Authentification Neon
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
@@ -14,7 +14,6 @@ import {
   deleteAccount,
   updateUserPassword,
   updateAccountRole,
-  DEMO_ADMIN_USER,
 } from '../services/auth/authService';
 import { DEFAULT_PERMISSIONS } from '../constants/permissions';
 import { GescoUser, UserAccount, UserRole } from '../types';
@@ -29,7 +28,7 @@ interface AuthContextValue {
   logout: () => Promise<void>;
   createUser: (username: string, password: string, role: UserRole, fullName: string) => Promise<{ error?: string }>;
   deleteUser: (userId: string) => Promise<{ error?: string }>;
-  changePassword: (newPassword: string) => Promise<{ error?: string }>;
+  changePassword: (newPassword: string, currentPassword: string) => Promise<{ error?: string }>;
   updateUserRole: (userId: string, role: UserRole) => Promise<{ error?: string }>;
   refreshUserAccounts: () => Promise<void>;
 }
@@ -64,8 +63,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearTimeout(safetyTimer);
       const session = res?.data?.session;
       if (session?.user) {
-        const user = await resolveUserFromSupabase(session.user);
-        if (!cancelled) setCurrentUser(user);
+        try {
+          const user = await resolveUserFromSupabase(session.user);
+          if (!cancelled) setCurrentUser(user);
+        } catch {
+          if (!cancelled) setCurrentUser(null);
+        }
       } else {
         // ✅ SEC-001 : Pas de session → l'utilisateur reste null (non connecté)
         if (!cancelled) setCurrentUser(null);
@@ -83,8 +86,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const subscription = subscribeToAuthStateChange(async (_event, session) => {
       if (cancelled) return;
       if (session?.user) {
-        const user = await resolveUserFromSupabase(session.user);
-        if (!cancelled) setCurrentUser(user);
+        try {
+          const user = await resolveUserFromSupabase(session.user);
+          if (!cancelled) setCurrentUser(user);
+        } catch {
+          if (!cancelled) setCurrentUser(null);
+        }
       } else {
         if (!cancelled) setCurrentUser(null);
       }
@@ -134,8 +141,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return res;
   }, []);
 
-  const changePassword = useCallback(async (newPassword: string): Promise<{ error?: string }> => {
-    return updateUserPassword(newPassword);
+  const changePassword = useCallback(async (newPassword: string, currentPassword: string): Promise<{ error?: string }> => {
+    return updateUserPassword(newPassword, currentPassword);
   }, []);
 
   const updateUserRole = useCallback(async (userId: string, role: UserRole): Promise<{ error?: string }> => {
@@ -147,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const permissions = currentUser
-    ? (DEFAULT_PERMISSIONS[currentUser.role] || (currentUser.username === 'admin' || currentUser.isOwner ? DEFAULT_PERMISSIONS.ADMIN_GENERALE : []))
+    ? (DEFAULT_PERMISSIONS[currentUser.role] || [])
     : [];
   const canAccess = useCallback((viewId: string) => permissions.includes(viewId), [permissions]);
 

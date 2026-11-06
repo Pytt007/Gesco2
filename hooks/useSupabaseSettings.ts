@@ -80,26 +80,11 @@ function useSupabaseSettings(): [
     fetchSettings();
 
     // Écouter les changements des paramètres en temps réel (Realtime)
-    const channel = supabase
-      .channel('public:school_settings')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'school_settings',
-        },
-        () => {
-          if (!cancelled) {
-            fetchSettings();
-          }
-        }
-      )
-      .subscribe();
+    const timer = window.setInterval(() => { if (!cancelled && document.visibilityState === 'visible') fetchSettings(); }, 30000);
 
     return () => {
       cancelled = true;
-      supabase.removeChannel(channel);
+      window.clearInterval(timer);
     };
   }, []);
 

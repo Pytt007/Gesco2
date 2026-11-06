@@ -157,12 +157,12 @@ const Settings: React.FC<SettingsProps> = ({
         addNotification('error', 'Les nouveaux mots de passe ne correspondent pas.');
         return;
       }
-      if (passwords.new.length < 6) {
-        addNotification('error', 'Le mot de passe doit contenir au moins 6 caractères.');
+      if (passwords.new.length < 12) {
+        addNotification('error', 'Le mot de passe doit contenir au moins 12 caractères.');
         return;
       }
       if (changePassword) {
-        const { error } = await changePassword(passwords.new);
+        const { error } = await changePassword(passwords.new, passwords.current);
         if (error) {
           addNotification('error', `Erreur lors du changement de mot de passe : ${error}`);
           return;
@@ -620,8 +620,8 @@ const Settings: React.FC<SettingsProps> = ({
       return;
     }
 
-    if (newUserPass.trim().length < 6) {
-      addNotification('error', "Le mot de passe doit faire au moins 6 caractères.");
+    if (newUserPass.length < 12) {
+      addNotification('error', "Le mot de passe doit faire au moins 12 caractères.");
       return;
     }
 
@@ -629,7 +629,7 @@ const Settings: React.FC<SettingsProps> = ({
       if (createUser) {
         const res = await createUser(
           newUserLogin.trim().toLowerCase(),
-          newUserPass.trim(),
+          newUserPass,
           newUserRole,
           newUserName.trim()
         );

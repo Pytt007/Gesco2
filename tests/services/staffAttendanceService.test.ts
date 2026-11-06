@@ -1,9 +1,31 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+const attendanceDb = vi.hoisted(() => ({ rows: new Map<string, any>(), writeError: '' }));
+vi.mock('../../src/services/common/supabaseClient', () => ({
+  supabase: {
+    from: (table: string) => {
+      if (table !== 'school_settings') throw new Error(`Unexpected table ${table}`);
+      return {
+        select: () => ({
+          eq: (_key: string, id: string) => ({ maybeSingle: async () => ({ data: attendanceDb.rows.get(id) || null, error: null }) }),
+          like: () => ({ range: async (start: number, end: number) => ({ data: Array.from(attendanceDb.rows.values()).slice(start, end + 1), error: null }) }),
+        }),
+        upsert: (row: any) => ({ select: () => ({ single: async () => {
+          if (attendanceDb.writeError) return { data: null, error: { message: attendanceDb.writeError } };
+          attendanceDb.rows.set(row.id, row);
+          return { data: { id: row.id }, error: null };
+        } }) }),
+      };
+    },
+  },
+}));
 import { staffAttendanceService, clearStaffAttendanceStore } from '../../src/services/staffAttendance';
 
 describe('Staff Attendance Service & Validation Layer (P2-19)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    attendanceDb.rows.clear();
+    attendanceDb.writeError = '';
     clearStaffAttendanceStore();
   });
 
@@ -72,6 +94,19 @@ describe('Staff Attendance Service & Validation Layer (P2-19)', () => {
       const history = await staffAttendanceService.getStaffAttendanceHistory({ date: todayStr });
       expect(history.length).toBe(1);
       expect(history[0].items[1].arrivalTime).toBe('08:25');
+      clearStaffAttendanceStore();
+      const reloaded = await staffAttendanceService.getStaffAttendanceSheet(todayStr, 'ay-2026');
+      expect(reloaded.items[1].arrivalTime).toBe('08:25');
+    });
+
+    it('does not announce success after Neon refuses the write', async () => {
+      attendanceDb.writeError = 'permission denied';
+      const result = await staffAttendanceService.saveStaffAttendanceSheet({
+        academicYearId: 'year-real-id', date: new Date().toISOString().split('T')[0],
+        items: [{ staffId: 's1', matricule: 'E1', firstName: 'A', lastName: 'B', role: 'Enseignant', phone: '', status: 'PRESENT' }],
+      });
+      expect(result).toMatchObject({ success: false, error: 'permission denied' });
+      expect(attendanceDb.rows.size).toBe(0);
     });
   });
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   StudentFinancialEnrollment,
   TuitionPaymentRecord,
@@ -19,6 +19,8 @@ export function useTuitionPayment(academicYearId: string = 'ay-2026') {
   const [activeReceipt, setActiveReceipt] = useState<ReceiptData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const pendingRequest = useRef<{ signature: string; id: string } | null>(null);
+  const requestRunning = useRef(false);
   const [recording, setRecording] = useState<boolean>(false);
 
   const fetchEnrollments = useCallback(async () => {
@@ -64,11 +66,16 @@ export function useTuitionPayment(academicYearId: string = 'ay-2026') {
   // Enregistrement d'un nouveau versement
   const recordPayment = useCallback(
     async (input: RecordPaymentInput) => {
+      if (requestRunning.current) return null;
+      requestRunning.current = true;
+      const signature = JSON.stringify(input);
+      if (pendingRequest.current?.signature !== signature) pendingRequest.current = { signature, id: crypto.randomUUID() };
       setRecording(true);
       setError(null);
       try {
-        const res = await tuitionPaymentService.recordPayment(input);
+        const res = await tuitionPaymentService.recordPayment({ ...input, requestId: pendingRequest.current.id });
         if (res.success && res.data) {
+          pendingRequest.current = null;
           setActiveReceipt(res.data.receipt);
           await fetchEnrollments();
           await fetchPaymentsHistory();
@@ -78,6 +85,7 @@ export function useTuitionPayment(academicYearId: string = 'ay-2026') {
           return null;
         }
       } finally {
+        requestRunning.current = false;
         setRecording(false);
       }
     },
@@ -100,6 +108,7 @@ export function useTuitionPayment(academicYearId: string = 'ay-2026') {
           return false;
         }
       } finally {
+        requestRunning.current = false;
         setRecording(false);
       }
     },

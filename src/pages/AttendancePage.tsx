@@ -23,7 +23,7 @@ export default function AttendancePage() {
   const { academicYears } = useAcademicYears();
   const classroomsHook = useClassrooms();
   
-  const [selectedYearId, setSelectedYearId] = useState<string>(schoolYear || 'ay-2026');
+  const selectedYearId = academicYears.find((year) => year.isCurrent)?.id || '';
   const [activeTab, setActiveTab] = useState<'APPEL' | 'HISTORIQUE'>('APPEL');
 
   const {
@@ -62,8 +62,8 @@ export default function AttendancePage() {
       variant: 'info',
     });
     if (ok) {
-      await saveSheet();
-      addNotification('success', `Feuille de présence enregistrée pour la classe ${selectedClassName}`);
+      const result = await saveSheet();
+      if (result.success) addNotification('success', `Feuille de présence enregistrée pour la classe ${selectedClassName}`);
     }
   };
 
@@ -92,7 +92,7 @@ export default function AttendancePage() {
             <button 
               className="btn btn-primary" 
               onClick={handleSaveSheetWithConfirm} 
-              disabled={saving}
+              disabled={saving || !selectedYearId || !selectedClassId}
               style={{ fontWeight: 700 }}
             >
               {saving ? (
@@ -145,6 +145,7 @@ export default function AttendancePage() {
                 height: '42px'
               }}
             >
+              <option value="">Choisir une classe</option>
               {availableClasses.map((c) => (
                 <option key={c.id} value={c.id}>Classe {c.name}</option>
               ))}

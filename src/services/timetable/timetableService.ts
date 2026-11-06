@@ -16,12 +16,56 @@ import { getClassrooms, getClassroom } from '../academic/classroomsService';
 import { listStaff } from '../staff/staffService';
 import { getSubjects } from '../academic/catalog/subjectsService';
 
-// ─── Stockage Local ─────────────────────────────────────────────────────────
+// Cache facultatif ; Neon reste la seule source de vérité.
 
 const scheduleStore: Map<string, ScheduleSlotRecord> = new Map();
 
 export function clearTimetableStore(): void {
   scheduleStore.clear();
+}
+
+async function loadSlotsByYear(academicYearId: string): Promise<ScheduleSlotRecord[]> {
+  if (!academicYearId) return [];
+  const slots: ScheduleSlotRecord[] = [];
+  for (let offset = 0; ; offset += 500) {
+    const { data, error } = await supabase.from('timetable_slots')
+      .select('id,data').eq('academic_year_id', academicYearId).range(offset, offset + 499);
+    if (error) throw new Error(error.message);
+    if (!Array.isArray(data)) throw new Error('Réponse Neon invalide pour l’emploi du temps.');
+    for (const row of data) {
+      if (!row.data || typeof row.data !== 'object' || Array.isArray(row.data)) {
+        throw new Error('Créneau Neon invalide.');
+      }
+      slots.push({ ...row.data, id: row.id } as ScheduleSlotRecord);
+    }
+    if (data.length < 500) break;
+  }
+  scheduleStore.clear();
+  for (const slot of slots) scheduleStore.set(slot.id, slot);
+  return slots;
+}
+
+async function loadSlotById(id: string): Promise<ScheduleSlotRecord | null> {
+  const { data, error } = await supabase.from('timetable_slots').select('id,data').eq('id', id).maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  if (!data.data || typeof data.data !== 'object' || Array.isArray(data.data)) throw new Error('Créneau Neon invalide.');
+  return { ...data.data, id: data.id } as ScheduleSlotRecord;
+}
+
+function slotRow(slot: ScheduleSlotRecord) {
+  return {
+    id: slot.id,
+    academic_year_id: slot.academicYearId,
+    class_id: slot.classId,
+    teacher_id: slot.teacherId,
+    day_of_week: slot.dayOfWeek,
+    start_time: slot.startTime,
+    end_time: slot.endTime,
+    room: slot.room || null,
+    data: slot,
+    updated_at: slot.updatedAt,
+  };
 }
 
 export function normalizeDayKey(day: string): DayOfWeek {
@@ -99,19 +143,17 @@ export const timetableService = {
   /**
    * Récupère l'emploi du temps par classe
    */
-  async getScheduleByClass(classId: string, academicYearId: string = 'ay-2026'): Promise<ScheduleSlotRecord[]> {
-    return Array.from(scheduleStore.values()).filter(
-      (s) => s.classId === classId && s.academicYearId === academicYearId
-    );
+  async getScheduleByClass(classId: string, academicYearId: string): Promise<ScheduleSlotRecord[]> {
+    const slots = await loadSlotsByYear(academicYearId);
+    return slots.filter((s) => s.classId === classId);
   },
 
   /**
    * Récupère l'emploi du temps par enseignant
    */
-  async getScheduleByTeacher(teacherId: string, academicYearId: string = 'ay-2026'): Promise<ScheduleSlotRecord[]> {
-    return Array.from(scheduleStore.values()).filter(
-      (s) => s.teacherId === teacherId && s.academicYearId === academicYearId
-    );
+  async getScheduleByTeacher(teacherId: string, academicYearId: string): Promise<ScheduleSlotRecord[]> {
+    const slots = await loadSlotsByYear(academicYearId);
+    return slots.filter((s) => s.teacherId === teacherId);
   },
 
   /**
@@ -158,9 +200,14 @@ export const timetableService = {
       return { success: false, error: 'Le créneau doit être compris entre 06h00 et 22h00.' };
     }
 
-    const allSlots = Array.from(scheduleStore.values()).filter(
-      (s) => s.academicYearId === input.academicYearId && normalizeDayKey(s.dayOfWeek) === normalizedDay
-    );
+    let allSlots: ScheduleSlotRecord[];
+    try {
+      allSlots = (await loadSlotsByYear(input.academicYearId)).filter(
+        (s) => normalizeDayKey(s.dayOfWeek) === normalizedDay
+      );
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Lecture Neon impossible.' };
+    }
 
     // 3. Conflit de Classe : Deux cours en même temps dans la même classe
     const classConflict = allSlots.find(
@@ -239,7 +286,13 @@ export const timetableService = {
       updatedAt: new Date().toISOString(),
     };
 
-    scheduleStore.set(id, record);
+    try {
+      const { data, error } = await supabase.from('timetable_slots').insert(slotRow(record)).select('id').single();
+      if (error || data?.id !== id) throw new Error(error?.message || 'Enregistrement du créneau non confirmé par Neon.');
+      scheduleStore.set(id, record);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Écriture Neon impossible.' };
+    }
     return { success: true, data: record, message: 'Cours ajouté avec succès.' };
   },
 
@@ -247,7 +300,12 @@ export const timetableService = {
    * Modifier un créneau
    */
   async updateSlot(id: string, input: ScheduleSlotInput): Promise<ServiceResponse<ScheduleSlotRecord>> {
-    const existing = scheduleStore.get(id);
+    let existing: ScheduleSlotRecord | null;
+    try {
+      existing = await loadSlotById(id);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Lecture Neon impossible.' };
+    }
     if (!existing) return { success: false, error: 'Créneau introuvable.' };
 
     if (
@@ -288,9 +346,14 @@ export const timetableService = {
 
     const normalizedDay = normalizeDayKey(input.dayOfWeek);
 
-    const otherSlots = Array.from(scheduleStore.values()).filter(
-      (s) => s.id !== id && s.academicYearId === input.academicYearId && normalizeDayKey(s.dayOfWeek) === normalizedDay
-    );
+    let otherSlots: ScheduleSlotRecord[];
+    try {
+      otherSlots = (await loadSlotsByYear(input.academicYearId)).filter(
+        (s) => s.id !== id && normalizeDayKey(s.dayOfWeek) === normalizedDay
+      );
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Lecture Neon impossible.' };
+    }
 
     const classConflict = otherSlots.find(
       (s) => s.classId === input.classId && intervalsOverlap(s.startTime, s.endTime, input.startTime, input.endTime)
@@ -319,25 +382,39 @@ export const timetableService = {
       }
     }
 
-    existing.classId = input.classId;
-    existing.subjectId = input.subjectId;
-    existing.teacherId = input.teacherId;
-    existing.room = input.room?.trim() || undefined;
-    existing.dayOfWeek = normalizedDay;
-    existing.startTime = input.startTime;
-    existing.endTime = input.endTime;
-    existing.updatedAt = new Date().toISOString();
-
-    scheduleStore.set(id, existing);
-    return { success: true, data: existing, message: 'Créneau mis à jour.' };
+    const updated: ScheduleSlotRecord = {
+      ...existing,
+      academicYearId: input.academicYearId,
+      classId: input.classId,
+      subjectId: input.subjectId,
+      teacherId: input.teacherId,
+      room: input.room?.trim() || undefined,
+      dayOfWeek: normalizedDay,
+      startTime: input.startTime,
+      endTime: input.endTime,
+      updatedAt: new Date().toISOString(),
+    };
+    try {
+      const { data, error } = await supabase.from('timetable_slots').update(slotRow(updated)).eq('id', id).select('id').single();
+      if (error || data?.id !== id) throw new Error(error?.message || 'Mise à jour du créneau non confirmée par Neon.');
+      scheduleStore.set(id, updated);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Écriture Neon impossible.' };
+    }
+    return { success: true, data: updated, message: 'Créneau mis à jour.' };
   },
 
   /**
    * Supprimer un créneau
    */
   async deleteSlot(id: string): Promise<ServiceResponse<boolean>> {
-    if (!scheduleStore.has(id)) return { success: false, error: 'Créneau introuvable.' };
-    scheduleStore.delete(id);
+    try {
+      const { data, error } = await supabase.from('timetable_slots').delete().eq('id', id).select('id').single();
+      if (error || data?.id !== id) throw new Error(error?.message || 'Suppression du créneau non confirmée par Neon.');
+      scheduleStore.delete(id);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Suppression Neon impossible.' };
+    }
     return { success: true, data: true, message: 'Créneau supprimé.' };
   },
 
@@ -347,15 +424,18 @@ export const timetableService = {
   async copyClassSchedule(
     sourceClassId: string,
     targetClassId: string,
-    academicYearId: string = 'ay-2026'
+    academicYearId: string
   ): Promise<ServiceResponse<number>> {
     if (sourceClassId === targetClassId) {
       return { success: false, error: 'La classe source et la classe cible doivent être différentes.' };
     }
 
-    const sourceSlots = Array.from(scheduleStore.values()).filter(
-      (s) => s.classId === sourceClassId && s.academicYearId === academicYearId
-    );
+    let sourceSlots: ScheduleSlotRecord[];
+    try {
+      sourceSlots = await this.getScheduleByClass(sourceClassId, academicYearId);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Lecture Neon impossible.' };
+    }
 
     if (sourceSlots.length === 0) {
       return { success: false, error: 'Aucun cours dans la classe source à copier.' };

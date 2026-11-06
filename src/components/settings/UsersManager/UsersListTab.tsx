@@ -4,7 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import React, { useState } from 'react';
-import { Search, Plus, UserCheck, UserX, KeyRound, Trash2, Edit3 } from 'lucide-react';
+import { Search, Plus, UserCheck, UserX, Trash2, Edit3 } from 'lucide-react';
 import { UserAccount } from '../../../types';
 import { DEFAULT_PROFILES } from './UserModal';
 
@@ -14,7 +14,6 @@ interface UsersListTabProps {
   onAddUser: () => void;
   onEditUser: (user: UserAccount) => void;
   onToggleStatus: (userId: string, currentStatus?: string) => void;
-  onResetPassword: (user: UserAccount) => void;
   onDeleteUser: (userId: string) => void;
 }
 
@@ -24,7 +23,6 @@ export const UsersListTab: React.FC<UsersListTabProps> = ({
   onAddUser,
   onEditUser,
   onToggleStatus,
-  onResetPassword,
   onDeleteUser,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -270,16 +268,6 @@ export const UsersListTab: React.FC<UsersListTabProps> = ({
                             title={isSuspended ? 'Réactiver le compte' : 'Suspendre le compte'}
                           >
                             {isSuspended ? <UserCheck size={14} /> : <UserX size={14} />}
-                          </button>
-
-                          <button
-                            type="button"
-                            className="btn btn-outline-secondary btn-sm p-1 px-2"
-                            onClick={() => onResetPassword(u)}
-                            style={{ borderRadius: 6, fontSize: '0.75rem', fontWeight: 700 }}
-                            title="Réinitialiser le mot de passe"
-                          >
-                            <KeyRound size={14} />
                           </button>
 
                           {!isOwner && (

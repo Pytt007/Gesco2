@@ -53,18 +53,18 @@ export async function getMedicalRecord(studentId: string): Promise<ServiceRespon
       .eq('student_id', studentId)
       .maybeSingle();
 
-    if (!error && data) {
+    if (error) throw new Error(error.message);
+    if (data) {
+      const details = data.data && typeof data.data === 'object' && !Array.isArray(data.data) ? data.data : {};
       const record: MedicalRecordData = {
+        ...details,
         id: data.id,
         studentId: data.student_id,
-        bloodType: data.blood_type,
-        allergies: data.allergies,
-        knownDiseases: data.known_diseases,
-        treatments: data.treatments,
-        referringDoctor: data.referring_doctor,
-        emergencyPhone: data.emergency_phone,
-        notes: data.notes,
-        isActive: data.is_active,
+        bloodType: data.blood_type || details.bloodType,
+        allergies: data.allergies || details.allergies,
+        knownDiseases: data.chronic_conditions || details.knownDiseases,
+        treatments: data.medications || details.treatments,
+        emergencyPhone: data.emergency_contact || details.emergencyPhone || '',
       };
       localMedicalRecordsCache.set(studentId, record);
       return createSuccess(record);
@@ -114,22 +114,17 @@ export async function createMedicalRecord(record: MedicalRecordData): Promise<Se
       isActive: record.isActive ?? true,
     };
 
-    const { error } = await supabase.from('medical_records').insert({
+    const { data, error } = await supabase.from('medical_records').insert({
       id: createdRecord.id,
       student_id: createdRecord.studentId,
-      blood_type: createdRecord.bloodType,
-      allergies: createdRecord.allergies,
-      known_diseases: createdRecord.knownDiseases,
-      treatments: createdRecord.treatments,
-      referring_doctor: createdRecord.referringDoctor,
-      emergency_phone: createdRecord.emergencyPhone,
-      notes: createdRecord.notes,
-      is_active: createdRecord.isActive,
-    });
-
-    if (error) {
-      console.warn('[medicalRecordsService:createMedicalRecord] Fallback local:', error.message);
-    }
+      blood_type: createdRecord.bloodType || null,
+      allergies: createdRecord.allergies || null,
+      chronic_conditions: createdRecord.knownDiseases || null,
+      medications: createdRecord.treatments || null,
+      emergency_contact: createdRecord.emergencyPhone,
+      data: createdRecord,
+    }).select('id').single();
+    if (error || data?.id !== createdRecord.id) throw new Error(error?.message || 'Enregistrement médical non confirmé par Neon.');
 
     localMedicalRecordsCache.set(createdRecord.studentId, createdRecord);
     return createSuccess(createdRecord, 'Dossier médical créé avec succès.');
@@ -151,37 +146,25 @@ export async function updateMedicalRecord(id: string, updates: Partial<MedicalRe
       return createError(null, `Groupe sanguin invalide "${updates.bloodType}". Groupes valides : ${VALID_BLOOD_TYPES.join(', ')}.`);
     }
 
-    // Trouver le dossier en cache
-    let foundStudentId: string | null = null;
-    for (const [sId, rec] of localMedicalRecordsCache.entries()) {
-      if (rec.id === id) {
-        foundStudentId = sId;
-        break;
-      }
-    }
-
-    const { error } = await supabase
+    const { data: existing, error: readError } = await supabase
       .from('medical_records')
-      .update({
-        blood_type: updates.bloodType,
-        allergies: updates.allergies,
-        known_diseases: updates.knownDiseases,
-        treatments: updates.treatments,
-        referring_doctor: updates.referringDoctor,
-        emergency_phone: updates.emergencyPhone,
-        notes: updates.notes,
-        is_active: updates.isActive,
-      })
-      .eq('id', id);
-
-    if (error) {
-      console.warn('[medicalRecordsService:updateMedicalRecord] Fallback local:', error.message);
-    }
-
-    if (foundStudentId) {
-      const existing = localMedicalRecordsCache.get(foundStudentId)!;
-      localMedicalRecordsCache.set(foundStudentId, { ...existing, ...updates });
-    }
+      .select('*').eq('id', id).maybeSingle();
+    if (readError) throw new Error(readError.message);
+    if (!existing) return createError(null, 'Dossier médical introuvable.');
+    const current = (await getMedicalRecord(existing.student_id));
+    if (!current.success || !current.data) throw new Error(current.error || 'Lecture du dossier médical impossible.');
+    const merged: MedicalRecordData = { ...current.data, ...updates, id, studentId: existing.student_id };
+    const { data, error } = await supabase.from('medical_records').update({
+      blood_type: merged.bloodType || null,
+      allergies: merged.allergies || null,
+      chronic_conditions: merged.knownDiseases || null,
+      medications: merged.treatments || null,
+      emergency_contact: merged.emergencyPhone,
+      data: merged,
+      updated_at: new Date().toISOString(),
+    }).eq('id', id).select('id').single();
+    if (error || data?.id !== id) throw new Error(error?.message || 'Mise à jour médicale non confirmée par Neon.');
+    localMedicalRecordsCache.set(merged.studentId, merged);
 
     return createSuccess(true, 'Dossier médical mis à jour avec succès.');
   } catch (err) {

@@ -86,7 +86,7 @@ export default function ParentsPage({ onNavigate }: ParentsPageProps) {
     whatsapp: '',
     email: '',
     address: '',
-    city: 'Abidjan',
+    city: '',
     preferredContactMethod: 'phone',
     receiveNotifications: true,
     status: 'Actif',
@@ -276,7 +276,11 @@ export default function ParentsPage({ onNavigate }: ParentsPageProps) {
                   <tr key={p.id} style={{ borderBottom: '1px solid #f1f5f9' }} className="table-row-hover">
                     <td style={{ padding: '12px 16px' }}>
                       <div style={{ fontWeight: 700, color: '#0f172a' }}>{p.lastName} {p.firstName}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{p.city || 'Abidjan'} · {p.address || ''}</div>
+                      {(p.city || p.address) && (
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                          {[p.city, p.address].filter(Boolean).join(' · ')}
+                        </div>
+                      )}
                     </td>
 
                     <td style={{ padding: '12px 16px' }}>

@@ -23,6 +23,7 @@ export const ExpenseDashboardView: React.FC = () => {
   const {
     stats,
     loading,
+    error,
     selectedCategory,
     setSelectedCategory,
     selectedMonth,
@@ -33,7 +34,7 @@ export const ExpenseDashboardView: React.FC = () => {
   const [categories, setCategories] = useState<ExpenseCategoryItem[]>([]);
 
   useEffect(() => {
-    expenseService.getCategories().then(setCategories);
+    expenseService.getCategories().then(setCategories).catch(() => setCategories([]));
   }, []);
 
   const formatFCFA = (val: number) => `${val.toLocaleString('fr-FR')} FCFA`;
@@ -130,6 +131,7 @@ export const ExpenseDashboardView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      {error && <div role="alert" className="alert alert-danger">{error}</div>}
       
       {/* En-tête */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>

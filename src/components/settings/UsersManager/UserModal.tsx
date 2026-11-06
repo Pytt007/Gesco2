@@ -263,7 +263,7 @@ export const UserModal: React.FC<UserModalProps> = ({
                 </label>
                 <input
                   type="password"
-                  placeholder="Par défaut: gesco2026"
+                    placeholder="12 caractères minimum"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   style={{

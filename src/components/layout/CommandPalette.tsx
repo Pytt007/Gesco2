@@ -5,6 +5,7 @@ import {
   FileBarChart, Settings, BookOpen, Sparkles, ArrowRight
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useSchoolYear } from '../../context/SchoolYearContext';
 import { dashboardService } from '../../services/dashboard/dashboardService';
 import {
   CommandDialog,
@@ -62,6 +63,7 @@ const ALL_MODULE_COMMANDS: CommandItemData[] = [
 
 export default function CommandPalette({ isOpen, onClose, onNavigate }: CommandPaletteProps) {
   const { canAccess } = useAuth();
+  const { schoolYear } = useSchoolYear();
   const [query, setQuery] = useState('');
   const [dynamicResults, setDynamicResults] = useState<CommandItemData[]>([]);
 
@@ -73,7 +75,7 @@ export default function CommandPalette({ isOpen, onClose, onNavigate }: CommandP
     }
 
     let active = true;
-    dashboardService.globalSearch(query).then((res) => {
+    dashboardService.globalSearch(query, schoolYear).then((res) => {
       if (!active) return;
       const mapped: CommandItemData[] = res.map((r) => ({
         id: r.id,
@@ -84,10 +86,10 @@ export default function CommandPalette({ isOpen, onClose, onNavigate }: CommandP
         targetView: r.targetView,
       }));
       setDynamicResults(mapped);
-    });
+    }).catch(() => { if (active) setDynamicResults([]); });
 
     return () => { active = false; };
-  }, [query]);
+  }, [query, schoolYear]);
 
   const handleSelect = (viewId: string) => {
     onNavigate(viewId);

@@ -1,40 +1,22 @@
-import { supabase } from '../services/supabase';
-
+import { supabase } from './supabase';
 type UploadLogoResult = { publicUrl: string } | { error: string };
-
-/**
- * Upload un logo/image dans le bucket Supabase Storage 'gesco-assets'.
- * Retourne l'URL publique de l'image uploadée.
- */
-export async function uploadLogo(file: File, path: string = 'logos/school-logo'): Promise<UploadLogoResult> {
-  const ext = file.name.split('.').pop();
-  const filePath = `${path}.${ext}`;
-
-  const { error: uploadError } = await supabase.storage
-    .from('gesco-assets')
-    .upload(filePath, file, {
-      cacheControl: '3600',
-      upsert: true, // Écrase si existe déjà
+/** Small logos are stored in Neon and embedded, with a strict image/size limit. */
+export async function uploadLogo(file: File, path = 'logos/school-logo'): Promise<UploadLogoResult> {
+  try {
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) throw new Error('Formats acceptés : PNG, JPEG et WebP.');
+    if (file.size > 1024 * 1024) throw new Error('Le logo doit peser moins de 1 Mo.');
+    const publicUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error('Lecture du fichier impossible.'));
+      reader.readAsDataURL(file);
     });
-
-  if (uploadError) {
-    console.error('[storageService] upload error:', uploadError);
-    return { error: uploadError.message };
-  }
-
-  const { data } = supabase.storage
-    .from('gesco-assets')
-    .getPublicUrl(filePath);
-
-  return { publicUrl: data.publicUrl };
+    const { error } = await supabase.from('school_settings').upsert({ id: `asset:${path}`, data: { url: publicUrl } });
+    if (error) throw new Error(error.message);
+    return { publicUrl };
+  } catch (error) { return { error: error instanceof Error ? error.message : 'Enregistrement du logo impossible.' }; }
 }
-
-/**
- * Supprime un fichier du bucket Supabase Storage.
- */
 export async function deleteStorageFile(path: string): Promise<void> {
-  const { error } = await supabase.storage.from('gesco-assets').remove([path]);
-  if (error) {
-    console.error('[storageService] delete error:', error);
-  }
+  const { error } = await supabase.from('school_settings').delete().eq('id', `asset:${path}`);
+  if (error) throw new Error(error.message);
 }

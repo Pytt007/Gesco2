@@ -24,6 +24,9 @@ export function useStudentDocuments(studentId?: string) {
       const res = await listDocuments(id);
       if (res.success && res.data) {
         setDocuments(res.data);
+      } else {
+        setError(res.error || 'Erreur lors du chargement des documents.');
+        setDocuments([]);
       }
     } catch (err: any) {
       setError(err.message || 'Erreur lors du chargement des documents.');

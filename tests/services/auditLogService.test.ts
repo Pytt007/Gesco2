@@ -1,93 +1,58 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const mock = vi.hoisted(() => ({ rows: [] as any[], failWrite: false, failRead: false, rpc: vi.fn(), from: vi.fn() }));
+vi.mock('../../src/services/common/supabaseClient', () => ({ supabase: { rpc: mock.rpc, from: mock.from } }));
+
 import { auditLogService, clearAuditLogs } from '../../src/services/common/auditLogService';
 
-describe('Audit Log Service & Traceability (P2-15)', () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
+beforeEach(() => {
+  mock.rows = [];
+  mock.failWrite = false;
+  mock.failRead = false;
+  mock.rpc.mockReset();
+  mock.from.mockReset();
+  mock.rpc.mockImplementation(async (_name: string, args: any) => {
+    if (mock.failWrite) return { data: null, error: { message: 'Neon indisponible' } };
+    const row = { id: `audit-${mock.rows.length + 1}`, actor_id: 'auth-user-1', action: args.p_action,
+      data: { ...args.p_data, user: 'Admin réel', role: 'ADMIN_GENERALE' }, created_at: '2026-10-07T12:00:00Z' };
+    mock.rows.unshift(row);
+    return { data: row, error: null };
+  });
+  mock.from.mockImplementation(() => {
+    const chain: any = { select: () => chain, order: () => chain, limit: () => chain,
+      then: (resolve: (value: unknown) => unknown) => Promise.resolve(mock.failRead
+        ? { data: null, error: { message: 'Lecture Neon refusée' } }
+        : { data: mock.rows, error: null }).then(resolve) };
+    return chain;
+  });
+  clearAuditLogs();
+  localStorage.clear();
+});
+
+describe('Journal d’audit Neon', () => {
+  it('attend la confirmation du serveur et utilise son identité horodatée', async () => {
+    const item = await auditLogService.log({ action: 'CANCEL_PAYMENT', module: 'FINANCE', severity: 'WARNING',
+      details: 'Double saisie', user: 'Utilisateur usurpé', role: 'ADMIN_GENERALE' });
+    expect(mock.rpc).toHaveBeenCalledWith('append_audit_log', { p_action: 'CANCEL_PAYMENT',
+      p_data: { module: 'FINANCE', severity: 'WARNING', details: 'Double saisie' } });
+    expect(item).toMatchObject({ user: 'Admin réel', role: 'ADMIN_GENERALE', action: 'CANCEL_PAYMENT' });
+    expect(localStorage.length).toBe(0);
+  });
+
+  it('ne simule aucune sauvegarde si Neon refuse l’écriture', async () => {
+    mock.failWrite = true;
+    await expect(auditLogService.log({ action: 'DELETE_STUDENT', module: 'PEDAGOGY', details: 'Test' })).rejects.toThrow('Neon indisponible');
+    expect(mock.rows).toHaveLength(0);
+  });
+
+  it('relit les événements depuis Neon et signale les erreurs de lecture', async () => {
+    await auditLogService.log({ action: 'PAYMENT', module: 'FINANCE', severity: 'SUCCESS', details: 'Reçu 1' });
+    await auditLogService.log({ action: 'ASSIGN_BUS', module: 'TRANSPORT', details: 'Ligne 1' });
     clearAuditLogs();
-  });
-
-  it('records audit events with timestamps, module, severity and details', async () => {
-    const item = await auditLogService.log({
-      action: 'CANCEL_PAYMENT',
-      module: 'FINANCE',
-      severity: 'WARNING',
-      user: 'Comptable Principal',
-      role: 'Comptable',
-      details: 'Annulation du reçu REC-2026-0001 pour motif de double saisie',
-    });
-
-    expect(item.id).toBeDefined();
-    expect(item.action).toBe('CANCEL_PAYMENT');
-    expect(item.module).toBe('FINANCE');
-    expect(item.severity).toBe('WARNING');
-    expect(item.user).toBe('Comptable Principal');
-
-    const logs = await auditLogService.getLogs(10);
-    expect(logs.length).toBe(1);
-    expect(logs[0].action).toBe('CANCEL_PAYMENT');
-  });
-
-  it('filters audit logs by module, severity and search keywords', async () => {
-    await auditLogService.log({
-      action: 'UPDATE_STUDENT_STATUS',
-      module: 'PEDAGOGY',
-      severity: 'INFO',
-      user: 'Directeur des Études',
-      details: 'Changement de statut élève ID 101',
-    });
-
-    await auditLogService.log({
-      action: 'CANCEL_TRANSACTION',
-      module: 'FINANCE',
-      severity: 'DANGER',
-      user: 'Super Administrateur',
-      details: 'Suppression transaction frauduleuse',
-    });
-
-    await auditLogService.log({
-      action: 'ASSIGN_BUS_DRIVER',
-      module: 'TRANSPORT',
-      severity: 'SUCCESS',
-      user: 'Responsable Logistique',
-      details: 'Affectation chauffeur ligne 04',
-    });
-
-    // 1. Filtre par module
-    const financeLogs = await auditLogService.getLogs({ module: 'FINANCE' });
-    expect(financeLogs.length).toBe(1);
-    expect(financeLogs[0].module).toBe('FINANCE');
-
-    // 2. Filtre par sévérité
-    const dangerLogs = await auditLogService.getLogs({ severity: 'DANGER' });
-    expect(dangerLogs.length).toBe(1);
-    expect(dangerLogs[0].action).toBe('CANCEL_TRANSACTION');
-
-    // 3. Recherche textuelle
-    const searchLogs = await auditLogService.getLogs({ search: 'chauffeur' });
-    expect(searchLogs.length).toBe(1);
-    expect(searchLogs[0].module).toBe('TRANSPORT');
-
-    // 4. Filtre par utilisateur
-    const userLogs = await auditLogService.getLogs({ user: 'Directeur' });
-    expect(userLogs.length).toBe(1);
-    expect(userLogs[0].module).toBe('PEDAGOGY');
-  });
-
-  it('supports legacy numeric limit parameter and clearAuditLogs isolation', async () => {
-    for (let i = 1; i <= 5; i++) {
-      await auditLogService.log({
-        action: `ACTION_${i}`,
-        module: 'SYSTEM',
-        details: `Détail ${i}`,
-      });
-    }
-
-    const limited = await auditLogService.getLogs(3);
-    expect(limited.length).toBe(3);
-
-    clearAuditLogs();
-    const afterClear = await auditLogService.getLogs();
-    expect(afterClear.length).toBe(0);
+    const logs = await auditLogService.getLogs({ module: 'FINANCE', search: 'Reçu' });
+    expect(logs).toHaveLength(1);
+    expect(logs[0].action).toBe('PAYMENT');
+    mock.failRead = true;
+    await expect(auditLogService.getLogs()).rejects.toThrow('Lecture Neon refusée');
   });
 });

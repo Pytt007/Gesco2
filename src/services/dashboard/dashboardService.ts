@@ -322,7 +322,7 @@ export const dashboardService = {
         staffRes,
         classroomsRes,
       ] = await Promise.all([
-        studentFinancialEnrollmentService.getEnrollmentsByYear(academicYearId).catch(() => []),
+        studentFinancialEnrollmentService.getEnrollmentsByYear(academicYearId).catch((): Awaited<ReturnType<typeof studentFinancialEnrollmentService.getEnrollmentsByYear>> => []),
         canteenEnrollmentService.getEnrollmentsByYear(academicYearId).catch(() => []),
         transportEnrollmentService.getEnrollmentsByYear(academicYearId).catch(() => []),
         expenseService.getKPIs(academicYearId).catch(() => ({ totalMonth: 0 })),
@@ -596,18 +596,18 @@ export const dashboardService = {
     const results: GlobalSearchResult[] = [];
 
     // 1. Recherche Élèves
-    const scolarList = await studentFinancialEnrollmentService.getEnrollmentsByYear('ay-2026');
-    scolarList.forEach((e) => {
-      if (e.studentName.toLowerCase().includes(q) || e.matricule.toLowerCase().includes(q)) {
+    const students = await listStudents({ searchQuery: q, schoolYear: academicYearId || undefined, pageSize: 5 });
+    if (students.success) {
+      students.data?.students.forEach((student) => {
         results.push({
-          id: `search-stu-${e.studentId}`,
-          title: e.studentName,
-          subtitle: `${e.matricule} · Classe : ${e.className}`,
+          id: `search-stu-${student.id}`,
+          title: `${student.firstName} ${student.lastName}`.trim(),
+          subtitle: student.matricule,
           category: 'Élève',
           targetView: 'STUDENTS',
         });
-      }
-    });
+      });
+    }
 
     // 2. Recherche Parents (FIX ANOMALIE-MAJ-01)
     try {
@@ -626,35 +626,24 @@ export const dashboardService = {
     } catch { /* Fallback */ }
 
     // 3. Recherche Classes
-    const mockClasses = ['Garderie A', 'PS A', 'MS A', 'GS A', 'CP1 A', 'CP1 B', 'CE1 A', 'CE2 B', 'CM1 A', 'CM2 A'];
-    mockClasses.forEach((cls) => {
-      if (cls.toLowerCase().includes(q)) {
+    const classrooms = await getClassrooms({ searchQuery: q, academicYearId: academicYearId || undefined });
+    if (classrooms.success) {
+      classrooms.data?.slice(0, 5).forEach((classroom) => {
         results.push({
-          id: `search-cls-${cls}`,
-          title: `Classe ${cls}`,
-          subtitle: `Gestion pédagogique et effectif de la classe`,
+          id: `search-cls-${classroom.id}`,
+          title: `Classe ${classroom.name}`,
+          subtitle: classroom.levelName || 'Classe',
           category: 'Classe',
           targetView: 'CLASSES',
         });
-      }
-    });
+      });
+    }
 
     // 4. Recherche Personnel
-    const mockStaff: { name: string; role: string }[] = [];
-
-    mockStaff.forEach((stf) => {
-      if (stf.name.toLowerCase().includes(q) || stf.role.toLowerCase().includes(q)) {
-        results.push({
-          id: `search-stf-${stf.name}`,
-          title: stf.name,
-          subtitle: stf.role,
-          category: 'Personnel',
-          targetView: 'STAFF',
-        });
-      }
-    });
-
     // 5. Recherche Paiements
+    const scolarList = academicYearId
+      ? await studentFinancialEnrollmentService.getEnrollmentsByYear(academicYearId).catch(() => [])
+      : [];
     scolarList.forEach((e) => {
       if (e.matricule.toLowerCase().includes(q) || 'paiement'.includes(q) || 'scolarite'.includes(q)) {
         results.push({
@@ -666,17 +655,6 @@ export const dashboardService = {
         });
       }
     });
-
-    // 6. Recherche Bulletins
-    if ('bulletin'.includes(q) || 'notes'.includes(q) || 'évaluation'.includes(q)) {
-      results.push({
-        id: 'search-rep-01',
-        title: 'Bulletins du 1er Trimestre',
-        subtitle: 'Génération et impression des bulletins de la classe CP1 A',
-        category: 'Bulletin',
-        targetView: 'BULLETINS',
-      });
-    }
 
     return results.slice(0, 8);
   },

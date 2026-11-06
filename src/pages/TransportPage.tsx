@@ -4,7 +4,7 @@ import { TransportLinesView } from '../components/transport/TransportLinesView';
 import { TransportEnrollmentView } from '../components/transport/TransportEnrollmentView';
 import { TransportPaymentView } from '../components/transport/TransportPaymentView';
 import { TransportTrackingView } from '../components/transport/TransportTrackingView';
-import { useRealtimeSync } from '../hooks/useRealtimeSync';
+
 
 type TransportTab = 'LINES' | 'ENROLLMENT' | 'PAYMENT' | 'TRACKING';
 
@@ -17,16 +17,10 @@ const TABS: { id: TransportTab; label: string; icon: React.ReactNode }[] = [
 
 export default function TransportPage() {
   const [activeTab, setActiveTab] = useState<TransportTab>('LINES');
-  const [syncKey, setSyncKey] = useState(0);
-
-  // Synchronisation temps réel automatique
-  useRealtimeSync({
-    tables: ['school_settings', 'transport_lines', 'transport_enrollments'],
-    onDataChange: () => setSyncKey((prev) => prev + 1),
-  });
+  // Keep mounted forms intact; each view refreshes its data after saving.
 
   return (
-    <div key={syncKey} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
       {/* ── BANNIÈRE HERO SAAS ─────────────────────────────────────────────── */}
       <div
@@ -99,3 +93,4 @@ export default function TransportPage() {
     </div>
   );
 }
+

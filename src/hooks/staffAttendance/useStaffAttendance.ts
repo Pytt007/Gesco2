@@ -14,7 +14,7 @@ import { downloadExcel } from '../../utils/exportUtils';
 import { useToast } from '../../context/ToastContext';
 import { safePrintHtml } from '../../services/documents/safePrintService';
 
-export function useStaffAttendance(academicYearId: string = 'ay-2026') {
+export function useStaffAttendance(academicYearId: string) {
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   
   const [items, setItems] = useState<StaffAttendanceItem[]>([]);
@@ -43,8 +43,10 @@ export function useStaffAttendance(academicYearId: string = 'ay-2026') {
     try {
       const hist = await staffAttendanceService.getStaffAttendanceHistory({ date: selectedDate });
       setHistory(hist);
-    } catch { /* Fallback */ }
-  }, [selectedDate]);
+    } catch {
+      showToast('Erreur lors du chargement de l’historique des présences.', 'error');
+    }
+  }, [selectedDate, showToast]);
 
   useEffect(() => {
     loadSheet();

@@ -96,27 +96,12 @@ function useSupabaseTable<T extends WithId>(
     });
 
     // 2. Écouter les modifications de la table en temps réel (Realtime)
-    const channel = supabase
-      .channel(`public:${tableName}:${schoolYear}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: tableName,
-        },
-        () => {
-          if (!cancelled) {
-            fetchData();
-          }
-        }
-      )
-      .subscribe();
+    const timer = window.setInterval(() => { if (!cancelled && document.visibilityState === 'visible') fetchData(); }, 30000);
 
     return () => {
       cancelled = true;
       authSub.unsubscribe();
-      supabase.removeChannel(channel);
+      window.clearInterval(timer);
     };
   }, [tableName, schoolYear, localKey, getLocalBackup, initialValue]);
 

@@ -1,243 +1,111 @@
-/**
- * GESCO — Service Présences des élèves
- */
-
-import {
-  AttendanceSheet,
-  AttendanceSheetInput,
-  AttendanceRecordItem,
-  AttendanceStats,
-  AttendanceHistoryFilter,
-  AttendanceStatus,
-} from './types';
-import { ServiceResponse } from '../academic/academicYearsService';
+/** Présences des élèves : Neon est la seule source de vérité. */
+import type { AttendanceSheet, AttendanceSheetInput, AttendanceRecordItem, AttendanceStats, AttendanceHistoryFilter, AttendanceStatus } from './types';
+import type { ServiceResponse } from '../academic/academicYearsService';
 import { supabase } from '../common/supabaseClient';
 import { getClassroom } from '../academic/classroomsService';
-
 import { statsCalculationService } from '../stats';
 
-// ─── Stockage Local (Feuilles de présence) ────────────────────────────────────
+type RosterStudent = { id: string; matricule: string; firstName: string; lastName: string };
+type AttendanceRow = { student_id: string; date: string; status: AttendanceStatus; reason?: string | null; data?: Record<string, any>; created_at?: string; updated_at?: string };
 
-const attendanceStore: Map<string, AttendanceSheet> = new Map(); // Clef : `classId_date`
+// Kept for callers of the old facade; there is no client-side attendance store.
+export function clearAttendanceStore(): void {}
 
-export function clearAttendanceStore(): void {
-  attendanceStore.clear();
+async function readRoster(classId: string, academicYearId?: string): Promise<RosterStudent[]> {
+  let assignmentsQuery = supabase.from('student_class_assignments').select('student_id').eq('classroom_id', classId).eq('status', 'Actif');
+  if (academicYearId) assignmentsQuery = assignmentsQuery.eq('academic_year_id', academicYearId);
+  const { data: assignments, error: assignmentError } = await assignmentsQuery;
+  if (assignmentError) throw new Error(assignmentError.message);
+  const ids = [...new Set((assignments || []).map((row: any) => row.student_id as string))];
+  if (!ids.length) return [];
+  const { data: students, error: studentError } = await supabase.from('students').select('id,matricule,data').in('id', ids);
+  if (studentError) throw new Error(studentError.message);
+  if (!students || students.length !== ids.length) throw new Error('La liste des élèves est incomplète. Actualisez avant de saisir les présences.');
+  return students.map((row: any) => ({ id: row.id, matricule: row.matricule, firstName: row.data?.firstName || '', lastName: row.data?.lastName || '' }));
 }
 
-// ─── Service ─────────────────────────────────────────────────────────────────
+async function readAttendance(studentIds: string[], date?: string): Promise<AttendanceRow[]> {
+  if (!studentIds.length) return [];
+  let query = supabase.from('student_attendance').select('student_id,date,status,reason,data,created_at,updated_at').in('student_id', studentIds);
+  if (date) query = query.eq('date', date);
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return (data || []) as AttendanceRow[];
+}
+
+async function classNameFor(classId: string): Promise<string> {
+  const result = await getClassroom(classId);
+  if (!result.success || !result.data) throw new Error(result.error || 'Classe introuvable.');
+  return result.data.name;
+}
+
+function buildSheet(classId: string, className: string, date: string, academicYearId: string, roster: RosterStudent[], rows: AttendanceRow[]): AttendanceSheet {
+  const byStudent = new Map(rows.map(row => [row.student_id, row]));
+  const items: AttendanceRecordItem[] = roster.map(student => {
+    const row = byStudent.get(student.id);
+    return { studentId: student.id, matricule: student.matricule, firstName: student.firstName, lastName: student.lastName,
+      status: row?.status || 'PRESENT', observation: row?.reason || undefined };
+  });
+  const first = rows[0];
+  return { id: `sheet-${classId}-${date}`, academicYearId, classId, className, date, items,
+    createdBy: first?.data?.createdBy || 'Enseignant', createdAt: first?.created_at || new Date().toISOString(),
+    updatedAt: first?.updated_at || new Date().toISOString() };
+}
 
 export const attendanceService = {
-
-  /**
-   * Récupère la feuille de présence pour une classe et une date donnée.
-   */
-  async getAttendanceSheet(
-    classId: string,
-    date: string,
-    academicYearId: string = 'ay-2026'
-  ): Promise<AttendanceSheet> {
-    const key = `${classId}_${date}`;
-
-    if (attendanceStore.has(key)) {
-      return attendanceStore.get(key)!;
-    }
-
-    // Récupération des vrais élèves de la classe depuis Supabase
-    let roster: any[] = [];
-    try {
-      const { data: rows, error } = await supabase
-        .from('students')
-        .select('*')
-        .eq('class_id', classId);
-      if (!error && Array.isArray(rows)) {
-        roster = rows.map((row: any) => ({
-          id: row.id,
-          matricule: row.matricule || row.registration_number || `MAT-${row.id.slice(0, 6)}`,
-          firstName: row.first_name || 'Élève',
-          lastName: row.last_name || '',
-        }));
-      }
-    } catch { /* Fallback roster vide */ }
-
-    let className = 'Classe';
-    try {
-      const clsRes = await getClassroom(classId);
-      if (clsRes.success && clsRes.data) {
-        className = clsRes.data.name;
-      }
-    } catch { /* Fallback */ }
-
-    const defaultItems: AttendanceRecordItem[] = roster.map((st) => ({
-      studentId: st.id,
-      matricule: st.matricule,
-      firstName: st.firstName,
-      lastName: st.lastName,
-      status: 'PRESENT',
-    }));
-
-    const newSheet: AttendanceSheet = {
-      id: `sheet-${classId}-${date}`,
-      academicYearId,
-      classId,
-      className,
-      date,
-      items: defaultItems,
-      createdBy: 'Enseignant',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    return newSheet;
+  async getAttendanceSheet(classId: string, date: string, academicYearId = ''): Promise<AttendanceSheet> {
+    if (!classId) return buildSheet('', '', date, academicYearId, [], []);
+    const [roster, className] = await Promise.all([readRoster(classId, academicYearId), classNameFor(classId)]);
+    const rows = await readAttendance(roster.map(student => student.id), date);
+    return buildSheet(classId, className, date, academicYearId, roster, rows);
   },
 
-
-  /**
-   * Enregistre ou met à jour la feuille de présence (Une seule feuille par classe et jour)
-   */
   async saveAttendanceSheet(input: AttendanceSheetInput): Promise<ServiceResponse<AttendanceSheet>> {
-    if (!input.classId || !input.date) {
-      return { success: false, error: 'Classe et date obligatoires.' };
-    }
-
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(input.date) || isNaN(Date.parse(input.date))) {
-      return { success: false, error: 'Format de date invalide. Utilisez AAAA-MM-JJ.' };
-    }
-
-    const sheetDate = new Date(input.date + 'T00:00:00');
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    if (sheetDate.getTime() > today.getTime()) {
-      return { success: false, error: 'Impossible d\'enregistrer une feuille de présence pour une date future.' };
-    }
-
-    if (!input.items || !Array.isArray(input.items) || input.items.length === 0) {
-      return { success: false, error: 'La feuille de présence doit contenir au moins un élève.' };
-    }
-
-    const validStatuses: AttendanceStatus[] = ['PRESENT', 'ABSENT', 'ABSENT_JUSTIFIED'];
-    input.items.forEach((item) => {
-      if (!validStatuses.includes(item.status)) {
-        item.status = 'PRESENT';
-      }
-    });
-
-    const key = `${input.classId}_${input.date}`;
-    let className = 'Classe';
     try {
-      const clsRes = await getClassroom(input.classId);
-      if (clsRes.success && clsRes.data) {
-        className = clsRes.data.name;
+      if (!input.classId || !input.date) throw new Error('Classe et date obligatoires.');
+      if (!input.academicYearId) throw new Error('Activez une année scolaire avant de saisir les présences.');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date) || Number.isNaN(Date.parse(input.date))) throw new Error('Format de date invalide. Utilisez AAAA-MM-JJ.');
+      const today = new Date().toISOString().slice(0, 10);
+      if (input.date > today) throw new Error('Impossible d\'enregistrer une feuille de présence pour une date future.');
+      if (!Array.isArray(input.items) || !input.items.length) throw new Error('La feuille de présence doit contenir au moins un élève.');
+      const validStatuses: AttendanceStatus[] = ['PRESENT', 'ABSENT', 'ABSENT_JUSTIFIED'];
+      if (input.items.some(item => !validStatuses.includes(item.status))) throw new Error('Statut de présence invalide.');
+
+      const [roster, className] = await Promise.all([readRoster(input.classId, input.academicYearId), classNameFor(input.classId)]);
+      const rosterIds = new Set(roster.map(student => student.id));
+      const enteredIds = input.items.map(item => item.studentId);
+      if (rosterIds.size !== enteredIds.length || new Set(enteredIds).size !== enteredIds.length || enteredIds.some(id => !rosterIds.has(id))) {
+        throw new Error('La liste des élèves a changé. Actualisez la feuille avant de l\'enregistrer.');
       }
-    } catch { /* Fallback */ }
-
-    const sheet: AttendanceSheet = {
-      id: attendanceStore.has(key) ? attendanceStore.get(key)!.id : `sheet-${Date.now()}`,
-      academicYearId: input.academicYearId || 'ay-2026',
-      classId: input.classId,
-      className,
-      date: input.date,
-      items: input.items,
-      createdBy: input.createdBy || 'Enseignant',
-      createdAt: attendanceStore.has(key) ? attendanceStore.get(key)!.createdAt : new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    attendanceStore.set(key, sheet);
-
-    try {
-      if (supabase && input.items && input.items.length > 0) {
-        let resolvedClassId: string | null = null;
-        if (input.classId) {
-          const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input.classId);
-          if (isUUID) {
-            resolvedClassId = input.classId;
-          } else {
-            try {
-              const { data: clsRow } = await supabase.from('classes').select('id').limit(1).maybeSingle();
-              if (clsRow) resolvedClassId = clsRow.id;
-            } catch {}
-          }
-        }
-
-        const rowsToInsert = input.items.map((item) => {
-          const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.studentId);
-          return {
-            id: crypto.randomUUID(),
-            student_id: isUUID ? item.studentId : null,
-            class_id: resolvedClassId,
-            date: input.date,
-            status: item.status || 'PRESENT',
-            reason: item.observation || null,
-            is_justified: item.status === 'ABSENT_JUSTIFIED',
-            recorded_by: null,
-          };
-        });
-
-        await supabase.from('student_attendance').insert(rowsToInsert);
-      }
-    } catch (err) {
-      console.warn('[attendanceService] Supabase insert fallback:', err);
+      const rows = input.items.map(item => ({ student_id: item.studentId, date: input.date, status: item.status,
+        reason: item.observation || null, data: { classId: input.classId, academicYearId: input.academicYearId, createdBy: input.createdBy || 'Enseignant' } }));
+      const { data, error } = await supabase.from('student_attendance').upsert(rows, { onConflict: 'student_id,date' }).select('student_id');
+      if (error || !data || data.length !== rows.length) throw new Error(error?.message || 'Enregistrement des présences non confirmé par Neon.');
+      const sheet = buildSheet(input.classId, className, input.date, input.academicYearId, roster,
+        input.items.map(item => ({ student_id: item.studentId, date: input.date, status: item.status, reason: item.observation, data: { createdBy: input.createdBy } })));
+      return { success: true, data: sheet, message: `Feuille de présence de la classe ${className} du ${input.date} enregistrée avec succès.` };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
-
-    return {
-      success: true,
-      data: sheet,
-      message: `Feuille de présence de la classe ${className} du ${input.date} enregistrée avec succès.`,
-    };
   },
 
-  /**
-   * Récupère l'historique des feuilles de présence avec filtres
-   */
   async getAttendanceHistory(filter: AttendanceHistoryFilter = {}): Promise<AttendanceSheet[]> {
-    let sheets = Array.from(attendanceStore.values());
-
-    if (filter.academicYearId) {
-      sheets = sheets.filter((s) => s.academicYearId === filter.academicYearId);
-    }
-
-    if (filter.classId && filter.classId !== 'ALL') {
-      sheets = sheets.filter((s) => s.classId === filter.classId);
-    }
-
-    if (filter.date) {
-      sheets = sheets.filter((s) => s.date === filter.date);
-    }
-
-    if (filter.searchQuery) {
-      const q = filter.searchQuery.toLowerCase().trim();
-      sheets = sheets.filter(
-        (s) =>
-          s.className.toLowerCase().includes(q) ||
-          s.items.some(
-            (i) =>
-              i.firstName.toLowerCase().includes(q) ||
-              i.lastName.toLowerCase().includes(q) ||
-              i.matricule.toLowerCase().includes(q)
-          )
-      );
-    }
-
-    return sheets.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    if (!filter.classId || filter.classId === 'ALL') return [];
+    const [roster, className] = await Promise.all([readRoster(filter.classId, filter.academicYearId), classNameFor(filter.classId)]);
+    const rows = await readAttendance(roster.map(student => student.id), filter.date);
+    const dates = [...new Set(rows.map(row => row.date))];
+    return dates.map(date => buildSheet(filter.classId!, className, date, filter.academicYearId || '', roster, rows.filter(row => row.date === date)))
+      .filter(sheet => !filter.studentId || sheet.items.some(item => item.studentId === filter.studentId))
+      .filter(sheet => { const q = filter.searchQuery?.toLowerCase().trim(); return !q || sheet.className.toLowerCase().includes(q) || sheet.items.some(item => [item.firstName, item.lastName, item.matricule].some(value => value.toLowerCase().includes(q))); })
+      .sort((a, b) => b.date.localeCompare(a.date));
   },
 
-  /**
-   * Calcul des statistiques de présence
-   */
   calculateStats(items: AttendanceRecordItem[]): AttendanceStats {
     const totalStudents = items.length;
-    const presentCount = items.filter((i) => i.status === 'PRESENT').length;
-    const absentCount = items.filter((i) => i.status === 'ABSENT').length;
-    const justifiedCount = items.filter((i) => i.status === 'ABSENT_JUSTIFIED').length;
-    const presenceRate = statsCalculationService.calculateAttendanceRate(presentCount, totalStudents, 0);
-
-    return {
-      totalStudents,
-      presentCount,
-      absentCount,
-      justifiedCount,
-      presenceRate,
-    };
+    const presentCount = items.filter(item => item.status === 'PRESENT').length;
+    const absentCount = items.filter(item => item.status === 'ABSENT').length;
+    const justifiedCount = items.filter(item => item.status === 'ABSENT_JUSTIFIED').length;
+    return { totalStudents, presentCount, absentCount, justifiedCount,
+      presenceRate: statsCalculationService.calculateAttendanceRate(presentCount, totalStudents, 0) };
   },
 };

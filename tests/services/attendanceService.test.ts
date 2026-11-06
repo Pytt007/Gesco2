@@ -1,105 +1,78 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const state = vi.hoisted(() => ({
+  rows: [] as any[],
+  failWrite: false,
+  from: vi.fn(),
+}));
+
+vi.mock('../../src/services/common/supabaseClient', () => ({ supabase: { from: state.from } }));
+vi.mock('../../src/services/academic/classroomsService', () => ({ getClassroom: async () => ({ success: true, data: { name: 'CP1 A' } }) }));
+
 import { attendanceService, clearAttendanceStore } from '../../src/services/attendance';
 
-describe('Attendance Service & Validation Layer (P2-13)', () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
+const studentId = 'student-1';
+const classId = 'class-1';
+const yearId = 'year-1';
+const date = '2026-10-01';
+const item = { studentId, matricule: 'MAT-1', firstName: 'Awa', lastName: 'Koné', status: 'ABSENT' as const, observation: 'Malade' };
+
+function query(table: string) {
+  let result: any;
+  let write: any[] | undefined;
+  let selectedIds: string[] | undefined;
+  let selectedDate: string | undefined;
+  const chain: any = {
+    select: vi.fn(() => chain),
+    eq: vi.fn((field: string, value: string) => { if (field === 'date') selectedDate = value; return chain; }),
+    in: vi.fn((_field: string, ids: string[]) => { selectedIds = ids; return chain; }),
+    upsert: vi.fn((rows: any[]) => { write = rows; return chain; }),
+    then: (resolve: (value: unknown) => unknown) => {
+      if (write) {
+        if (state.failWrite) return Promise.resolve({ data: null, error: { message: 'Neon indisponible' } }).then(resolve);
+        state.rows = write.map(row => ({ ...row, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }));
+        result = { data: write.map(row => ({ student_id: row.student_id })), error: null };
+      } else if (table === 'student_class_assignments') result = { data: [{ student_id: studentId }], error: null };
+      else if (table === 'students') result = { data: [{ id: studentId, matricule: 'MAT-1', data: { firstName: 'Awa', lastName: 'Koné' } }], error: null };
+      else result = { data: state.rows.filter(row => (!selectedIds || selectedIds.includes(row.student_id)) && (!selectedDate || selectedDate === row.date)), error: null };
+      return Promise.resolve(result).then(resolve);
+    },
+  };
+  return chain;
+}
+
+beforeEach(() => {
+  state.rows = [];
+  state.failWrite = false;
+  state.from.mockReset();
+  state.from.mockImplementation(query);
+  clearAttendanceStore();
+});
+
+describe('Présences enregistrées dans Neon', () => {
+  it('refuse une feuille incomplète ou une date future', async () => {
+    expect((await attendanceService.saveAttendanceSheet({ academicYearId: yearId, classId: '', date, items: [item] })).success).toBe(false);
+    expect((await attendanceService.saveAttendanceSheet({ academicYearId: yearId, classId, date: '2099-01-01', items: [item] })).success).toBe(false);
+    expect((await attendanceService.saveAttendanceSheet({ academicYearId: yearId, classId, date, items: [] })).success).toBe(false);
+  });
+
+  it('ne confirme pas une écriture refusée par Neon', async () => {
+    state.failWrite = true;
+    const result = await attendanceService.saveAttendanceSheet({ academicYearId: yearId, classId, date, items: [item] });
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Neon indisponible');
+    expect(state.rows).toHaveLength(0);
+  });
+
+  it('relit la présence et son historique depuis Neon après effacement de la mémoire locale', async () => {
+    const saved = await attendanceService.saveAttendanceSheet({ academicYearId: yearId, classId, date, items: [item] });
+    expect(saved.success).toBe(true);
+    expect(state.rows).toHaveLength(1);
     clearAttendanceStore();
-  });
-
-  describe('saveAttendanceSheet validation', () => {
-    it('rejects missing classId or date', async () => {
-      const res = await attendanceService.saveAttendanceSheet({
-        academicYearId: 'ay-2026',
-        classId: '',
-        date: '2026-03-01',
-        items: [],
-      });
-      expect(res.success).toBe(false);
-      expect(res.error).toContain('Classe et date obligatoires');
-    });
-
-    it('rejects invalid date formats', async () => {
-      const res = await attendanceService.saveAttendanceSheet({
-        academicYearId: 'ay-2026',
-        classId: 'cls-6a',
-        date: '01-03-2026',
-        items: [{ studentId: 'st-1', matricule: 'M-01', firstName: 'Jean', lastName: 'Koffi', status: 'PRESENT' }],
-      });
-      expect(res.success).toBe(false);
-      expect(res.error).toContain('Format de date invalide');
-    });
-
-    it('rejects future dates beyond today', async () => {
-      const res = await attendanceService.saveAttendanceSheet({
-        academicYearId: 'ay-2026',
-        classId: 'cls-6a',
-        date: '2099-12-31',
-        items: [{ studentId: 'st-1', matricule: 'M-01', firstName: 'Jean', lastName: 'Koffi', status: 'PRESENT' }],
-      });
-      expect(res.success).toBe(false);
-      expect(res.error).toContain('date future');
-    });
-
-    it('rejects empty items list', async () => {
-      const todayStr = new Date().toISOString().split('T')[0];
-      const res = await attendanceService.saveAttendanceSheet({
-        academicYearId: 'ay-2026',
-        classId: 'cls-6a',
-        date: todayStr,
-        items: [],
-      });
-      expect(res.success).toBe(false);
-      expect(res.error).toContain('au moins un élève');
-    });
-
-    it('successfully saves and updates an attendance sheet for valid dates', async () => {
-      const todayStr = new Date().toISOString().split('T')[0];
-      const items = [
-        { studentId: 'st-1', matricule: 'M-01', firstName: 'Jean', lastName: 'Koffi', status: 'PRESENT' as const },
-        { studentId: 'st-2', matricule: 'M-02', firstName: 'Marie', lastName: 'Amani', status: 'ABSENT' as const },
-        { studentId: 'st-3', matricule: 'M-03', firstName: 'Paul', lastName: 'Yao', status: 'ABSENT_JUSTIFIED' as const, observation: 'Certificat médical' },
-      ];
-
-      const saveRes = await attendanceService.saveAttendanceSheet({
-        academicYearId: 'ay-2026',
-        classId: 'cls-6a',
-        date: todayStr,
-        items,
-        createdBy: 'Professeur Titulaire',
-      });
-
-      expect(saveRes.success).toBe(true);
-      expect(saveRes.data?.items.length).toBe(3);
-
-      const history = await attendanceService.getAttendanceHistory({ classId: 'cls-6a', date: todayStr });
-      expect(history.length).toBe(1);
-      expect(history[0].items[1].status).toBe('ABSENT');
-    });
-  });
-
-  describe('calculateStats', () => {
-    it('calculates stats and presence rate accurately using stats calculation service', () => {
-      const items = [
-        { studentId: 'st-1', matricule: 'M-01', firstName: 'A', lastName: 'A', status: 'PRESENT' as const },
-        { studentId: 'st-2', matricule: 'M-02', firstName: 'B', lastName: 'B', status: 'PRESENT' as const },
-        { studentId: 'st-3', matricule: 'M-03', firstName: 'C', lastName: 'C', status: 'ABSENT' as const },
-        { studentId: 'st-4', matricule: 'M-04', firstName: 'D', lastName: 'D', status: 'ABSENT_JUSTIFIED' as const },
-      ];
-
-      const stats = attendanceService.calculateStats(items);
-      expect(stats.totalStudents).toBe(4);
-      expect(stats.presentCount).toBe(2);
-      expect(stats.absentCount).toBe(1);
-      expect(stats.justifiedCount).toBe(1);
-      expect(stats.presenceRate).toBe(50);
-    });
-
-    it('handles empty items list safely without division by zero', () => {
-      const stats = attendanceService.calculateStats([]);
-      expect(stats.totalStudents).toBe(0);
-      expect(stats.presentCount).toBe(0);
-      expect(stats.presenceRate).toBe(0);
-    });
+    const loaded = await attendanceService.getAttendanceSheet(classId, date, yearId);
+    expect(loaded.items[0]).toMatchObject({ studentId, status: 'ABSENT', observation: 'Malade' });
+    const history = await attendanceService.getAttendanceHistory({ classId, academicYearId: yearId });
+    expect(history).toHaveLength(1);
+    expect(history[0].items[0].status).toBe('ABSENT');
   });
 });

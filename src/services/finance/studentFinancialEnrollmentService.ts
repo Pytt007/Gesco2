@@ -11,50 +11,11 @@ import { getStudentById } from '../students/studentsService';
 import { getClassroom } from '../academic/classroomsService';
 import { supabase } from '../common/supabaseClient';
 
-const STORAGE_KEY_FINANCIAL_ENROLLMENTS = 'gesco_financial_enrollments_store';
-
-function loadPersistedFinancialEnrollments(): Map<string, StudentFinancialEnrollment> {
-  const store = new Map<string, StudentFinancialEnrollment>();
-  try {
-    if (typeof localStorage !== 'undefined') {
-      const raw = localStorage.getItem(STORAGE_KEY_FINANCIAL_ENROLLMENTS);
-      if (raw) {
-        const parsed: StudentFinancialEnrollment[] = JSON.parse(raw);
-        parsed.forEach((e) => {
-          if (Array.isArray(e.installments)) {
-            const nonZero = e.installments.filter((i) => i.amountDue > 0 || i.amountPaid > 0);
-            if (nonZero.length > 0 && nonZero.length < e.installments.length) {
-              e.installments = nonZero;
-              e.installments.forEach((i, idx) => { i.number = idx + 1; });
-              e.installmentsCount = nonZero.length;
-            }
-          }
-          store.set(e.id, e);
-        });
-      }
-    }
-  } catch {}
-  return store;
-}
-
-function persistFinancialEnrollments(store: Map<string, StudentFinancialEnrollment>) {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      const list = Array.from(store.values());
-      localStorage.setItem(STORAGE_KEY_FINANCIAL_ENROLLMENTS, JSON.stringify(list));
-    }
-  } catch {}
-}
-
-const localFinancialEnrollmentsStore: Map<string, StudentFinancialEnrollment> = loadPersistedFinancialEnrollments();
-
-export function clearFinancialEnrollmentsStore() {
-  localFinancialEnrollmentsStore.clear();
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem(STORAGE_KEY_FINANCIAL_ENROLLMENTS);
-    }
-  } catch {}
+export function clearFinancialEnrollmentsStore() { /* No browser persistence. */ }
+async function loadEnrollment(id: string): Promise<StudentFinancialEnrollment | null> {
+  const { data, error } = await supabase.from('student_financial_enrollments').select('data').eq('id', id).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data?.data || null;
 }
 
 /**
@@ -83,7 +44,7 @@ export function generateDefaultInstallments(
     return finalCustoms.map((c, idx) => ({
       number: idx + 1,
       label: c.label || (finalCustoms.length === 1 ? 'Paiement Unique (Comptant)' : `Échéance ${idx + 1}`),
-      dueDate: c.dueDate || `${startYear}-${String(10 + (idx % 12)).padStart(2, '0')}-05`,
+      dueDate: c.dueDate || new Date(Date.UTC(startYear, 9 + idx, 5)).toISOString().slice(0, 10),
       amountDue: c.amountDue,
       amountPaid: 0,
       status: 'PENDING' as const,
@@ -141,76 +102,18 @@ export const studentFinancialEnrollmentService = {
   /**
    * Obtient tous les dossiers financiers pour une année scolaire
    */
-  async getEnrollmentsByYear(academicYearId: string = '2024-2025'): Promise<StudentFinancialEnrollment[]> {
-    try {
-      if (supabase) {
-        const { data, error } = await supabase
-          .from('student_financial_enrollments')
-          .select('*, enrollment_installments(*)')
-          .eq('academic_year_id', academicYearId)
-          .eq('status', 'ACTIVE');
-
-        if (!error && Array.isArray(data) && data.length > 0) {
-          return data.map((d: any) => ({
-            id: d.id,
-            studentId: d.student_id,
-            studentName: d.student_name,
-            matricule: d.matricule,
-            academicYearId: d.academic_year_id,
-            classroomId: d.classroom_id,
-            className: d.class_name,
-            levelCode: d.level_code as TuitionLevelCode,
-            registrationFee: Number(d.registration_fee || 0),
-            tuitionFee: Number(d.tuition_fee || 0),
-            totalAnnualFee: Number(d.registration_fee || 0) + Number(d.tuition_fee || 0),
-            discountType: d.discount_type as DiscountType,
-            discountValue: Number(d.discount_value || 0),
-            discountAmount: Number(d.discount_amount || 0),
-            netTotalDue: Number(d.net_total_due || 0),
-            totalPaid: Number(d.total_paid || 0),
-            remainingBalance: Number(d.remaining_balance || 0),
-            installmentsCount: Array.isArray(d.enrollment_installments) ? d.enrollment_installments.length : 8,
-            installments: Array.isArray(d.enrollment_installments)
-              ? d.enrollment_installments.map((i: any) => ({
-                  id: i.id,
-                  number: i.installment_number,
-                  label: i.installment_label,
-                  dueDate: i.due_date,
-                  amountDue: Number(i.amount_due || 0),
-                  amountPaid: Number(i.amount_paid || 0),
-                  status: i.status || 'PENDING',
-                }))
-              : [],
-            status: d.status || 'ACTIVE',
-            createdAt: d.created_at,
-            updatedAt: d.updated_at,
-          }));
-        }
-      }
-    } catch {
-      // Fallback
-    }
-
-    const inMemoryList = Array.from(localFinancialEnrollmentsStore.values()).filter(
-      (e) => (e.academicYearId === academicYearId || !academicYearId) && e.status === 'ACTIVE'
-    );
-    inMemoryList.forEach((e) => {
-      if (Array.isArray(e.installments) && e.installments.length > 1) {
-        const nonZero = e.installments.filter((i) => i.amountDue > 0 || i.amountPaid > 0);
-        if (nonZero.length > 0 && nonZero.length < e.installments.length) {
-          e.installments = nonZero;
-          e.installments.forEach((i, idx) => { i.number = idx + 1; });
-          e.installmentsCount = nonZero.length;
-        }
-      }
-    });
-    return inMemoryList;
+  async getEnrollmentsByYear(academicYearId = ''): Promise<StudentFinancialEnrollment[]> {
+    let query = supabase.from('student_financial_enrollments').select('data').eq('status', 'ACTIVE');
+    if (academicYearId) query = query.eq('academic_year_id', academicYearId);
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+    return (data || []).map(row => row.data as StudentFinancialEnrollment);
   },
 
   /**
    * Obtient le dossier financier d'un élève pour une année scolaire
    */
-  async getEnrollmentByStudent(studentId: string, academicYearId: string = 'ay-2026'): Promise<StudentFinancialEnrollment | null> {
+  async getEnrollmentByStudent(studentId: string, academicYearId = ''): Promise<StudentFinancialEnrollment | null> {
     const list = await this.getEnrollmentsByYear(academicYearId);
     return list.find((e) => e.studentId === studentId) || null;
   },
@@ -237,30 +140,34 @@ export const studentFinancialEnrollmentService = {
     }
 
     // 3. Résolution des informations de classe et niveau
-    let className = 'Classe';
-    let levelCode: TuitionLevelCode = input.levelCode || 'CP1';
-    try {
-      const clsRes = await getClassroom(input.classroomId);
-      if (clsRes.success && clsRes.data) {
-        className = clsRes.data.name;
-        levelCode = input.levelCode || (clsRes.data.levelCode as TuitionLevelCode) || 'CP1';
-      }
-    } catch { /* Fallback */ }
+    let clsRes;
+    try { clsRes = await getClassroom(input.classroomId); }
+    catch (error) { return { success: false, error: error instanceof Error ? error.message : 'Lecture de la classe impossible.' }; }
+    if (!clsRes.success || !clsRes.data) {
+      return { success: false, error: clsRes.error || 'Classe introuvable dans Neon.' };
+    }
+    const className = clsRes.data.name;
+    const levelCode = input.levelCode || (clsRes.data.levelCode as TuitionLevelCode);
+    if (!levelCode) return { success: false, error: 'Niveau scolaire de la classe manquant.' };
 
     // 4. Récupération des tarifs officiels configurés
     const schedules = await tuitionFeesService.getSchedulesByYear(input.academicYearId);
     const schedule = schedules.find((s) => s.levelCode === levelCode);
 
-    const registrationFee = schedule ? schedule.registrationFee : 50000;
-    const tuitionFee = schedule ? schedule.tuitionFee : 120000;
+    if (!schedule) return { success: false, error: 'Configurez les tarifs de ce niveau avant de créer le dossier.' };
+    const registrationFee = schedule.registrationFee;
+    const tuitionFee = schedule.tuitionFee;
     const totalAnnualFee = registrationFee + tuitionFee;
+
+    const discountValue = input.discountValue ?? 0;
+    if (!Number.isFinite(discountValue) || discountValue < 0) return { success: false, error: 'Remise invalide.' };
 
     // 5. Calcul de la remise éventuelle
     let discountAmount = 0;
     if (input.discountType === 'FIXED') {
-      discountAmount = input.discountValue;
+      discountAmount = discountValue;
     } else if (input.discountType === 'PERCENTAGE') {
-      discountAmount = Math.round((tuitionFee * input.discountValue) / 100);
+      discountAmount = Math.round((tuitionFee * discountValue) / 100);
     }
 
     if (discountAmount > totalAnnualFee) {
@@ -278,16 +185,15 @@ export const studentFinancialEnrollmentService = {
     );
 
     // 7. Assemblage du dossier financier
-    let studentName = `ÉLÈVE ${input.studentId}`;
-    let matricule = `MAT-2026-${Math.floor(100 + Math.random() * 900)}`;
-
-    try {
-      const studentRes = await getStudentById(input.studentId);
-      if (studentRes.success && studentRes.data) {
-        studentName = `${studentRes.data.lastName} ${studentRes.data.firstName}`;
-        matricule = studentRes.data.matricule;
-      }
-    } catch { /* Fallback */ }
+    let studentRes;
+    try { studentRes = await getStudentById(input.studentId); }
+    catch (error) { return { success: false, error: error instanceof Error ? error.message : 'Lecture de l’élève impossible.' }; }
+    if (!studentRes.success || !studentRes.data) {
+      return { success: false, error: studentRes.error || 'Élève introuvable dans Neon.' };
+    }
+    const studentName = `${studentRes.data.lastName} ${studentRes.data.firstName}`;
+    const matricule = studentRes.data.matricule;
+    if (!matricule) return { success: false, error: 'Matricule de l’élève manquant.' };
 
     const id = `fin-${input.studentId}-${input.academicYearId}`;
 
@@ -304,7 +210,7 @@ export const studentFinancialEnrollmentService = {
       tuitionFee,
       totalAnnualFee,
       discountType: input.discountType,
-      discountValue: input.discountValue,
+      discountValue,
       discountAmount,
       netTotalDue,
       totalPaid: 0,
@@ -316,8 +222,8 @@ export const studentFinancialEnrollmentService = {
       updatedAt: new Date().toISOString(),
     };
 
-    localFinancialEnrollmentsStore.set(id, record);
-    persistFinancialEnrollments(localFinancialEnrollmentsStore);
+    try { await this.saveEnrollment(record); }
+    catch (error) { return { success: false, error: error instanceof Error ? error.message : 'Enregistrement refusé.' }; }
 
     return {
       success: true,
@@ -329,9 +235,10 @@ export const studentFinancialEnrollmentService = {
   /**
    * Sauvegarde directe d'un dossier financier (synchronisation mémoire + localStorage)
    */
-  saveEnrollment(enrollment: StudentFinancialEnrollment) {
-    localFinancialEnrollmentsStore.set(enrollment.id, enrollment);
-    persistFinancialEnrollments(localFinancialEnrollmentsStore);
+  async saveEnrollment(enrollment: StudentFinancialEnrollment): Promise<StudentFinancialEnrollment> {
+    const { data, error } = await supabase.rpc('save_financial_enrollment', { p_data: enrollment });
+    if (error || !data) throw new Error(error?.message || 'Dossier non enregistré.');
+    return data as StudentFinancialEnrollment;
   },
 
   /**
@@ -341,7 +248,7 @@ export const studentFinancialEnrollmentService = {
     id: string,
     input: Partial<FinancialEnrollmentInput>
   ): Promise<ServiceResponse<StudentFinancialEnrollment>> {
-    const existing = localFinancialEnrollmentsStore.get(id);
+    const existing = await loadEnrollment(id);
     if (!existing) {
       return { success: false, error: 'Dossier financier introuvable.' };
     }
@@ -349,7 +256,7 @@ export const studentFinancialEnrollmentService = {
     const discountType = input.discountType ?? existing.discountType;
     const discountValue = input.discountValue !== undefined ? input.discountValue : existing.discountValue;
 
-    if (discountValue < 0) {
+    if (!Number.isFinite(discountValue) || discountValue < 0) {
       return { success: false, error: 'La remise ne peut pas être négative.' };
     }
 
@@ -385,8 +292,8 @@ export const studentFinancialEnrollmentService = {
       updatedAt: new Date().toISOString(),
     };
 
-    localFinancialEnrollmentsStore.set(id, updated);
-    persistFinancialEnrollments(localFinancialEnrollmentsStore);
+    try { await this.saveEnrollment(updated); }
+    catch (error) { return { success: false, error: error instanceof Error ? error.message : 'Modification refusée.' }; }
     return { success: true, data: updated, message: 'Dossier financier mis à jour.' };
   },
 
@@ -394,15 +301,15 @@ export const studentFinancialEnrollmentService = {
    * Archivage d'un dossier financier
    */
   async archiveEnrollment(id: string): Promise<ServiceResponse<boolean>> {
-    const existing = localFinancialEnrollmentsStore.get(id);
+    const existing = await loadEnrollment(id);
     if (!existing) {
       return { success: false, error: 'Dossier financier introuvable.' };
     }
 
     existing.status = 'ARCHIVED';
     existing.updatedAt = new Date().toISOString();
-    localFinancialEnrollmentsStore.set(id, existing);
-    persistFinancialEnrollments(localFinancialEnrollmentsStore);
+    try { await this.saveEnrollment(existing); }
+    catch (error) { return { success: false, error: error instanceof Error ? error.message : 'Archivage refusé.' }; }
 
     return { success: true, data: true, message: 'Dossier financier archivé.' };
   },

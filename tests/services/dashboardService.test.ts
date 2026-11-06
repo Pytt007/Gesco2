@@ -10,6 +10,7 @@ import {
   invalidateDashboardCache,
   dashboardService,
 } from '../../src/services/dashboard/dashboardService';
+import { studentFinancialEnrollmentService } from '../../src/services/finance/studentFinancialEnrollmentService';
 
 describe('Dashboard Service Layer', () => {
   const schoolYear = '2026-2027';
@@ -65,6 +66,13 @@ describe('Dashboard Service Layer', () => {
   it('getCalendarEvents returns upcoming events', async () => {
     const events = await getCalendarEvents(schoolYear);
     expect(Array.isArray(events)).toBe(true);
+  });
+
+  it('does not invent classes or payment records when no school year is configured', async () => {
+    const enrollmentRead = vi.spyOn(studentFinancialEnrollmentService, 'getEnrollmentsByYear');
+    const results = await dashboardService.globalSearch('Garderie A', '');
+    expect(results.some(result => result.category === 'Classe' && result.title === 'Classe Garderie A')).toBe(false);
+    expect(enrollmentRead).not.toHaveBeenCalled();
   });
 
   it('supports cache invalidation and instant cached retrieval (P1-03)', async () => {
